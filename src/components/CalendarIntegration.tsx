@@ -21,33 +21,7 @@ interface CalendarIntegrationProps {
 
 export default function CalendarIntegration({ pos = [], onAddReminder }: CalendarIntegrationProps) {
   const [events, setEvents] = useState<CalendarEvent[]>([
-    {
-      id: '1',
-      title: 'PO-2024-015 Delivery',
-      description: 'Expected delivery for ABC Technologies order',
-      date: addDays(new Date(), 2),
-      type: 'delivery',
-      poNumber: 'PO-2024-015',
-      status: 'upcoming'
-    },
-    {
-      id: '2',
-      title: 'PO-2024-014 Approval Deadline',
-      description: 'Approval required by end of day',
-      date: new Date(),
-      type: 'approval',
-      poNumber: 'PO-2024-014',
-      status: 'today'
-    },
-    {
-      id: '3',
-      title: 'PO-2024-013 Shipment',
-      description: 'Shipment scheduled for pickup',
-      date: addDays(new Date(), 5),
-      type: 'shipment',
-      poNumber: 'PO-2024-013',
-      status: 'upcoming'
-    }
+    // TODO: Fetch real events from Firestore based on PO dates
   ]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
