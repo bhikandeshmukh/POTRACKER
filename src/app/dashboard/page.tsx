@@ -3,16 +3,16 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Sidebar from '@/components/Sidebar';
 import KpiCard from '@/components/KpiCard';
 import { getPOs, getShipments, PurchaseOrder, Shipment } from '@/lib/firestore';
 import { useQuery } from '@tanstack/react-query';
-import { IndianRupee, Clock, CheckCircle, AlertCircle, FileText, Package, Truck, PlayCircle, XCircle, RefreshCw, Wifi, WifiOff } from 'lucide-react';
+import { IndianRupee, Clock, CheckCircle, AlertCircle, FileText, Package, Truck, PlayCircle, XCircle, RefreshCw, Wifi, WifiOff, Calendar, Plus } from 'lucide-react';
 import { getThemeClasses } from '@/styles/theme';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { format, isWithinInterval } from 'date-fns';
-import Link from 'next/link';
 import StatusBadge from '@/components/StatusBadge';
 import DateRangePicker, { DateRange } from '@/components/DateRangePicker';
 import { useToast } from '@/components/ToastContainer';
@@ -496,6 +496,33 @@ export default function Dashboard() {
           {/* Comparison View */}
           <div className="mb-5">
             <ComparisonView data={pos} period="month" />
+          </div>
+
+          {/* PO Appointments Section */}
+          <div className={`${getThemeClasses.card()} ${getThemeClasses.sectionPadding()} mb-5`}>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className={getThemeClasses.sectionHeading()}>Upcoming PO Appointments</h2>
+              <Link
+                href="/appointments"
+                className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+              >
+                View All →
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Empty state - will be populated from Firestore */}
+              <div className="col-span-3 text-center py-8 text-gray-500">
+                <Calendar className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                <p className="mb-2">No upcoming appointments</p>
+                <Link
+                  href="/appointments"
+                  className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Schedule Appointment</span>
+                </Link>
+              </div>
+            </div>
           </div>
 
           {/* Recent Activity & Calendar */}

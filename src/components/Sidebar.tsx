@@ -4,12 +4,13 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { LayoutDashboard, FileText, Users, Settings, UserPlus, X, User, LogOut, Shield } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, Settings, UserPlus, X, User, LogOut, Shield, Calendar } from 'lucide-react';
 import { getThemeClasses } from '@/styles/theme';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Purchase Orders', href: '/pos', icon: FileText },
+  { name: 'PO Appointments', href: '/appointments', icon: Calendar },
   { name: 'Return Orders', href: '/ros', icon: FileText },
   { name: 'Vendors', href: '/vendors', icon: Users },
   { name: 'Transporters', href: '/transporters', icon: Users },
