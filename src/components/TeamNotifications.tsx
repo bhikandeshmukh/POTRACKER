@@ -44,82 +44,11 @@ export default function TeamNotifications({ className = '' }: TeamNotificationsP
   const loadNotifications = async () => {
     setLoading(true);
     
-    // Mock data - replace with actual Firestore query
-    const mockNotifications: Notification[] = [
-      {
-        id: '1',
-        type: 'mention',
-        title: 'You were mentioned',
-        message: '@you mentioned you in PO-2024-001 comments',
-        fromUser: {
-          id: 'user1',
-          name: 'Rajesh Kumar',
-          role: 'Manager'
-        },
-        entityType: 'po',
-        entityId: 'po1',
-        entityName: 'PO-2024-001',
-        timestamp: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
-        isRead: false,
-        actionUrl: '/pos/po1'
-      },
-      {
-        id: '2',
-        type: 'approval',
-        title: 'Approval Required',
-        message: 'PO-2024-002 requires your approval (₹2,50,000)',
-        fromUser: {
-          id: 'user2',
-          name: 'Priya Sharma',
-          role: 'Employee'
-        },
-        entityType: 'po',
-        entityId: 'po2',
-        entityName: 'PO-2024-002',
-        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-        isRead: false,
-        actionUrl: '/pos/po2'
-      },
-      {
-        id: '3',
-        type: 'comment',
-        title: 'New Comment',
-        message: 'New comment added to PO-2024-001',
-        fromUser: {
-          id: 'user3',
-          name: 'Amit Singh',
-          role: 'Employee'
-        },
-        entityType: 'po',
-        entityId: 'po1',
-        entityName: 'PO-2024-001',
-        timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000), // 4 hours ago
-        isRead: true,
-        actionUrl: '/pos/po1'
-      },
-      {
-        id: '4',
-        type: 'po_update',
-        title: 'PO Status Updated',
-        message: 'PO-2024-003 has been approved and is ready for shipping',
-        entityType: 'po',
-        entityId: 'po3',
-        entityName: 'PO-2024-003',
-        timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000), // 6 hours ago
-        isRead: true,
-        actionUrl: '/pos/po3'
-      },
-      {
-        id: '5',
-        type: 'system',
-        title: 'System Maintenance',
-        message: 'Scheduled maintenance completed successfully',
-        timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
-        isRead: true
-      }
-    ];
+    // TODO: Fetch real notifications from Firestore
+    // For now, showing empty state
+    const notifications: Notification[] = [];
 
-    setNotifications(mockNotifications);
+    setNotifications(notifications);
     setLoading(false);
   };
 

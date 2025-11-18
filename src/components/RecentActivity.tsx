@@ -35,69 +35,8 @@ export default function RecentActivity({ userId, limit = 10, showFilters = true 
   const loadActivities = async () => {
     setLoading(true);
 
-    // Mock data - replace with actual Firestore query
-    const mockActivities: Activity[] = [
-      {
-        id: '1',
-        type: 'po_created',
-        title: 'Created Purchase Order',
-        description: 'PO-2024-015 for ABC Technologies - ₹2,50,000',
-        timestamp: new Date(Date.now() - 30 * 60 * 1000),
-        entityId: 'po-2024-015',
-        entityType: 'po',
-        metadata: { poNumber: 'PO-2024-015', amount: 250000 }
-      },
-      {
-        id: '2',
-        type: 'po_approved',
-        title: 'Approved Purchase Order',
-        description: 'PO-2024-014 has been approved',
-        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-        entityId: 'po-2024-014',
-        entityType: 'po',
-        metadata: { poNumber: 'PO-2024-014' }
-      },
-      {
-        id: '3',
-        type: 'shipment_created',
-        title: 'Created Shipment',
-        description: 'Shipment SHP-001 for PO-2024-013',
-        timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000),
-        entityId: 'shp-001',
-        entityType: 'shipment',
-        metadata: { shipmentId: 'SHP-001', poNumber: 'PO-2024-013' }
-      },
-      {
-        id: '4',
-        type: 'comment_added',
-        title: 'Added Comment',
-        description: 'Commented on PO-2024-012',
-        timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000),
-        entityId: 'po-2024-012',
-        entityType: 'po',
-        metadata: { poNumber: 'PO-2024-012' }
-      },
-      {
-        id: '5',
-        type: 'po_updated',
-        title: 'Updated Purchase Order',
-        description: 'Updated PO-2024-011 details',
-        timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
-        entityId: 'po-2024-011',
-        entityType: 'po',
-        metadata: { poNumber: 'PO-2024-011' }
-      },
-      {
-        id: '6',
-        type: 'po_rejected',
-        title: 'Rejected Purchase Order',
-        description: 'PO-2024-010 has been rejected',
-        timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-        entityId: 'po-2024-010',
-        entityType: 'po',
-        metadata: { poNumber: 'PO-2024-010' }
-      }
-    ];
+    // TODO: Fetch real activities from Firestore audit logs
+    const mockActivities: Activity[] = [];
 
     // Filter activities
     let filtered = mockActivities;

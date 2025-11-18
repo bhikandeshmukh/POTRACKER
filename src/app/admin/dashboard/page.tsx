@@ -212,35 +212,7 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Quick Actions */}
-          <div className={`${getThemeClasses.card()} ${getThemeClasses.sectionPadding()}`}>
-            <h2 className={getThemeClasses.sectionHeading()}>Quick Actions</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Link
-                href="/admin/create-user"
-                className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
-              >
-                <Users className={`${getThemeClasses.icon('medium')} text-blue-600`} />
-                <span className={getThemeClasses.cardTitle()}>Create New User</span>
-              </Link>
-              
-              <Link
-                href="/vendors"
-                className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
-              >
-                <Building2 className={`${getThemeClasses.icon('medium')} text-green-600`} />
-                <span className={getThemeClasses.cardTitle()}>Manage Vendors</span>
-              </Link>
-              
-              <Link
-                href="/pos"
-                className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
-              >
-                <FileText className={`${getThemeClasses.icon('medium')} text-purple-600`} />
-                <span className={getThemeClasses.cardTitle()}>Manage Purchase Orders</span>
-              </Link>
-            </div>
-          </div>
+
         </main>
       </div>
     </div>
