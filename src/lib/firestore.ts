@@ -202,7 +202,6 @@ export const getVendors = async (): Promise<Vendor[]> => {
 };
 
 export const updateVendor = async (id: string, vendor: Partial<Vendor>, userId?: string, userEmail?: string) => {
-  console.log('Updating vendor:', id, vendor);
   try {
     const vendorRef = doc(db, 'vendors', id);
     await updateDoc(vendorRef, {
@@ -221,16 +220,12 @@ export const updateVendor = async (id: string, vendor: Partial<Vendor>, userId?:
         vendor.name
       );
     }
-    
-    console.log('Vendor updated successfully');
   } catch (error) {
-    console.error('Firestore updateVendor error:', error);
-    throw error;
+    throw new DatabaseError('Failed to update vendor', error);
   }
 };
 
 export const deleteVendor = async (id: string, userId?: string, userEmail?: string, vendorName?: string) => {
-  console.log('Deleting vendor:', id);
   try {
     const vendorRef = doc(db, 'vendors', id);
     await deleteDoc(vendorRef);
@@ -246,11 +241,8 @@ export const deleteVendor = async (id: string, userId?: string, userEmail?: stri
         vendorName
       );
     }
-    
-    console.log('Vendor deleted successfully');
   } catch (error) {
-    console.error('Firestore deleteVendor error:', error);
-    throw error;
+    throw new DatabaseError('Failed to delete vendor', error);
   }
 };
 
@@ -305,8 +297,7 @@ export const getPOs = async (
     
     return pos;
   } catch (error) {
-    console.error('Error in getPOs:', error);
-    throw error;
+    throw new DatabaseError('Failed to fetch purchase orders', error);
   }
 };
 
@@ -324,7 +315,6 @@ export const getPO = async (id: string): Promise<PurchaseOrder | null> => {
     }
     return null;
   } catch (error) {
-    console.error('Error fetching PO:', error);
     return null;
   }
 };
@@ -347,29 +337,23 @@ export const updatePOStatus = async (
 
 
 export const updatePO = async (id: string, po: Partial<PurchaseOrder>) => {
-  console.log('Updating PO:', id, po);
   try {
     const poRef = doc(db, 'purchaseOrders', id);
     await updateDoc(poRef, {
       ...po,
       updatedAt: serverTimestamp()
     });
-    console.log('PO updated successfully');
   } catch (error) {
-    console.error('Firestore updatePO error:', error);
-    throw error;
+    throw new DatabaseError('Failed to update purchase order', error);
   }
 };
 
 export const deletePO = async (id: string) => {
-  console.log('Deleting PO:', id);
   try {
     const poRef = doc(db, 'purchaseOrders', id);
     await deleteDoc(poRef);
-    console.log('PO deleted successfully');
   } catch (error) {
-    console.error('Firestore deletePO error:', error);
-    throw error;
+    throw new DatabaseError('Failed to delete purchase order', error);
   }
 };
 
@@ -389,7 +373,6 @@ export const vendorNameToDocId = (name: string): string => {
 
 // Transporter operations
 export const addTransporter = async (transporter: Omit<Transporter, 'id'>, userId?: string, userEmail?: string) => {
-  console.log('Adding transporter to Firestore:', transporter);
   try {
     const docId = vendorNameToDocId(transporter.name);
     const transporterRef = doc(db, 'transporters', docId);
@@ -413,24 +396,19 @@ export const addTransporter = async (transporter: Omit<Transporter, 'id'>, userI
       );
     }
     
-    console.log('Transporter added with ID:', docId);
     return { id: docId };
   } catch (error) {
-    console.error('Firestore addTransporter error:', error);
-    throw error;
+    throw new DatabaseError('Failed to add transporter', error);
   }
 };
 
 export const getTransporters = async (): Promise<Transporter[]> => {
-  console.log('Fetching transporters from Firestore...');
   try {
     const snapshot = await getDocs(collection(db, 'transporters'));
     const transporters = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Transporter));
-    console.log('Transporters fetched:', transporters);
     return transporters;
   } catch (error) {
-    console.error('Firestore getTransporters error:', error);
-    throw error;
+    throw new DatabaseError('Failed to fetch transporters', error);
   }
 };
 
@@ -444,13 +422,11 @@ export const getTransporter = async (id: string): Promise<Transporter | null> =>
     }
     return null;
   } catch (error) {
-    console.error('Firestore getTransporter error:', error);
-    throw error;
+    return null;
   }
 };
 
 export const updateTransporter = async (id: string, transporter: Partial<Transporter>, userId?: string, userEmail?: string) => {
-  console.log('Updating transporter:', id, transporter);
   try {
     const transporterRef = doc(db, 'transporters', id);
     await updateDoc(transporterRef, {
@@ -469,16 +445,12 @@ export const updateTransporter = async (id: string, transporter: Partial<Transpo
         transporter.name
       );
     }
-    
-    console.log('Transporter updated successfully');
   } catch (error) {
-    console.error('Firestore updateTransporter error:', error);
-    throw error;
+    throw new DatabaseError('Failed to update transporter', error);
   }
 };
 
 export const deleteTransporter = async (id: string, userId?: string, userEmail?: string, transporterName?: string) => {
-  console.log('Deleting transporter:', id);
   try {
     const transporterRef = doc(db, 'transporters', id);
     await deleteDoc(transporterRef);
@@ -494,11 +466,8 @@ export const deleteTransporter = async (id: string, userId?: string, userEmail?:
         transporterName
       );
     }
-    
-    console.log('Transporter deleted successfully');
   } catch (error) {
-    console.error('Firestore deleteTransporter error:', error);
-    throw error;
+    throw new DatabaseError('Failed to delete transporter', error);
   }
 };
 
@@ -549,8 +518,7 @@ export const getReturnOrders = async (userId?: string, role?: string): Promise<R
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ReturnOrder));
   } catch (error) {
-    console.error('Error fetching return orders:', error);
-    throw error;
+    throw new DatabaseError('Failed to fetch return orders', error);
   }
 };
 
@@ -564,8 +532,7 @@ export const getReturnOrder = async (id: string): Promise<ReturnOrder | null> =>
     }
     return null;
   } catch (error) {
-    console.error('Error fetching return order:', error);
-    throw error;
+    return null;
   }
 };
 
@@ -576,7 +543,6 @@ export const getReturnOrdersByPO = async (poNumber: string): Promise<ReturnOrder
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ReturnOrder));
   } catch (error) {
-    console.error('Error fetching return orders by PO:', error);
     return [];
   }
 };
@@ -612,8 +578,7 @@ export const updateReturnOrderStatus = async (
       );
     }
   } catch (error) {
-    console.error('Error updating return order status:', error);
-    throw error;
+    throw new DatabaseError('Failed to update return order status', error);
   }
 };
 
@@ -625,8 +590,7 @@ export const updateReturnOrder = async (id: string, ro: Partial<ReturnOrder>) =>
       updatedAt: serverTimestamp()
     });
   } catch (error) {
-    console.error('Error updating return order:', error);
-    throw error;
+    throw new DatabaseError('Failed to update return order', error);
   }
 };
 
@@ -647,7 +611,6 @@ export const deleteReturnOrder = async (id: string, userId?: string, userName?: 
       );
     }
   } catch (error) {
-    console.error('Error deleting return order:', error);
     throw error;
   }
 };
@@ -692,7 +655,6 @@ export const getAuditLogs = async (entityId?: string, limit = 50): Promise<Audit
     const snapshot = await getDocs(q);
     return snapshot.docs.slice(0, limit).map(doc => ({ id: doc.id, ...doc.data() } as AuditLog));
   } catch (error) {
-    console.error('Failed to fetch audit logs:', error);
     return [];
   }
 };
@@ -754,29 +716,23 @@ export const getAllUsers = async (): Promise<(User & { id: string })[]> => {
 };
 
 export const updateUser = async (id: string, user: Partial<User>) => {
-  console.log('Updating user:', id, user);
   try {
     const userRef = doc(db, 'users', id);
     await updateDoc(userRef, {
       ...user,
       updatedAt: serverTimestamp()
     });
-    console.log('User updated successfully');
   } catch (error) {
-    console.error('Firestore updateUser error:', error);
-    throw error;
+    throw new DatabaseError('Failed to update user', error);
   }
 };
 
 export const deleteUser = async (id: string) => {
-  console.log('Deleting user:', id);
   try {
     const userRef = doc(db, 'users', id);
     await deleteDoc(userRef);
-    console.log('User deleted successfully');
   } catch (error) {
-    console.error('Firestore deleteUser error:', error);
-    throw error;
+    throw new DatabaseError('Failed to delete user', error);
   }
 };
 
@@ -787,8 +743,6 @@ export const deleteUser = async (id: string) => {
 // Shipment operations
 export const createShipment = async (poNumber: string, shipmentData: Omit<Shipment, 'id'>) => {
   try {
-    console.log('Creating shipment for PO:', poNumber);
-    
     // Generate shipment ID
     const shipmentId = `SHP-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     
@@ -806,11 +760,9 @@ export const createShipment = async (poNumber: string, shipmentData: Omit<Shipme
     // Update PO with shipment reference and quantities
     await updatePOWithShipment(poNumber, shipmentWithId);
     
-    console.log('Shipment created successfully:', shipmentId);
     return { id: shipmentId };
   } catch (error) {
-    console.error('Error creating shipment:', error);
-    throw error;
+    throw new DatabaseError('Failed to create shipment', error);
   }
 };
 
@@ -865,11 +817,8 @@ export const updatePOWithShipment = async (poNumber: string, shipment: Shipment)
       totalShippedAmount,
       status: newStatus
     });
-    
-    console.log('PO updated with shipment data');
   } catch (error) {
-    console.error('Error updating PO with shipment:', error);
-    throw error;
+    throw new DatabaseError('Failed to update PO with shipment', error);
   }
 };
 
@@ -889,7 +838,6 @@ export const getShipments = async (poNumber?: string): Promise<Shipment[]> => {
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Shipment));
   } catch (error) {
-    console.error('Error fetching shipments:', error);
     return [];
   }
 };
@@ -916,11 +864,8 @@ export const updateShipmentStatus = async (shipmentId: string, status: Shipment[
         await updatePOReceivedQuantities(shipment.poNumber, shipment);
       }
     }
-    
-    console.log('Shipment status updated successfully');
   } catch (error) {
-    console.error('Error updating shipment status:', error);
-    throw error;
+    throw new DatabaseError('Failed to update shipment status', error);
   }
 };
 
@@ -966,10 +911,7 @@ export const updatePOReceivedQuantities = async (poNumber: string, shipment: Shi
       totalReceivedAmount,
       status: newStatus
     });
-    
-    console.log('PO received quantities updated');
   } catch (error) {
-    console.error('Error updating PO received quantities:', error);
-    throw error;
+    throw new DatabaseError('Failed to update PO received quantities', error);
   }
 };

@@ -52,8 +52,7 @@ export async function logAuditEvent(
 
     await addDoc(collection(db, 'auditLogs'), auditLog);
   } catch (error) {
-    console.error('Error logging audit event:', error);
-    // Don't throw - audit logging shouldn't break the main operation
+    // Silent fail - audit logging shouldn't break the main operation
   }
 }
 
@@ -92,7 +91,6 @@ export async function getAuditLogs(
       ...doc.data()
     } as AuditLog));
   } catch (error) {
-    console.error('Error fetching audit logs:', error);
     return [];
   }
 }
@@ -115,7 +113,6 @@ export async function getUserAuditLogs(
       ...doc.data()
     } as AuditLog));
   } catch (error) {
-    console.error('Error fetching user audit logs:', error);
     return [];
   }
 }

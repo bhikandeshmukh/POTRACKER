@@ -144,7 +144,6 @@ export const getUserPermissions = async (userId: string, userEmail: string, user
     const rolePerms = await getRolePermissions(userRole);
     return rolePerms.permissions;
   } catch (error) {
-    console.error('Error fetching user permissions:', error);
     // Fallback to role permissions
     return DEFAULT_PERMISSIONS[userRole];
   }
@@ -159,7 +158,6 @@ export const getAllUserPermissions = async (): Promise<UserPermissions[]> => {
       ...doc.data() 
     } as UserPermissions));
   } catch (error) {
-    console.error('Error fetching all user permissions:', error);
     return [];
   }
 };
@@ -188,9 +186,7 @@ export const updateUserPermissions = async (
     };
     
     await setDoc(userDocRef, userPerms);
-    console.log(`User permissions updated for: ${userName}`);
   } catch (error) {
-    console.error('Error updating user permissions:', error);
     throw error;
   }
 };
@@ -204,9 +200,7 @@ export const deleteUserPermissions = async (userId: string): Promise<void> => {
       useRolePermissions: true,
       updatedAt: new Date()
     }, { merge: true });
-    console.log(`User permissions reset to role defaults for: ${userId}`);
   } catch (error) {
-    console.error('Error deleting user permissions:', error);
     throw error;
   }
 };
@@ -228,7 +222,6 @@ export const getRolePermissions = async (role: RoleType): Promise<RolePermission
       };
     }
   } catch (error) {
-    console.error('Error fetching role permissions:', error);
     return {
       role,
       permissions: DEFAULT_PERMISSIONS[role],
@@ -254,7 +247,6 @@ export const getAllRolePermissions = async (): Promise<RolePermissions[]> => {
     
     return permissions;
   } catch (error) {
-    console.error('Error fetching all role permissions:', error);
     return Object.entries(DEFAULT_PERMISSIONS).map(([role, perms]) => ({
       role: role as RoleType,
       permissions: perms,
@@ -280,9 +272,7 @@ export const updateRolePermissions = async (
     };
     
     await setDoc(docRef, rolePermissions);
-    console.log(`Permissions updated for role: ${role}`);
   } catch (error) {
-    console.error('Error updating role permissions:', error);
     throw error;
   }
 };
@@ -330,11 +320,9 @@ export const initializeDefaultPermissions = async (): Promise<void> => {
         };
         
         await setDoc(docRef, rolePermissions);
-        console.log(`Initialized default permissions for ${role}`);
       }
     }
   } catch (error) {
-    console.error('Error initializing default permissions:', error);
     throw error;
   }
 };

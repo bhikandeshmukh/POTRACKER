@@ -31,7 +31,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log('Auth state changed:', user ? user.uid : 'No user');
       setUser(user);
       if (user && user.email) {
         try {
@@ -45,7 +44,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           
           setUserData(data);
         } catch (error) {
-          console.error('Error fetching user data:', error);
           setUserData(null);
         }
       } else {
@@ -63,13 +61,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = async (email: string, password: string, name: string, role: 'Admin' | 'Manager' | 'Employee') => {
     try {
-      console.log('Starting user creation process...');
-      console.log('Email:', email, 'Role:', role, 'Name:', name);
-      
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-      
-      console.log('Firebase Auth user created:', user.uid);
       
       // Create user document in Firestore
       await createUser(user.uid, {
@@ -77,12 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         name,
         role
       });
-      
-      console.log('Firestore user document created successfully');
     } catch (error: any) {
-      console.error('Error creating user:', error);
-      console.error('Error code:', error.code);
-      console.error('Error message:', error.message);
       throw error;
     }
   };
