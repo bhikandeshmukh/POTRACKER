@@ -1,0 +1,340 @@
+import { db } from './firebase';
+import { doc, getDoc, setDoc, collection, getDocs, updateDoc, query, where } from 'firebase/firestore';
+
+// User-specific permissions interface
+export interface UserPermissions {
+  userId: string;
+  userEmail: string;
+  userName: string;
+  role: RoleType;
+  customPermissions?: Permission[]; // If set, overrides role permissions
+  useRolePermissions: boolean; // If true, use role permissions; if false, use custom
+  updatedAt?: Date;
+  updatedBy?: string;
+}
+
+// Permission types
+export type Permission = 
+  // PO Permissions
+  | 'po.view' | 'po.create' | 'po.edit' | 'po.delete' | 'po.approve' | 'po.reject'
+  // Vendor Permissions
+  | 'vendor.view' | 'vendor.create' | 'vendor.edit' | 'vendor.delete'
+  // User Permissions
+  | 'user.view' | 'user.create' | 'user.edit' | 'user.delete'
+  // Shipment Permissions
+  | 'shipment.view' | 'shipment.create' | 'shipment.edit' | 'shipment.delete'
+  // Report Permissions
+  | 'report.view' | 'report.export' | 'report.compliance'
+  // Settings Permissions
+  | 'settings.view' | 'settings.edit' | 'permissions.manage'
+  // Audit Permissions
+  | 'audit.view' | 'audit.export';
+
+export type RoleType = 'Admin' | 'Manager' | 'Employee';
+
+export interface RolePermissions {
+  role: RoleType;
+  permissions: Permission[];
+  description: string;
+  updatedAt?: Date;
+  updatedBy?: string;
+}
+
+// Default permissions for each role
+export const DEFAULT_PERMISSIONS: Record<RoleType, Permission[]> = {
+  Admin: [
+    // All permissions
+    'po.view', 'po.create', 'po.edit', 'po.delete', 'po.approve', 'po.reject',
+    'vendor.view', 'vendor.create', 'vendor.edit', 'vendor.delete',
+    'user.view', 'user.create', 'user.edit', 'user.delete',
+    'shipment.view', 'shipment.create', 'shipment.edit', 'shipment.delete',
+    'report.view', 'report.export', 'report.compliance',
+    'settings.view', 'settings.edit', 'permissions.manage',
+    'audit.view', 'audit.export'
+  ],
+  Manager: [
+    // PO permissions
+    'po.view', 'po.create', 'po.edit', 'po.approve', 'po.reject',
+    // Vendor permissions
+    'vendor.view', 'vendor.create', 'vendor.edit',
+    // User permissions (limited)
+    'user.view',
+    // Shipment permissions
+    'shipment.view', 'shipment.create', 'shipment.edit',
+    // Report permissions
+    'report.view', 'report.export', 'report.compliance',
+    // Audit permissions
+    'audit.view'
+  ],
+  Employee: [
+    // PO permissions (limited)
+    'po.view', 'po.create', 'po.edit',
+    // Vendor permissions (view only)
+    'vendor.view',
+    // Shipment permissions (view only)
+    'shipment.view',
+    // Report permissions (view only)
+    'report.view'
+  ]
+};
+
+// Permission descriptions
+export const PERMISSION_DESCRIPTIONS: Record<Permission, string> = {
+  'po.view': 'View purchase orders',
+  'po.create': 'Create new purchase orders',
+  'po.edit': 'Edit purchase orders',
+  'po.delete': 'Delete purchase orders',
+  'po.approve': 'Approve purchase orders',
+  'po.reject': 'Reject purchase orders',
+  'vendor.view': 'View vendors',
+  'vendor.create': 'Create new vendors',
+  'vendor.edit': 'Edit vendor details',
+  'vendor.delete': 'Delete vendors',
+  'user.view': 'View users',
+  'user.create': 'Create new users',
+  'user.edit': 'Edit user details',
+  'user.delete': 'Delete users',
+  'shipment.view': 'View shipments',
+  'shipment.create': 'Create new shipments',
+  'shipment.edit': 'Edit shipment details',
+  'shipment.delete': 'Delete shipments',
+  'report.view': 'View reports',
+  'report.export': 'Export reports',
+  'report.compliance': 'Generate compliance reports',
+  'settings.view': 'View settings',
+  'settings.edit': 'Edit settings',
+  'permissions.manage': 'Manage role permissions',
+  'audit.view': 'View audit logs',
+  'audit.export': 'Export audit logs'
+};
+
+// Permission categories
+export const PERMISSION_CATEGORIES = {
+  'Purchase Orders': ['po.view', 'po.create', 'po.edit', 'po.delete', 'po.approve', 'po.reject'],
+  'Vendors': ['vendor.view', 'vendor.create', 'vendor.edit', 'vendor.delete'],
+  'Users': ['user.view', 'user.create', 'user.edit', 'user.delete'],
+  'Shipments': ['shipment.view', 'shipment.create', 'shipment.edit', 'shipment.delete'],
+  'Reports': ['report.view', 'report.export', 'report.compliance'],
+  'Settings': ['settings.view', 'settings.edit', 'permissions.manage'],
+  'Audit': ['audit.view', 'audit.export']
+};
+
+// Get user-specific permissions
+export const getUserPermissions = async (userId: string, userEmail: string, userRole: RoleType): Promise<Permission[]> => {
+  try {
+    // Admin always gets all permissions
+    if (userRole === 'Admin') {
+      return DEFAULT_PERMISSIONS.Admin;
+    }
+
+    // Check if user has custom permissions
+    const userDocRef = doc(db, 'userPermissions', userId);
+    const userDocSnap = await getDoc(userDocRef);
+    
+    if (userDocSnap.exists()) {
+      const userPerms = userDocSnap.data() as UserPermissions;
+      
+      // If user has custom permissions and not using role permissions
+      if (!userPerms.useRolePermissions && userPerms.customPermissions) {
+        return userPerms.customPermissions;
+      }
+    }
+    
+    // Otherwise, use role permissions
+    const rolePerms = await getRolePermissions(userRole);
+    return rolePerms.permissions;
+  } catch (error) {
+    console.error('Error fetching user permissions:', error);
+    // Fallback to role permissions
+    return DEFAULT_PERMISSIONS[userRole];
+  }
+};
+
+// Get all users with custom permissions
+export const getAllUserPermissions = async (): Promise<UserPermissions[]> => {
+  try {
+    const snapshot = await getDocs(collection(db, 'userPermissions'));
+    return snapshot.docs.map(doc => ({ 
+      userId: doc.id, 
+      ...doc.data() 
+    } as UserPermissions));
+  } catch (error) {
+    console.error('Error fetching all user permissions:', error);
+    return [];
+  }
+};
+
+// Update user-specific permissions (Admin only)
+export const updateUserPermissions = async (
+  userId: string,
+  userEmail: string,
+  userName: string,
+  role: RoleType,
+  customPermissions: Permission[],
+  useRolePermissions: boolean,
+  updatedBy: string
+): Promise<void> => {
+  try {
+    const userDocRef = doc(db, 'userPermissions', userId);
+    const userPerms: UserPermissions = {
+      userId,
+      userEmail,
+      userName,
+      role,
+      customPermissions,
+      useRolePermissions,
+      updatedAt: new Date(),
+      updatedBy
+    };
+    
+    await setDoc(userDocRef, userPerms);
+    console.log(`User permissions updated for: ${userName}`);
+  } catch (error) {
+    console.error('Error updating user permissions:', error);
+    throw error;
+  }
+};
+
+// Delete user-specific permissions (revert to role permissions)
+export const deleteUserPermissions = async (userId: string): Promise<void> => {
+  try {
+    const userDocRef = doc(db, 'userPermissions', userId);
+    await setDoc(userDocRef, {
+      userId,
+      useRolePermissions: true,
+      updatedAt: new Date()
+    }, { merge: true });
+    console.log(`User permissions reset to role defaults for: ${userId}`);
+  } catch (error) {
+    console.error('Error deleting user permissions:', error);
+    throw error;
+  }
+};
+
+// Get role permissions from Firestore
+export const getRolePermissions = async (role: RoleType): Promise<RolePermissions> => {
+  try {
+    const docRef = doc(db, 'rolePermissions', role);
+    const docSnap = await getDoc(docRef);
+    
+    if (docSnap.exists()) {
+      return docSnap.data() as RolePermissions;
+    } else {
+      // Return default permissions if not found
+      return {
+        role,
+        permissions: DEFAULT_PERMISSIONS[role],
+        description: `Default permissions for ${role}`
+      };
+    }
+  } catch (error) {
+    console.error('Error fetching role permissions:', error);
+    return {
+      role,
+      permissions: DEFAULT_PERMISSIONS[role],
+      description: `Default permissions for ${role}`
+    };
+  }
+};
+
+// Get all role permissions
+export const getAllRolePermissions = async (): Promise<RolePermissions[]> => {
+  try {
+    const snapshot = await getDocs(collection(db, 'rolePermissions'));
+    const permissions = snapshot.docs.map(doc => doc.data() as RolePermissions);
+    
+    // If no permissions found, return defaults
+    if (permissions.length === 0) {
+      return Object.entries(DEFAULT_PERMISSIONS).map(([role, perms]) => ({
+        role: role as RoleType,
+        permissions: perms,
+        description: `Default permissions for ${role}`
+      }));
+    }
+    
+    return permissions;
+  } catch (error) {
+    console.error('Error fetching all role permissions:', error);
+    return Object.entries(DEFAULT_PERMISSIONS).map(([role, perms]) => ({
+      role: role as RoleType,
+      permissions: perms,
+      description: `Default permissions for ${role}`
+    }));
+  }
+};
+
+// Update role permissions (Admin only)
+export const updateRolePermissions = async (
+  role: RoleType,
+  permissions: Permission[],
+  updatedBy: string
+): Promise<void> => {
+  try {
+    const docRef = doc(db, 'rolePermissions', role);
+    const rolePermissions: RolePermissions = {
+      role,
+      permissions,
+      description: `Permissions for ${role}`,
+      updatedAt: new Date(),
+      updatedBy
+    };
+    
+    await setDoc(docRef, rolePermissions);
+    console.log(`Permissions updated for role: ${role}`);
+  } catch (error) {
+    console.error('Error updating role permissions:', error);
+    throw error;
+  }
+};
+
+// Check if user has permission
+export const hasPermission = (
+  userPermissions: Permission[],
+  requiredPermission: Permission
+): boolean => {
+  return userPermissions.includes(requiredPermission);
+};
+
+// Check if user has any of the permissions
+export const hasAnyPermission = (
+  userPermissions: Permission[],
+  requiredPermissions: Permission[]
+): boolean => {
+  return requiredPermissions.some(perm => userPermissions.includes(perm));
+};
+
+// Check if user has all permissions
+export const hasAllPermissions = (
+  userPermissions: Permission[],
+  requiredPermissions: Permission[]
+): boolean => {
+  return requiredPermissions.every(perm => userPermissions.includes(perm));
+};
+
+// Initialize default permissions in Firestore
+export const initializeDefaultPermissions = async (): Promise<void> => {
+  try {
+    const roles: RoleType[] = ['Admin', 'Manager', 'Employee'];
+    
+    for (const role of roles) {
+      const docRef = doc(db, 'rolePermissions', role);
+      const docSnap = await getDoc(docRef);
+      
+      if (!docSnap.exists()) {
+        const rolePermissions: RolePermissions = {
+          role,
+          permissions: DEFAULT_PERMISSIONS[role],
+          description: `Default permissions for ${role}`,
+          updatedAt: new Date(),
+          updatedBy: 'System'
+        };
+        
+        await setDoc(docRef, rolePermissions);
+        console.log(`Initialized default permissions for ${role}`);
+      }
+    }
+  } catch (error) {
+    console.error('Error initializing default permissions:', error);
+    throw error;
+  }
+};
