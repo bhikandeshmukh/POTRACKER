@@ -7,7 +7,8 @@ import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Sidebar from '@/components/Sidebar';
 import EnhancedPOTable from '@/components/EnhancedPOTable';
-import { getPOsFromOrganizedStructure, PurchaseOrder } from '@/lib/firestore';
+import { getPOs, PurchaseOrder } from '@/lib/firestore';
+import { useQuery } from '@tanstack/react-query';
 import { Plus, Download, Search, Filter, RefreshCw } from 'lucide-react';
 import DataImportExport from '@/components/DataImportExport';
 import AdvancedSearch from '@/components/AdvancedSearch';
@@ -19,12 +20,22 @@ import { getThemeClasses } from '@/styles/theme';
 export default function PosPage() {
   const { user, userData, loading } = useAuth();
   const router = useRouter();
-  const [pos, setPos] = useState<PurchaseOrder[]>([]);
-  const [loadingData, setLoadingData] = useState(true);
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [showImportExport, setShowImportExport] = useState(false);
   const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>({});
-  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Use React Query for POs with caching
+  const { 
+    data: pos = [], 
+    isLoading: loadingData, 
+    refetch,
+    isFetching: isRefreshing 
+  } = useQuery({
+    queryKey: ['pos', user?.uid, userData?.role],
+    queryFn: () => getPOs(user?.uid, userData?.role, 100),
+    enabled: !!user && !!userData,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
   // Filter configurations
   const filterConfigs: FilterConfig[] = useMemo(() => {
@@ -89,28 +100,8 @@ export default function PosPage() {
     }
   }, [user, loading, router]);
 
-  useEffect(() => {
-    if (user && userData) {
-      loadData();
-    }
-  }, [user, userData]);
-
-  const loadData = async (showRefreshIndicator = false) => {
-    try {
-      if (showRefreshIndicator) setIsRefreshing(true);
-      // Try organized structure first, fallback to regular structure
-      const poList = await getPOsFromOrganizedStructure(user?.uid, userData?.role);
-      setPos(poList);
-    } catch (error) {
-      console.error('Error loading POs:', error);
-    } finally {
-      setLoadingData(false);
-      if (showRefreshIndicator) setIsRefreshing(false);
-    }
-  };
-
   const handleRefresh = () => {
-    loadData(true);
+    refetch();
   };
 
   if (loading || loadingData) {
@@ -213,7 +204,7 @@ export default function PosPage() {
               </button>
             </div>
           ) : (
-            <EnhancedPOTable pos={paginatedPOs} onRefresh={loadData} />
+            <EnhancedPOTable pos={paginatedPOs} onRefresh={() => refetch()} />
           )}
 
           {/* Pagination */}
@@ -243,7 +234,7 @@ export default function PosPage() {
           type="pos"
           isOpen={showImportExport}
           onClose={() => setShowImportExport(false)}
-          onImportComplete={loadData}
+          onImportComplete={() => refetch()}
         />
       </div>
     </div>

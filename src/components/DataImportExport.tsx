@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Upload, Download, FileText, AlertCircle, CheckCircle, X, Eye } from 'lucide-react';
 import { useToast } from '@/components/ToastContainer';
-import { addVendor, Vendor, createPOWithCustomNumber, PurchaseOrder, getPOs, getVendors, vendorNameToDocId, createPOWithOrganizedStructure, getPOsFromOrganizedStructure, getPOFromOrganizedStructure } from '@/lib/firestore';
+import { addVendor, Vendor, PurchaseOrder, getPOs, getVendors, vendorNameToDocId, createPO } from '@/lib/firestore';
 import { useAuth } from '@/contexts/AuthContext';
 import { Timestamp } from 'firebase/firestore';
 
@@ -296,7 +296,7 @@ export default function DataImportExport({ type, isOpen, onClose, onImportComple
               totalAmount: group.totalAmount
             };
             
-            await createPOWithOrganizedStructure(finalPOData);
+            await createPO(finalPOData);
             result.success++;
           } catch (error: any) {
             result.errors.push({
@@ -371,8 +371,8 @@ export default function DataImportExport({ type, isOpen, onClose, onImportComple
           row.map(cell => `"${cell}"`).join(',')
         ).join('\n');
       } else {
-        // Fetch real PO data from Firestore (try organized structure first)
-        const pos = await getPOsFromOrganizedStructure(user.uid, userData?.role);
+        // Fetch real PO data from Firestore
+        const pos = await getPOs(user.uid, userData?.role);
         
         const exportData = [
           ['PO Number', 'Vendor Name', 'Order Date', 'Delivery Date', 'Status', 'Item Name', 'Barcode', 'SKU', 'Size', 'Order Qty', 'Item Price', 'Sent Qty', 'Pending Qty', 'Line Total']

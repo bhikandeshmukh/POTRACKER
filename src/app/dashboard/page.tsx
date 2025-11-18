@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Sidebar from '@/components/Sidebar';
 import KpiCard from '@/components/KpiCard';
-import { getPOs, getPOsFromOrganizedStructure, getShipments, PurchaseOrder, Shipment, testFirestoreConnection } from '@/lib/firestore';
+import { getPOs, getShipments, PurchaseOrder, Shipment } from '@/lib/firestore';
+import { useQuery } from '@tanstack/react-query';
 import { IndianRupee, Clock, CheckCircle, AlertCircle, FileText, Package, Truck, PlayCircle, XCircle, RefreshCw, Wifi, WifiOff } from 'lucide-react';
 import { getThemeClasses } from '@/styles/theme';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
@@ -19,20 +20,39 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import AdvancedFilters, { FilterConfig } from '@/components/AdvancedFilters';
 import ExportOptions from '@/components/ExportOptions';
 import { useRealTimeUpdates } from '@/hooks/useRealTimeUpdates';
-import InteractiveCharts from '@/components/InteractiveCharts';
-import ComparisonView from '@/components/ComparisonView';
-import RecentActivity from '@/components/RecentActivity';
-import CalendarIntegration from '@/components/CalendarIntegration';
-import ComplianceReports from '@/components/ComplianceReports';
+// Lazy load heavy components for better initial load performance
+import dynamic from 'next/dynamic';
+
+const InteractiveCharts = dynamic(() => import('@/components/InteractiveCharts'), {
+  loading: () => <div className="animate-pulse bg-gray-200 h-64 rounded-lg"></div>,
+  ssr: false,
+});
+
+const ComparisonView = dynamic(() => import('@/components/ComparisonView'), {
+  loading: () => <div className="animate-pulse bg-gray-200 h-64 rounded-lg"></div>,
+  ssr: false,
+});
+
+const RecentActivity = dynamic(() => import('@/components/RecentActivity'), {
+  loading: () => <div className="animate-pulse bg-gray-200 h-96 rounded-lg"></div>,
+  ssr: false,
+});
+
+const CalendarIntegration = dynamic(() => import('@/components/CalendarIntegration'), {
+  loading: () => <div className="animate-pulse bg-gray-200 h-96 rounded-lg"></div>,
+  ssr: false,
+});
+
+const ComplianceReports = dynamic(() => import('@/components/ComplianceReports'), {
+  loading: () => <div className="animate-pulse bg-gray-200 h-48 rounded-lg"></div>,
+  ssr: false,
+});
 
 
 export default function Dashboard() {
   const { user, userData, loading } = useAuth();
   const router = useRouter();
   const { showSuccess, showError, showInfo } = useToast();
-  const [pos, setPos] = useState<PurchaseOrder[]>([]);
-  const [shipments, setShipments] = useState<Shipment[]>([]);
-  const [loadingData, setLoadingData] = useState(true);
   const [dateRange, setDateRange] = useState<DateRange>({
     startDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
     endDate: new Date(),
@@ -40,94 +60,65 @@ export default function Dashboard() {
   });
   const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>({});
 
+  // Use React Query for POs with caching
+  const { data: pos = [], isLoading: loadingPOs, refetch: refetchPOs } = useQuery({
+    queryKey: ['pos', user?.uid, userData?.role],
+    queryFn: () => getPOs(user?.uid, userData?.role, 50),
+    enabled: !!user && !!userData,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Use React Query for Shipments with caching
+  const { data: shipments = [], isLoading: loadingShipments } = useQuery({
+    queryKey: ['shipments'],
+    queryFn: () => getShipments().catch(() => []),
+    enabled: !!user && !!userData,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  const loadingData = loadingPOs || loadingShipments;
+
   useEffect(() => {
-    console.log('Dashboard useEffect - loading:', loading, 'user:', user ? user.uid : 'null', 'userData:', userData);
     if (!loading && !user) {
-      console.log('Redirecting to login - no user found');
       router.push('/login');
     }
-  }, [user, loading, router, userData]);
+  }, [user, loading, router]);
 
-  useEffect(() => {
-    if (user && userData) {
-      loadData();
-    }
-  }, [user, userData]);
-
-  const loadData = async () => {
-    try {
-      console.log('Loading PO data for user:', user?.uid, 'role:', userData?.role);
-      
-      // Test Firestore connection first
-      console.log('Testing Firestore connection...');
-      const connectionTest = await testFirestoreConnection();
-      console.log('Connection test results:', connectionTest);
-      
-      // Try organized structure first, fallback to regular structure
-      const [poList, shipmentList] = await Promise.all([
-        getPOsFromOrganizedStructure(user?.uid, userData?.role),
-        getShipments()
-      ]);
-      console.log('PO data loaded:', poList.length, 'items');
-      console.log('Shipment data loaded:', shipmentList.length, 'items');
-      setPos(poList);
-      setShipments(shipmentList);
-    } catch (error) {
-      console.error('Error loading data:', error);
-      showError('Data Load Failed', 'Failed to load dashboard data');
-    } finally {
-      setLoadingData(false);
-    }
-  };
-
-  // Real-time updates
-  const { isActive: isRealTimeActive, lastUpdate, toggleRealTime, forceUpdate } = useRealTimeUpdates({
-    onUpdate: loadData,
-    interval: 30000, // 30 seconds
-    enabled: true
-  });
-
-  if (loading || loadingData) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="lg" text="Loading dashboard..." />
-      </div>
-    );
-  }
-
-  // Filter POs based on selected date range and advanced filters
-  const filteredPOs = pos.filter(po => {
-    const poDate = po.orderDate.toDate();
-    const dateMatch = isWithinInterval(poDate, {
-      start: dateRange.startDate,
-      end: dateRange.endDate
-    });
-
-    // Apply advanced filters
-    const statusFilter = selectedFilters.status || [];
-    const vendorFilter = selectedFilters.vendor || [];
-    const amountFilter = selectedFilters.amount || [];
-
-    const statusMatch = statusFilter.length === 0 || statusFilter.includes(po.status);
-    const vendorMatch = vendorFilter.length === 0 || vendorFilter.includes(po.vendorName);
-    
-    let amountMatch = true;
-    if (amountFilter.length > 0) {
-      amountMatch = amountFilter.some(range => {
-        switch (range) {
-          case 'low': return po.totalAmount < 10000;
-          case 'medium': return po.totalAmount >= 10000 && po.totalAmount < 50000;
-          case 'high': return po.totalAmount >= 50000;
-          default: return true;
-        }
+  // Memoize filtered POs to avoid recalculation on every render
+  const filteredPOs = useMemo(() => {
+    return pos.filter(po => {
+      const poDate = po.orderDate.toDate();
+      const dateMatch = isWithinInterval(poDate, {
+        start: dateRange.startDate,
+        end: dateRange.endDate
       });
-    }
 
-    return dateMatch && statusMatch && vendorMatch && amountMatch;
-  });
+      // Apply advanced filters
+      const statusFilter = selectedFilters.status || [];
+      const vendorFilter = selectedFilters.vendor || [];
+      const amountFilter = selectedFilters.amount || [];
 
-  // Create filter configurations
-  const filterConfigs: FilterConfig[] = [
+      const statusMatch = statusFilter.length === 0 || statusFilter.includes(po.status);
+      const vendorMatch = vendorFilter.length === 0 || vendorFilter.includes(po.vendorName);
+      
+      let amountMatch = true;
+      if (amountFilter.length > 0) {
+        amountMatch = amountFilter.some(range => {
+          switch (range) {
+            case 'low': return po.totalAmount < 10000;
+            case 'medium': return po.totalAmount >= 10000 && po.totalAmount < 50000;
+            case 'high': return po.totalAmount >= 50000;
+            default: return true;
+          }
+        });
+      }
+
+      return dateMatch && statusMatch && vendorMatch && amountMatch;
+    });
+  }, [pos, dateRange, selectedFilters]);
+
+  // Memoize filter configurations to avoid recalculation
+  const filterConfigs: FilterConfig[] = useMemo(() => [
     {
       key: 'status',
       label: 'Status',
@@ -160,26 +151,30 @@ export default function Dashboard() {
         { value: 'high', label: 'Above ₹50,000', count: pos.filter(p => p.totalAmount >= 50000).length },
       ]
     }
-  ];
+  ], [pos]);
   
-  // Calculate quantities from all POs
-  const totalItemQty = pos.reduce((sum, po) => {
-    return sum + po.lineItems.reduce((itemSum, item) => itemSum + item.quantity, 0);
-  }, 0);
-  
-  const sentQty = pos.reduce((sum, po) => {
-    return sum + po.lineItems.reduce((itemSum, item) => itemSum + (item.sentQty || 0), 0);
-  }, 0);
-  
-  const receivedQty = pos.reduce((sum, po) => {
-    return sum + po.lineItems.reduce((itemSum, item) => itemSum + (item.receivedQty || 0), 0);
-  }, 0);
-  
-  const pendingQty = pos.reduce((sum, po) => {
-    return sum + po.lineItems.reduce((itemSum, item) => itemSum + (item.pendingQty || item.quantity), 0);
-  }, 0);
-  
-  const inTransitQty = sentQty - receivedQty;
+  // Memoize expensive quantity calculations
+  const quantities = useMemo(() => {
+    const totalItemQty = pos.reduce((sum, po) => {
+      return sum + po.lineItems.reduce((itemSum, item) => itemSum + item.quantity, 0);
+    }, 0);
+    
+    const sentQty = pos.reduce((sum, po) => {
+      return sum + po.lineItems.reduce((itemSum, item) => itemSum + (item.sentQty || 0), 0);
+    }, 0);
+    
+    const receivedQty = pos.reduce((sum, po) => {
+      return sum + po.lineItems.reduce((itemSum, item) => itemSum + (item.receivedQty || 0), 0);
+    }, 0);
+    
+    const pendingQty = pos.reduce((sum, po) => {
+      return sum + po.lineItems.reduce((itemSum, item) => itemSum + (item.pendingQty || item.quantity), 0);
+    }, 0);
+    
+    return { totalItemQty, sentQty, receivedQty, pendingQty, inTransitQty: sentQty - receivedQty };
+  }, [pos]);
+
+  const { totalItemQty, sentQty, receivedQty, pendingQty, inTransitQty } = quantities;
   
   // Calculate quantities from filtered POs
   const filteredTotalQty = filteredPOs.reduce((sum, po) => {
@@ -198,82 +193,96 @@ export default function Dashboard() {
     return sum + po.lineItems.reduce((itemSum, item) => itemSum + (item.pendingQty || item.quantity), 0);
   }, 0);
   
-  // Status-based quantities
-  const pendingStatusQty = pos.filter(po => po.status === 'Pending').reduce((sum, po) => {
-    return sum + po.lineItems.reduce((itemSum, item) => itemSum + item.quantity, 0);
-  }, 0);
-  
-  const approvedStatusQty = pos.filter(po => po.status === 'Approved').reduce((sum, po) => {
-    return sum + po.lineItems.reduce((itemSum, item) => itemSum + item.quantity, 0);
-  }, 0);
-  
-  const shippedStatusQty = pos.filter(po => po.status === 'Shipped' || po.status === 'Partial').reduce((sum, po) => {
-    return sum + po.lineItems.reduce((itemSum, item) => itemSum + item.quantity, 0);
-  }, 0);
-  
-  const receivedStatusQty = pos.filter(po => po.status === 'Received').reduce((sum, po) => {
-    return sum + po.lineItems.reduce((itemSum, item) => itemSum + item.quantity, 0);
-  }, 0);
+  // Memoize status-based quantities
+  const statusQuantities = useMemo(() => ({
+    pending: pos.filter(po => po.status === 'Pending').reduce((sum, po) => 
+      sum + po.lineItems.reduce((itemSum, item) => itemSum + item.quantity, 0), 0),
+    approved: pos.filter(po => po.status === 'Approved').reduce((sum, po) => 
+      sum + po.lineItems.reduce((itemSum, item) => itemSum + item.quantity, 0), 0),
+    shipped: pos.filter(po => po.status === 'Shipped' || po.status === 'Partial').reduce((sum, po) => 
+      sum + po.lineItems.reduce((itemSum, item) => itemSum + item.quantity, 0), 0),
+    received: pos.filter(po => po.status === 'Received').reduce((sum, po) => 
+      sum + po.lineItems.reduce((itemSum, item) => itemSum + item.quantity, 0), 0),
+  }), [pos]);
 
-  // Status distribution by QUANTITY for pie chart (using filtered data)
-  const statusData = [
-    { 
-      name: 'Pending', 
-      value: filteredPOs.filter(p => p.status === 'Pending').reduce((sum, po) => 
-        sum + po.lineItems.reduce((itemSum, item) => itemSum + item.quantity, 0), 0
-      ), 
-      color: '#f59e0b' 
-    },
-    { 
-      name: 'Approved', 
-      value: filteredPOs.filter(p => p.status === 'Approved').reduce((sum, po) => 
-        sum + po.lineItems.reduce((itemSum, item) => itemSum + item.quantity, 0), 0
-      ), 
-      color: '#10b981' 
-    },
-    { 
-      name: 'Shipped', 
-      value: filteredPOs.filter(p => p.status === 'Shipped' || p.status === 'Partial').reduce((sum, po) => 
-        sum + po.lineItems.reduce((itemSum, item) => itemSum + item.quantity, 0), 0
-      ), 
-      color: '#3b82f6' 
-    },
-    { 
-      name: 'Received', 
-      value: filteredPOs.filter(p => p.status === 'Received').reduce((sum, po) => 
-        sum + po.lineItems.reduce((itemSum, item) => itemSum + item.quantity, 0), 0
-      ), 
-      color: '#8b5cf6' 
-    },
-    { 
-      name: 'Rejected', 
-      value: filteredPOs.filter(p => p.status === 'Rejected').reduce((sum, po) => 
-        sum + po.lineItems.reduce((itemSum, item) => itemSum + item.quantity, 0), 0
-      ), 
-      color: '#ef4444' 
-    },
-  ].filter(item => item.value > 0);
+  const { pending: pendingStatusQty, approved: approvedStatusQty, shipped: shippedStatusQty, received: receivedStatusQty } = statusQuantities;
 
-  // Quantity by vendor for bar chart (using filtered data)
-  const vendorQuantity = filteredPOs.reduce((acc, po) => {
-    const qty = po.lineItems.reduce((sum, item) => sum + item.quantity, 0);
-    acc[po.vendorName] = (acc[po.vendorName] || 0) + qty;
-    return acc;
-  }, {} as Record<string, number>);
+  // Memoize chart data calculations
+  const statusData = useMemo(() => {
+    return [
+      { 
+        name: 'Pending', 
+        value: filteredPOs.filter(p => p.status === 'Pending').reduce((sum, po) => 
+          sum + po.lineItems.reduce((itemSum, item) => itemSum + item.quantity, 0), 0), 
+        color: '#f59e0b' 
+      },
+      { 
+        name: 'Approved', 
+        value: filteredPOs.filter(p => p.status === 'Approved').reduce((sum, po) => 
+          sum + po.lineItems.reduce((itemSum, item) => itemSum + item.quantity, 0), 0), 
+        color: '#10b981' 
+      },
+      { 
+        name: 'Shipped', 
+        value: filteredPOs.filter(p => p.status === 'Shipped' || p.status === 'Partial').reduce((sum, po) => 
+          sum + po.lineItems.reduce((itemSum, item) => itemSum + item.quantity, 0), 0), 
+        color: '#3b82f6' 
+      },
+      { 
+        name: 'Received', 
+        value: filteredPOs.filter(p => p.status === 'Received').reduce((sum, po) => 
+          sum + po.lineItems.reduce((itemSum, item) => itemSum + item.quantity, 0), 0), 
+        color: '#8b5cf6' 
+      },
+      { 
+        name: 'Rejected', 
+        value: filteredPOs.filter(p => p.status === 'Rejected').reduce((sum, po) => 
+          sum + po.lineItems.reduce((itemSum, item) => itemSum + item.quantity, 0), 0), 
+        color: '#ef4444' 
+      },
+    ].filter(item => item.value > 0);
+  }, [filteredPOs]);
 
-  const vendorData = Object.entries(vendorQuantity)
-    .map(([name, value]) => ({ name, value }))
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 5);
+  const vendorData = useMemo(() => {
+    const vendorQuantity = filteredPOs.reduce((acc, po) => {
+      const qty = po.lineItems.reduce((sum, item) => sum + item.quantity, 0);
+      acc[po.vendorName] = (acc[po.vendorName] || 0) + qty;
+      return acc;
+    }, {} as Record<string, number>);
 
-  // Recent activity
-  const recentPOs = [...pos]
-    .sort((a, b) => b.orderDate.toDate().getTime() - a.orderDate.toDate().getTime())
-    .slice(0, 5);
+    return Object.entries(vendorQuantity)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 5);
+  }, [filteredPOs]);
+
+  const recentPOs = useMemo(() => {
+    return [...pos]
+      .sort((a, b) => b.orderDate.toDate().getTime() - a.orderDate.toDate().getTime())
+      .slice(0, 5);
+  }, [pos]);
 
   const actionRequired = userData?.role === 'Manager' 
     ? pos.filter(po => po.status === 'Pending').slice(0, 5)
     : [];
+
+  // Real-time updates with React Query refetch
+  const { isActive: isRealTimeActive, lastUpdate, toggleRealTime, forceUpdate } = useRealTimeUpdates({
+    onUpdate: () => {
+      refetchPOs();
+    },
+    interval: 30000, // 30 seconds
+    enabled: true
+  });
+
+  // Early return AFTER all hooks
+  if (loading || loadingData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner size="lg" text="Loading dashboard..." />
+      </div>
+    );
+  }
 
   // Chart interaction handlers
   const handleStatusChartClick = (data: any) => {

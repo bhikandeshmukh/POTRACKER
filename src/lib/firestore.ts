@@ -10,18 +10,20 @@ import {
   query, 
   where, 
   orderBy,
+  limit,
   Timestamp,
   serverTimestamp
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { logAuditEvent } from './auditLogs';
+import { logger } from './logger';
+import { DatabaseError, NotFoundError } from './errors';
 
 export interface User {
   email: string;
   name: string;
   role: 'Admin' | 'Manager' | 'Employee';
   uid?: string; // Firebase UID for reference
-  password?: string; // Plain text password
 }
 
 export interface Vendor {
@@ -154,7 +156,7 @@ export const generatePONumber = async (): Promise<string> => {
 
 // Vendor operations
 export const addVendor = async (vendor: Omit<Vendor, 'id'>, userId?: string, userEmail?: string) => {
-  console.log('Adding vendor to Firestore:', vendor);
+  logger.debug('Adding vendor to Firestore', { vendorName: vendor.name });
   try {
     // Use vendor name as document ID
     const docId = vendorNameToDocId(vendor.name);
@@ -178,24 +180,24 @@ export const addVendor = async (vendor: Omit<Vendor, 'id'>, userId?: string, use
       );
     }
     
-    console.log('Vendor added with ID:', docId);
+    logger.info('Vendor added successfully', { vendorId: docId, vendorName: vendor.name });
     return { id: docId };
   } catch (error) {
-    console.error('Firestore addVendor error:', error);
-    throw error;
+    logger.error('Failed to add vendor', error, { vendorName: vendor.name });
+    throw new DatabaseError('Failed to add vendor', error);
   }
 };
 
 export const getVendors = async (): Promise<Vendor[]> => {
-  console.log('Fetching vendors from Firestore...');
+  logger.debug('Fetching vendors from Firestore');
   try {
     const snapshot = await getDocs(collection(db, 'vendors'));
     const vendors = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Vendor));
-    console.log('Vendors fetched:', vendors);
+    logger.debug('Vendors fetched successfully', { count: vendors.length });
     return vendors;
   } catch (error) {
-    console.error('Firestore getVendors error:', error);
-    throw error;
+    logger.error('Failed to fetch vendors', error);
+    throw new DatabaseError('Failed to fetch vendors', error);
   }
 };
 
@@ -252,111 +254,55 @@ export const deleteVendor = async (id: string, userId?: string, userEmail?: stri
   }
 };
 
-// PO operations
+// PO operations - SIMPLIFIED (Regular structure only)
 export const createPO = async (po: Omit<PurchaseOrder, 'id' | 'poNumber'>) => {
   const poNumber = await generatePONumber();
   const poData = {
     ...po,
     poNumber,
     createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
   };
-  return await addDoc(collection(db, 'purchaseOrders'), poData);
-};
-
-export const createPOWithCustomNumber = async (po: Omit<PurchaseOrder, 'id'>) => {
-  // Use PO number as document ID for consistency
-  const docId = po.poNumber.replace(/[^a-zA-Z0-9]/g, '-');
+  
+  // Use PO number as document ID for easy retrieval
+  const docId = poNumber.replace(/[^a-zA-Z0-9]/g, '-');
   const poRef = doc(db, 'purchaseOrders', docId);
-  
-  const poData = {
-    ...po,
-    createdAt: serverTimestamp(),
-  };
-  
   await setDoc(poRef, poData);
-  return { id: docId };
+  
+  return { id: docId, poNumber };
 };
 
-// Create PO with organized subcollection structure
-export const createPOWithOrganizedStructure = async (po: Omit<PurchaseOrder, 'id'>) => {
-  console.log('Creating PO with organized structure:', po.poNumber);
-  
-  const orderDate = po.orderDate.toDate();
-  const year = orderDate.getFullYear();
-  const month = String(orderDate.getMonth() + 1).padStart(2, '0');
-  
-  console.log('Date info:', { year, month, orderDate });
-  
-  try {
-    // Create vendor document first (if it doesn't exist)
-    const vendorDocRef = doc(db, 'purchaseOrders', po.vendorId);
-    console.log('Creating vendor document:', po.vendorId);
-    await setDoc(vendorDocRef, {
-      vendorId: po.vendorId,
-      vendorName: po.vendorName,
-      createdAt: serverTimestamp()
-    }, { merge: true });
-    
-    // Create year document
-    const yearDocRef = doc(vendorDocRef, 'years', year.toString());
-    console.log('Creating year document:', year.toString());
-    await setDoc(yearDocRef, {
-      year: year,
-      createdAt: serverTimestamp()
-    }, { merge: true });
-    
-    // Create month document
-    const monthDocRef = doc(yearDocRef, 'months', month);
-    console.log('Creating month document:', month);
-    await setDoc(monthDocRef, {
-      month: month,
-      year: year,
-      createdAt: serverTimestamp()
-    }, { merge: true });
-    
-    // Create PO document
-    const poDocRef = doc(monthDocRef, 'pos', po.poNumber);
-    console.log('Creating PO document:', po.poNumber);
-    const poData = {
-      ...po,
-      createdAt: serverTimestamp(),
-    };
-    
-    await setDoc(poDocRef, poData);
-    console.log('PO created successfully at path:', `purchaseOrders/${po.vendorId}/years/${year}/months/${month}/pos/${po.poNumber}`);
-    
-    return { id: po.poNumber, path: `purchaseOrders/${po.vendorId}/years/${year}/months/${month}/pos/${po.poNumber}` };
-  } catch (error) {
-    console.error('Error creating organized PO structure:', error);
-    throw error;
-  }
-};
+// REMOVED: Organized structure - caused performance issues
+// All POs now use simple flat structure in /purchaseOrders/{poNumber}
 
-export const getPOs = async (userId?: string, role?: string): Promise<PurchaseOrder[]> => {
+// Get POs with pagination support
+export const getPOs = async (
+  userId?: string, 
+  role?: string,
+  limitCount: number = 50
+): Promise<PurchaseOrder[]> => {
   try {
-    console.log('getPOs called with userId:', userId, 'role:', role);
     const posRef = collection(db, 'purchaseOrders');
     let q;
     
     if (role === 'Employee' && userId) {
-      console.log('Creating employee-specific query');
-      q = query(posRef, where('createdBy_uid', '==', userId), orderBy('orderDate', 'desc'));
+      q = query(
+        posRef, 
+        where('createdBy_uid', '==', userId), 
+        orderBy('orderDate', 'desc'),
+        limit(limitCount)
+      );
     } else {
-      console.log('Creating general query for all POs');
-      q = query(posRef, orderBy('orderDate', 'desc'));
+      q = query(
+        posRef, 
+        orderBy('orderDate', 'desc'),
+        limit(limitCount)
+      );
     }
     
-    console.log('Executing query...');
     const snapshot = await getDocs(q);
-    console.log('Query executed, found', snapshot.docs.length, 'documents');
+    const pos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PurchaseOrder));
     
-    const pos = snapshot.docs.map(doc => {
-      const data = doc.data();
-      console.log('Processing document:', doc.id, 'Keys:', Object.keys(data));
-      return { id: doc.id, ...data } as PurchaseOrder;
-    });
-    
-    console.log('Returning', pos.length, 'POs from regular structure');
     return pos;
   } catch (error) {
     console.error('Error in getPOs:', error);
@@ -364,207 +310,26 @@ export const getPOs = async (userId?: string, role?: string): Promise<PurchaseOr
   }
 };
 
-// Get POs from organized subcollection structure
-export const getPOsFromOrganizedStructure = async (userId?: string, role?: string): Promise<PurchaseOrder[]> => {
-  try {
-    const allPOs: PurchaseOrder[] = [];
-    
-    console.log('Fetching POs from organized structure...');
-    console.log('User ID:', userId, 'Role:', role);
-    
-    // First, try to get from regular purchaseOrders collection (old structure)
-    try {
-      console.log('Attempting to fetch from regular structure...');
-      const regularPOs = await getPOs(userId, role);
-      console.log('Found', regularPOs.length, 'POs in regular structure');
-      if (regularPOs.length > 0) {
-        console.log('Sample regular PO:', regularPOs[0]);
-      }
-      allPOs.push(...regularPOs);
-    } catch (error) {
-      console.error('Error fetching from regular structure:', error);
-    }
-    
-    // Then, get from organized subcollection structure (new structure)
-    try {
-      console.log('Attempting to fetch from organized structure...');
-      const vendorsSnapshot = await getDocs(collection(db, 'purchaseOrders'));
-      console.log('Found', vendorsSnapshot.docs.length, 'vendor documents');
-      
-      for (const vendorDoc of vendorsSnapshot.docs) {
-        const vendorId = vendorDoc.id;
-        const vendorData = vendorDoc.data();
-        
-        console.log('Processing vendor document:', vendorId, 'Data keys:', Object.keys(vendorData));
-        
-        // Skip if this is a regular PO document (not a vendor document)
-        if (vendorData.poNumber) {
-          console.log('Skipping regular PO document:', vendorId);
-          continue;
-        }
-        
-        try {
-          // Get all years for this vendor
-          console.log(`Checking years for vendor: ${vendorId}`);
-          const yearsSnapshot = await getDocs(collection(db, `purchaseOrders/${vendorId}/years`));
-          console.log(`Found ${yearsSnapshot.docs.length} years for vendor ${vendorId}`);
-          
-          for (const yearDoc of yearsSnapshot.docs) {
-            const year = yearDoc.id;
-            console.log(`Processing year: ${year} for vendor: ${vendorId}`);
-            
-            try {
-              // Get all months for this year
-              const monthsSnapshot = await getDocs(collection(db, `purchaseOrders/${vendorId}/years/${year}/months`));
-              console.log(`Found ${monthsSnapshot.docs.length} months for ${vendorId}/${year}`);
-              
-              for (const monthDoc of monthsSnapshot.docs) {
-                const month = monthDoc.id;
-                console.log(`Processing month: ${month} for ${vendorId}/${year}`);
-                
-                try {
-                  // Get all POs for this month
-                  const posSnapshot = await getDocs(collection(db, `purchaseOrders/${vendorId}/years/${year}/months/${month}/pos`));
-                  console.log(`Found ${posSnapshot.docs.length} POs for ${vendorId}/${year}/${month}`);
-                  
-                  for (const poDoc of posSnapshot.docs) {
-                    const poData = poDoc.data() as PurchaseOrder;
-                    console.log(`Processing PO: ${poDoc.id} for ${vendorId}/${year}/${month}`);
-                    
-                    // Filter by user role if needed
-                    if (role === 'Employee' && userId && poData.createdBy_uid !== userId) {
-                      console.log(`Skipping PO ${poDoc.id} - not created by current user`);
-                      continue;
-                    }
-                    
-                    allPOs.push({
-                      id: poDoc.id,
-                      ...poData
-                    });
-                    console.log(`Added PO: ${poDoc.id} to results`);
-                  }
-                } catch (error) {
-                  console.log(`No POs found for ${vendorId}/${year}/${month}:`, error);
-                }
-              }
-            } catch (error) {
-              console.log(`No months found for ${vendorId}/${year}:`, error);
-            }
-          }
-        } catch (error) {
-          console.log(`No years found for vendor ${vendorId}:`, error);
-        }
-      }
-    } catch (error) {
-      console.log('Error fetching from organized structure:', error);
-    }
-    
-    // Remove duplicates based on PO number
-    const uniquePOs = allPOs.filter((po, index, self) => 
-      index === self.findIndex(p => p.poNumber === po.poNumber)
-    );
-    
-    // Sort by order date descending
-    uniquePOs.sort((a, b) => {
-      const dateA = a.orderDate?.toDate?.() || new Date(0);
-      const dateB = b.orderDate?.toDate?.() || new Date(0);
-      return dateB.getTime() - dateA.getTime();
-    });
-    
-    console.log('Total unique POs found:', uniquePOs.length);
-    return uniquePOs;
-  } catch (error) {
-    console.error('Error fetching organized POs:', error);
-    // Fallback to regular getPOs
-    return await getPOs(userId, role);
-  }
-};
+// REMOVED: Complex organized structure function
+// Now using simple flat structure only - much faster!
 
+// Get single PO by ID
 export const getPO = async (id: string): Promise<PurchaseOrder | null> => {
-  const docRef = doc(db, 'purchaseOrders', id);
-  const docSnap = await getDoc(docRef);
-  
-  if (docSnap.exists()) {
-    return { id: docSnap.id, ...docSnap.data() } as PurchaseOrder;
-  }
-  return null;
-};
-
-// Get single PO from organized structure
-export const getPOFromOrganizedStructure = async (poNumber: string): Promise<PurchaseOrder | null> => {
   try {
-    console.log('Searching for PO:', poNumber);
+    const docRef = doc(db, 'purchaseOrders', id);
+    const docSnap = await getDoc(docRef);
     
-    // First, try to get from regular purchaseOrders collection (old structure)
-    try {
-      const regularPO = await getPO(poNumber);
-      if (regularPO) {
-        console.log('Found PO in regular structure');
-        return regularPO;
-      }
-    } catch (error) {
-      console.log('PO not found in regular structure');
+    if (docSnap.exists()) {
+      return { id: docSnap.id, ...docSnap.data() } as PurchaseOrder;
     }
-    
-    // Then, search in organized subcollection structure (new structure)
-    const vendorsSnapshot = await getDocs(collection(db, 'purchaseOrders'));
-    
-    for (const vendorDoc of vendorsSnapshot.docs) {
-      const vendorId = vendorDoc.id;
-      const vendorData = vendorDoc.data();
-      
-      // Skip if this is a regular PO document (not a vendor document)
-      if (vendorData.poNumber) {
-        continue;
-      }
-      
-      try {
-        // Get all years for this vendor
-        const yearsSnapshot = await getDocs(collection(db, `purchaseOrders/${vendorId}/years`));
-        
-        for (const yearDoc of yearsSnapshot.docs) {
-          const year = yearDoc.id;
-          
-          try {
-            // Get all months for this year
-            const monthsSnapshot = await getDocs(collection(db, `purchaseOrders/${vendorId}/years/${year}/months`));
-            
-            for (const monthDoc of monthsSnapshot.docs) {
-              const month = monthDoc.id;
-              
-              try {
-                // Check if PO exists in this month
-                const poDocRef = doc(db, `purchaseOrders/${vendorId}/years/${year}/months/${month}/pos`, poNumber);
-                const poDocSnap = await getDoc(poDocRef);
-                
-                if (poDocSnap.exists()) {
-                  console.log('Found PO in organized structure:', `${vendorId}/${year}/${month}/${poNumber}`);
-                  return {
-                    id: poDocSnap.id,
-                    ...poDocSnap.data()
-                  } as PurchaseOrder;
-                }
-              } catch (error) {
-                // Continue searching
-              }
-            }
-          } catch (error) {
-            // Continue searching
-          }
-        }
-      } catch (error) {
-        // Continue searching
-      }
-    }
-    
-    console.log('PO not found in any structure');
     return null;
   } catch (error) {
-    console.error('Error fetching PO from organized structure:', error);
-    // Fallback to regular getPO
-    return await getPO(poNumber);
+    console.error('Error fetching PO:', error);
+    return null;
   }
 };
+
+// REMOVED: Organized structure lookup - now using simple flat structure only
 
 export const updatePOStatus = async (
   id: string, 
@@ -579,84 +344,7 @@ export const updatePOStatus = async (
   return await updateDoc(docRef, updateData);
 };
 
-// Update PO status in organized structure
-export const updatePOStatusInOrganizedStructure = async (
-  poNumber: string,
-  status: PurchaseOrder['status'],
-  approvedBy?: string
-) => {
-  try {
-    console.log('Updating PO status:', poNumber, 'to', status);
-    
-    // First, try to update in regular purchaseOrders collection (old structure)
-    try {
-      await updatePOStatus(poNumber, status, approvedBy);
-      console.log('Updated PO in regular structure');
-      return;
-    } catch (error) {
-      console.log('PO not found in regular structure, searching organized structure');
-    }
-    
-    // Then, search and update in organized subcollection structure (new structure)
-    const vendorsSnapshot = await getDocs(collection(db, 'purchaseOrders'));
-    
-    for (const vendorDoc of vendorsSnapshot.docs) {
-      const vendorId = vendorDoc.id;
-      const vendorData = vendorDoc.data();
-      
-      // Skip if this is a regular PO document (not a vendor document)
-      if (vendorData.poNumber) {
-        continue;
-      }
-      
-      try {
-        // Get all years for this vendor
-        const yearsSnapshot = await getDocs(collection(db, `purchaseOrders/${vendorId}/years`));
-        
-        for (const yearDoc of yearsSnapshot.docs) {
-          const year = yearDoc.id;
-          
-          try {
-            // Get all months for this year
-            const monthsSnapshot = await getDocs(collection(db, `purchaseOrders/${vendorId}/years/${year}/months`));
-            
-            for (const monthDoc of monthsSnapshot.docs) {
-              const month = monthDoc.id;
-              
-              try {
-                // Check if PO exists in this month and update it
-                const poDocRef = doc(db, `purchaseOrders/${vendorId}/years/${year}/months/${month}/pos`, poNumber);
-                const poDocSnap = await getDoc(poDocRef);
-                
-                if (poDocSnap.exists()) {
-                  const updateData: any = { status };
-                  if (approvedBy) {
-                    updateData.approvedBy_uid = approvedBy;
-                  }
-                  
-                  await updateDoc(poDocRef, updateData);
-                  console.log('Updated PO in organized structure:', `${vendorId}/${year}/${month}/${poNumber}`);
-                  return;
-                }
-              } catch (error) {
-                // Continue searching
-              }
-            }
-          } catch (error) {
-            // Continue searching
-          }
-        }
-      } catch (error) {
-        // Continue searching
-      }
-    }
-    
-    throw new Error('PO not found in any structure');
-  } catch (error) {
-    console.error('Error updating PO status in organized structure:', error);
-    throw error;
-  }
-};
+
 
 export const updatePO = async (id: string, po: Partial<PurchaseOrder>) => {
   console.log('Updating PO:', id, po);
@@ -1092,36 +780,9 @@ export const deleteUser = async (id: string) => {
   }
 };
 
-// Test function to check Firestore connectivity
-export const testFirestoreConnection = async () => {
-  try {
-    console.log('Testing Firestore connection...');
-    
-    // Test 1: Try to read from purchaseOrders collection
-    const posRef = collection(db, 'purchaseOrders');
-    const snapshot = await getDocs(posRef);
-    console.log('Test 1 - purchaseOrders collection:', snapshot.docs.length, 'documents');
-    
-    // Test 2: Try to read from vendors collection
-    const vendorsRef = collection(db, 'vendors');
-    const vendorsSnapshot = await getDocs(vendorsRef);
-    console.log('Test 2 - vendors collection:', vendorsSnapshot.docs.length, 'documents');
-    
-    // Test 3: Try to read from users collection
-    const usersRef = collection(db, 'users');
-    const usersSnapshot = await getDocs(usersRef);
-    console.log('Test 3 - users collection:', usersSnapshot.docs.length, 'documents');
-    
-    return {
-      purchaseOrders: snapshot.docs.length,
-      vendors: vendorsSnapshot.docs.length,
-      users: usersSnapshot.docs.length
-    };
-  } catch (error) {
-    console.error('Firestore connection test failed:', error);
-    throw error;
-  }
-};
+// Test function to check Firestore connectivity - REMOVED FOR PERFORMANCE
+// This was causing unnecessary reads on every page load
+// Use browser console and Firebase console to debug connection issues instead
 
 // Shipment operations
 export const createShipment = async (poNumber: string, shipmentData: Omit<Shipment, 'id'>) => {
@@ -1155,8 +816,8 @@ export const createShipment = async (poNumber: string, shipmentData: Omit<Shipme
 
 export const updatePOWithShipment = async (poNumber: string, shipment: Shipment) => {
   try {
-    // Find and update PO in organized structure
-    const po = await getPOFromOrganizedStructure(poNumber);
+    // Find and update PO
+    const po = await getPO(poNumber);
     if (!po) {
       throw new Error('PO not found');
     }
@@ -1197,8 +858,8 @@ export const updatePOWithShipment = async (poNumber: string, shipment: Shipment)
     // Add shipment to PO shipments array
     const updatedShipments = [...(po.shipments || []), shipment];
     
-    // Update PO in organized structure
-    await updatePOInOrganizedStructure(poNumber, {
+    // Update PO
+    await updatePO(poNumber, {
       lineItems: updatedLineItems,
       shipments: updatedShipments,
       totalShippedAmount,
@@ -1212,78 +873,7 @@ export const updatePOWithShipment = async (poNumber: string, shipment: Shipment)
   }
 };
 
-export const updatePOInOrganizedStructure = async (poNumber: string, updateData: Partial<PurchaseOrder>) => {
-  try {
-    console.log('Updating PO in organized structure:', poNumber);
-    
-    // First, try to update in regular purchaseOrders collection (old structure)
-    try {
-      const docRef = doc(db, 'purchaseOrders', poNumber);
-      await updateDoc(docRef, updateData);
-      console.log('Updated PO in regular structure');
-      return;
-    } catch (error) {
-      console.log('PO not found in regular structure, searching organized structure');
-    }
-    
-    // Then, search and update in organized subcollection structure (new structure)
-    const vendorsSnapshot = await getDocs(collection(db, 'purchaseOrders'));
-    
-    for (const vendorDoc of vendorsSnapshot.docs) {
-      const vendorId = vendorDoc.id;
-      const vendorData = vendorDoc.data();
-      
-      // Skip if this is a regular PO document (not a vendor document)
-      if (vendorData.poNumber) {
-        continue;
-      }
-      
-      try {
-        // Get all years for this vendor
-        const yearsSnapshot = await getDocs(collection(db, `purchaseOrders/${vendorId}/years`));
-        
-        for (const yearDoc of yearsSnapshot.docs) {
-          const year = yearDoc.id;
-          
-          try {
-            // Get all months for this year
-            const monthsSnapshot = await getDocs(collection(db, `purchaseOrders/${vendorId}/years/${year}/months`));
-            
-            for (const monthDoc of monthsSnapshot.docs) {
-              const month = monthDoc.id;
-              
-              try {
-                // Check if PO exists in this month and update it
-                const poDocRef = doc(db, `purchaseOrders/${vendorId}/years/${year}/months/${month}/pos`, poNumber);
-                const poDocSnap = await getDoc(poDocRef);
-                
-                if (poDocSnap.exists()) {
-                  await updateDoc(poDocRef, {
-                    ...updateData,
-                    updatedAt: serverTimestamp()
-                  });
-                  console.log('Updated PO in organized structure:', `${vendorId}/${year}/${month}/${poNumber}`);
-                  return;
-                }
-              } catch (error) {
-                // Continue searching
-              }
-            }
-          } catch (error) {
-            // Continue searching
-          }
-        }
-      } catch (error) {
-        // Continue searching
-      }
-    }
-    
-    throw new Error('PO not found in any structure');
-  } catch (error) {
-    console.error('Error updating PO in organized structure:', error);
-    throw error;
-  }
-};
+// REMOVED: updatePOInOrganizedStructure - now using simple updatePO()
 
 export const getShipments = async (poNumber?: string): Promise<Shipment[]> => {
   try {
@@ -1336,7 +926,7 @@ export const updateShipmentStatus = async (shipmentId: string, status: Shipment[
 
 export const updatePOReceivedQuantities = async (poNumber: string, shipment: Shipment) => {
   try {
-    const po = await getPOFromOrganizedStructure(poNumber);
+    const po = await getPO(poNumber);
     if (!po) {
       throw new Error('PO not found');
     }
@@ -1371,7 +961,7 @@ export const updatePOReceivedQuantities = async (poNumber: string, shipment: Shi
       newStatus = 'Received';
     }
     
-    await updatePOInOrganizedStructure(poNumber, {
+    await updatePO(poNumber, {
       lineItems: updatedLineItems,
       totalReceivedAmount,
       status: newStatus

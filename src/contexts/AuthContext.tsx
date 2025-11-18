@@ -35,17 +35,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(user);
       if (user && user.email) {
         try {
-          console.log('Fetching user data for email:', user.email);
-          // Try email-based lookup first
+          // Try email-based lookup first (faster)
           let data = await getUserByEmail(user.email);
           
           // If not found, try UID-based lookup (backward compatibility)
           if (!data) {
-            console.log('Email-based lookup failed, trying UID:', user.uid);
             data = await getUser(user.uid);
           }
           
-          console.log('User data fetched:', data);
           setUserData(data);
         } catch (error) {
           console.error('Error fetching user data:', error);
@@ -55,7 +52,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUserData(null);
       }
       setLoading(false);
-      console.log('Loading set to false');
     });
 
     return unsubscribe;
@@ -75,12 +71,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       console.log('Firebase Auth user created:', user.uid);
       
-      // Create user document in Firestore with password
+      // Create user document in Firestore
       await createUser(user.uid, {
         email,
         name,
-        role,
-        password // Save plain text password
+        role
       });
       
       console.log('Firestore user document created successfully');

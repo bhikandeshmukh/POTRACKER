@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Sidebar from '@/components/Sidebar';
-import { getAllUsers, getVendors, getPOs, getPOsFromOrganizedStructure } from '@/lib/firestore';
+import { getAllUsers, getVendors, getPOs } from '@/lib/firestore';
 import { Users, Building2, FileText, TrendingUp, Shield, User, Settings } from 'lucide-react';
 import { getThemeClasses } from '@/styles/theme';
 import Link from 'next/link';
@@ -41,7 +41,7 @@ export default function AdminDashboard() {
       const [users, vendors, pos] = await Promise.all([
         getAllUsers(),
         getVendors(),
-        getPOsFromOrganizedStructure()
+        getPOs()
       ]);
 
       setStats({

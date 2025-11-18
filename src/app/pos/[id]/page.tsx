@@ -6,7 +6,8 @@ import { useRouter, useParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Sidebar from '@/components/Sidebar';
 import StatusBadge from '@/components/StatusBadge';
-import { getPO, getPOFromOrganizedStructure, updatePOStatus, updatePOStatusInOrganizedStructure, PurchaseOrder } from '@/lib/firestore';
+import { getPO, updatePOStatus, PurchaseOrder } from '@/lib/firestore';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { CheckCircle, XCircle, Truck, Package, Mail, ChevronLeft, ChevronRight, Settings, Eye, EyeOff, RotateCcw } from 'lucide-react';
 import CommentsSystem from '@/components/CommentsSystem';
@@ -19,9 +20,28 @@ export default function PoDetailPage() {
   const { user, userData, loading } = useAuth();
   const router = useRouter();
   const params = useParams();
-  const [po, setPo] = useState<PurchaseOrder | null>(null);
-  const [loadingData, setLoadingData] = useState(true);
+  const queryClient = useQueryClient();
   const [updating, setUpdating] = useState(false);
+
+  // Use React Query for PO data with caching
+  const { data: po, isLoading: loadingData, refetch } = useQuery({
+    queryKey: ['po', params.id],
+    queryFn: () => getPO(params.id as string),
+    enabled: !!params.id,
+    staleTime: 2 * 60 * 1000, // 2 minutes for detail page
+  });
+
+  // Mutation for updating PO status
+  const updateStatusMutation = useMutation({
+    mutationFn: ({ poNumber, status, userId }: { poNumber: string; status: PurchaseOrder['status']; userId: string }) =>
+      updatePOStatus(poNumber, status, userId),
+    onSuccess: () => {
+      // Invalidate and refetch
+      queryClient.invalidateQueries({ queryKey: ['po', params.id] });
+      queryClient.invalidateQueries({ queryKey: ['pos'] });
+      refetch();
+    },
+  });
   const [showEmailModal, setShowEmailModal] = useState(false);
   
   // Table controls
@@ -82,11 +102,7 @@ export default function PoDetailPage() {
     }
   }, [user, loading, router]);
 
-  useEffect(() => {
-    if (user && params.id) {
-      loadPO();
-    }
-  }, [user, params.id]);
+  // React Query handles data loading automatically
 
   // Add event listeners for resize
   useEffect(() => {
@@ -102,26 +118,16 @@ export default function PoDetailPage() {
   }, [resizing, handleMouseMove, handleMouseUp]);
 
   // REGULAR FUNCTIONS AFTER ALL HOOKS
-  const loadPO = async () => {
-    try {
-      // Try organized structure first, fallback to regular structure
-      const poData = await getPOFromOrganizedStructure(params.id as string);
-      setPo(poData);
-    } catch (error) {
-      console.error('Error loading PO:', error);
-    } finally {
-      setLoadingData(false);
-    }
-  };
-
   const handleStatusUpdate = async (status: PurchaseOrder['status']) => {
     if (!po || !user) return;
     
     setUpdating(true);
     try {
-      // Use PO number instead of ID for organized structure
-      await updatePOStatusInOrganizedStructure(po.poNumber, status, user.uid);
-      await loadPO();
+      await updateStatusMutation.mutateAsync({
+        poNumber: po.poNumber,
+        status,
+        userId: user.uid,
+      });
     } catch (error) {
       console.error('Error updating status:', error);
       alert('Failed to update status');
@@ -612,7 +618,7 @@ export default function PoDetailPage() {
           {/* Shipment Management */}
           {(po.status === 'Approved' || po.status === 'Partial' || po.status === 'Shipped') && (
             <div className="mt-6">
-              <ShipmentManagement po={po} onUpdate={loadPO} />
+              <ShipmentManagement po={po} onUpdate={() => refetch()} />
             </div>
           )}
 

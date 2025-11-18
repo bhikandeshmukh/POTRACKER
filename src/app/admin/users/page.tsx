@@ -27,7 +27,6 @@ export default function UsersManagementPage() {
     name: '',
     email: '',
     role: 'Employee' as 'Admin' | 'Manager' | 'Employee',
-    password: '',
   });
 
   useEffect(() => {
@@ -59,9 +58,13 @@ export default function UsersManagementPage() {
     e.preventDefault();
     try {
       // This would need Firebase Admin SDK for creating users with custom passwords
-      // For now, we'll just create the Firestore document
+      // Create user with Firebase Authentication and Firestore
       const docId = formData.email.replace(/[@.]/g, '-');
-      await createUser(docId, formData);
+      await createUser(docId, {
+        email: formData.email,
+        name: formData.name,
+        role: formData.role
+      });
       setFormData({ name: '', email: '', password: '', role: 'Employee' });
       setShowForm(false);
       loadUsers();
@@ -204,7 +207,6 @@ export default function UsersManagementPage() {
                     <th className={`px-6 py-3 text-left ${getThemeClasses.smallText()} font-medium text-gray-500 uppercase`}>Name</th>
                     <th className={`px-6 py-3 text-left ${getThemeClasses.smallText()} font-medium text-gray-500 uppercase`}>Email</th>
                     <th className={`px-6 py-3 text-left ${getThemeClasses.smallText()} font-medium text-gray-500 uppercase`}>Role</th>
-                    <th className={`px-6 py-3 text-left ${getThemeClasses.smallText()} font-medium text-gray-500 uppercase`}>Password</th>
                     <th className={`px-6 py-3 text-left ${getThemeClasses.smallText()} font-medium text-gray-500 uppercase`}>Actions</th>
                   </tr>
                 </thead>
@@ -221,9 +223,6 @@ export default function UsersManagementPage() {
                         }`}>
                           {user.role}
                         </span>
-                      </td>
-                      <td className={`px-6 py-4 whitespace-nowrap ${getThemeClasses.description()}`}>
-                        {user.password ? '••••••••' : 'Not Set'}
                       </td>
                       <td className={`px-6 py-4 whitespace-nowrap ${getThemeClasses.description()} font-medium`}>
                         <div className="flex space-x-2">
