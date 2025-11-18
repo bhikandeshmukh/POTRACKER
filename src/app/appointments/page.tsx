@@ -13,8 +13,9 @@ interface Appointment {
   id?: string;
   appointmentId: string; // Auto-generated: APT-2024-001
   poNumber: string;
-  poId: string;
+  poId?: string;
   vendorName: string;
+  transporterId?: string;
   transporterName?: string;
   transporterEmail?: string;
   transporterPhone?: string;
@@ -25,7 +26,7 @@ interface Appointment {
   purpose: 'delivery' | 'inspection' | 'meeting' | 'pickup';
   status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled';
   notes?: string;
-  createdBy: string;
+  createdBy?: string;
   createdAt?: Date;
   emailSent?: boolean;
 }
