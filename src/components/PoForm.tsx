@@ -69,22 +69,21 @@ export default function PoForm() {
     try {
       const selectedVendor = vendors.find(v => v.id === formData.vendorId);
       
-      const poData = {
+      const poFormData = {
         vendorId: formData.vendorId,
-        vendorName: selectedVendor?.name || '',
-        orderDate: new Date(formData.orderDate),
-        expectedDeliveryDate: new Date(formData.expectedDeliveryDate),
-        totalAmount,
+        orderDate: formData.orderDate,
+        expectedDeliveryDate: formData.expectedDeliveryDate,
         lineItems,
       };
 
       const result = await poService.createPO(
-        poData,
+        poFormData,
         {
           uid: user.uid,
           name: userData.name,
           role: userData.role
-        }
+        },
+        selectedVendor?.name || ''
       );
 
       if (result.success) {
