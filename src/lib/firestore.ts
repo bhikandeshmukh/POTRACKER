@@ -19,7 +19,7 @@ import {
   serverTimestamp
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { auditService } from './services';
+import { auditService } from './services/audit.service';
 import { logger } from './logger';
 import { DatabaseError, NotFoundError } from './errors';
 

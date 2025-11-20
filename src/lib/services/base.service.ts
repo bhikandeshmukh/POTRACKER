@@ -18,12 +18,58 @@ import {
 import { db } from '../firebase';
 import { BaseEntity, QueryOptions, ApiResponse, PaginatedResponse, AppError } from '../types';
 import { logger } from '../logger';
+import { cacheService } from './cache.service';
+import { performanceService } from './performance.service';
+import { errorTrackingService } from './error-tracking.service';
+import { retryService } from './retry.service';
 
 export abstract class BaseService<T extends BaseEntity> {
   protected collectionName: string;
 
   constructor(collectionName: string) {
     this.collectionName = collectionName;
+    
+    // Wrap methods with performance monitoring and retry logic
+    this.findById = this.wrapWithRetryAndPerformance('findById', this.findById.bind(this));
+    this.findMany = this.wrapWithRetryAndPerformance('findMany', this.findMany.bind(this));
+    this.create = this.wrapWithRetryAndPerformance('create', this.create.bind(this));
+    this.update = this.wrapWithRetryAndPerformance('update', this.update.bind(this));
+    this.delete = this.wrapWithRetryAndPerformance('delete', this.delete.bind(this));
+  }
+
+  // Wrap method with both retry logic and performance monitoring
+  private wrapWithRetryAndPerformance<TArgs extends any[], TReturn>(
+    operation: string,
+    fn: (...args: TArgs) => Promise<TReturn>
+  ) {
+    // First wrap with performance monitoring
+    const performanceWrapped = performanceService.measurePerformance(
+      this.collectionName,
+      operation,
+      fn
+    );
+
+    // Then wrap with retry logic
+    return retryService.wrapServiceMethod(
+      this.collectionName,
+      operation,
+      performanceWrapped,
+      {
+        maxAttempts: 3,
+        baseDelay: 1000,
+        retryCondition: (error: any) => {
+          // Retry on network errors, timeouts, and Firebase unavailable errors
+          const message = error.message?.toLowerCase() || '';
+          const code = error.code?.toLowerCase() || '';
+          
+          return message.includes('network') || 
+                 message.includes('timeout') || 
+                 message.includes('connection') ||
+                 code.includes('unavailable') ||
+                 code.includes('deadline-exceeded');
+        }
+      }
+    );
   }
 
   protected getCollection() {
@@ -54,8 +100,18 @@ export abstract class BaseService<T extends BaseEntity> {
     return constraints;
   }
 
-  protected handleError(error: any, operation: string): AppError {
+  protected handleError(error: any, operation: string, userId?: string, userRole?: string): AppError {
+    // Track the error
+    errorTrackingService.trackError(error, {
+      operation,
+      service: this.collectionName,
+      userId,
+      userRole,
+      timestamp: new Date()
+    });
+
     logger.error(`${operation} failed in ${this.collectionName}`, error);
+    
     return {
       code: error.code || 'UNKNOWN_ERROR',
       message: error.message || `Failed to ${operation}`,
@@ -63,22 +119,52 @@ export abstract class BaseService<T extends BaseEntity> {
     };
   }
 
-  async findById(id: string): Promise<ApiResponse<T>> {
+  // Cache key generators
+  protected getCacheKey(operation: string, params?: any): string {
+    const baseKey = `${this.collectionName}:${operation}`;
+    if (params) {
+      const paramStr = typeof params === 'string' ? params : JSON.stringify(params);
+      return `${baseKey}:${paramStr}`;
+    }
+    return baseKey;
+  }
+
+  protected invalidateCache(pattern?: string): void {
+    const cachePattern = pattern || `${this.collectionName}:`;
+    cacheService.invalidatePattern(cachePattern);
+  }
+
+  async findById(id: string, useCache: boolean = true): Promise<ApiResponse<T>> {
+    const cacheKey = this.getCacheKey('findById', id);
+    
+    // Try cache first
+    if (useCache) {
+      const cached = cacheService.get<ApiResponse<T>>(cacheKey);
+      if (cached) {
+        return cached;
+      }
+    }
+
     try {
       const docRef = this.getDocRef(id);
       const docSnap = await getDoc(docRef);
       
-      if (docSnap.exists()) {
-        return {
-          success: true,
-          data: { id: docSnap.id, ...docSnap.data() } as T
-        };
+      const result: ApiResponse<T> = docSnap.exists() 
+        ? {
+            success: true,
+            data: { id: docSnap.id, ...docSnap.data() } as T
+          }
+        : {
+            success: false,
+            error: 'Document not found'
+          };
+
+      // Cache successful results
+      if (useCache && result.success) {
+        cacheService.set(cacheKey, result, 2 * 60 * 1000); // 2 minutes for single documents
       }
       
-      return {
-        success: false,
-        error: 'Document not found'
-      };
+      return result;
     } catch (error) {
       return {
         success: false,
@@ -87,7 +173,17 @@ export abstract class BaseService<T extends BaseEntity> {
     }
   }
 
-  async findMany(options?: QueryOptions): Promise<ApiResponse<PaginatedResponse<T>>> {
+  async findMany(options?: QueryOptions, useCache: boolean = true): Promise<ApiResponse<PaginatedResponse<T>>> {
+    const cacheKey = this.getCacheKey('findMany', options);
+    
+    // Try cache first
+    if (useCache) {
+      const cached = cacheService.get<ApiResponse<PaginatedResponse<T>>>(cacheKey);
+      if (cached) {
+        return cached;
+      }
+    }
+
     try {
       const constraints = this.buildQuery(options);
       const q = query(this.getCollection(), ...constraints);
@@ -98,7 +194,7 @@ export abstract class BaseService<T extends BaseEntity> {
         ...doc.data() 
       } as T));
 
-      return {
+      const result: ApiResponse<PaginatedResponse<T>> = {
         success: true,
         data: {
           data,
@@ -108,6 +204,13 @@ export abstract class BaseService<T extends BaseEntity> {
           hasMore: false // TODO: Implement proper pagination
         }
       };
+
+      // Cache successful results
+      if (useCache) {
+        cacheService.set(cacheKey, result, 1 * 60 * 1000); // 1 minute for lists
+      }
+
+      return result;
     } catch (error) {
       return {
         success: false,
@@ -132,6 +235,9 @@ export abstract class BaseService<T extends BaseEntity> {
         docRef = await addDoc(this.getCollection(), entityData);
       }
 
+      // Invalidate cache after successful creation
+      this.invalidateCache();
+
       return {
         success: true,
         data: { id: docRef.id, ...entityData } as T
@@ -154,8 +260,11 @@ export abstract class BaseService<T extends BaseEntity> {
       
       await updateDoc(docRef, updateData);
       
-      // Get updated document
-      const result = await this.findById(id);
+      // Invalidate cache after successful update
+      this.invalidateCache();
+      
+      // Get updated document (bypass cache to get fresh data)
+      const result = await this.findById(id, false);
       return result;
     } catch (error) {
       return {
@@ -169,6 +278,9 @@ export abstract class BaseService<T extends BaseEntity> {
     try {
       const docRef = this.getDocRef(id);
       await deleteDoc(docRef);
+      
+      // Invalidate cache after successful deletion
+      this.invalidateCache();
       
       return {
         success: true

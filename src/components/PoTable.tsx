@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
-import { PurchaseOrder, updatePOStatus, deletePO } from '@/lib/firestore';
+import { poService } from '@/lib/services';
+import { PurchaseOrder } from '@/lib/types';
 import StatusBadge from './StatusBadge';
 import { format } from 'date-fns';
 import { Eye, Search, Edit, Trash2, Check, X } from 'lucide-react';
@@ -33,10 +34,26 @@ export default function PoTable({ pos, onRefresh }: PoTableProps) {
   };
 
   const handleStatusUpdate = async (poId: string) => {
+    if (!userData) return;
+    
     try {
-      await updatePOStatus(poId, newStatus, userData?.uid);
-      setEditingStatus(null);
-      if (onRefresh) onRefresh();
+      const result = await poService.updatePOStatus(
+        poId,
+        newStatus,
+        {
+          uid: userData.uid,
+          name: userData.name,
+          role: userData.role
+        }
+      );
+
+      if (result.success) {
+        setEditingStatus(null);
+        if (onRefresh) onRefresh();
+      } else {
+        console.error('Failed to update PO status:', result.error);
+        alert('Failed to update status: ' + result.error);
+      }
     } catch (error: any) {
       console.error('Error updating PO status:', error);
       alert('Failed to update status: ' + error.message);
@@ -44,10 +61,25 @@ export default function PoTable({ pos, onRefresh }: PoTableProps) {
   };
 
   const handleDelete = async (poId: string, poNumber: string) => {
+    if (!userData) return;
+    
     if (confirm(`Are you sure you want to delete PO "${poNumber}"?`)) {
       try {
-        await deletePO(poId);
-        if (onRefresh) onRefresh();
+        const result = await poService.deletePO(
+          poId,
+          {
+            uid: userData.uid,
+            name: userData.name,
+            role: userData.role
+          }
+        );
+
+        if (result.success) {
+          if (onRefresh) onRefresh();
+        } else {
+          console.error('Failed to delete PO:', result.error);
+          alert('Failed to delete PO: ' + result.error);
+        }
       } catch (error: any) {
         console.error('Error deleting PO:', error);
         alert('Failed to delete PO: ' + error.message);

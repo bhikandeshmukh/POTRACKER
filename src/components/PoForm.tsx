@@ -3,9 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { createPO, getVendors, Vendor, LineItem } from '@/lib/firestore';
-import { logAuditEvent } from '@/lib/auditLogs';
-import { Timestamp } from 'firebase/firestore';
+import { poService, vendorService } from '@/lib/services';
+import { Vendor, LineItem } from '@/lib/types';
 import { Plus, Trash2 } from 'lucide-react';
 
 export default function PoForm() {
@@ -29,8 +28,16 @@ export default function PoForm() {
   }, []);
 
   const loadVendors = async () => {
-    const vendorList = await getVendors();
-    setVendors(vendorList);
+    try {
+      const result = await vendorService.findMany();
+      if (result.success && result.data) {
+        setVendors(result.data.data);
+      } else {
+        console.error('Failed to load vendors:', result.error);
+      }
+    } catch (error) {
+      console.error('Error loading vendors:', error);
+    }
   };
 
   const addLineItem = () => {
@@ -62,37 +69,30 @@ export default function PoForm() {
     try {
       const selectedVendor = vendors.find(v => v.id === formData.vendorId);
       
-      const result = await createPO({
+      const poData = {
         vendorId: formData.vendorId,
         vendorName: selectedVendor?.name || '',
-        orderDate: Timestamp.fromDate(new Date(formData.orderDate)),
-        expectedDeliveryDate: Timestamp.fromDate(new Date(formData.expectedDeliveryDate)),
+        orderDate: new Date(formData.orderDate),
+        expectedDeliveryDate: new Date(formData.expectedDeliveryDate),
         totalAmount,
-        status: 'Pending',
-        createdBy_uid: user.uid,
-        createdBy_name: userData.name,
         lineItems,
-      });
+      };
 
-      // Log audit event
-      await logAuditEvent(
-        user.uid,
-        userData.name,
-        'create',
-        'po',
-        result.id,
-        result.poNumber,
-        `Created PO ${result.poNumber} for vendor ${selectedVendor?.name} with total amount ₹${totalAmount.toLocaleString()}`,
-        undefined,
+      const result = await poService.createPO(
+        poData,
         {
-          vendorName: selectedVendor?.name,
-          totalAmount,
-          itemCount: lineItems.length,
-          userRole: userData.role
+          uid: user.uid,
+          name: userData.name,
+          role: userData.role
         }
       );
 
-      router.push('/pos');
+      if (result.success) {
+        router.push('/pos');
+      } else {
+        console.error('Failed to create PO:', result.error);
+        alert('Failed to create PO: ' + result.error);
+      }
     } catch (error) {
       console.error('Error creating PO:', error);
       alert('Failed to create PO');
