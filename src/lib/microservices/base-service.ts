@@ -136,7 +136,7 @@ export abstract class BaseMicroservice {
       return enrichedResponse;
     } catch (error) {
       // Track error
-      errorTrackingService.trackError(error, {
+      errorTrackingService.trackError(error as Error, {
         operation: request.endpoint,
         service: this.config.name,
         timestamp: new Date(),

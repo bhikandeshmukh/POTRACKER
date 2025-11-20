@@ -7,6 +7,11 @@ export { InMemoryServiceRegistry, serviceRegistry } from './service-registry';
 export { InMemoryEventBus, eventBus } from './event-bus';
 export { ApiGatewayImpl } from './api-gateway';
 
+// Import instances for internal use
+import { serviceRegistry } from './service-registry';
+import { eventBus } from './event-bus';
+import { orchestrator, type OrchestrationConfig } from './orchestrator';
+
 // Export orchestrator
 export { 
   MicroserviceOrchestrator, 

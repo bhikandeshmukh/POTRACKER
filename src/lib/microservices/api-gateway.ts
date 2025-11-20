@@ -26,7 +26,7 @@ interface RequestMetrics {
 
 export class ApiGatewayImpl implements ApiGateway {
   private routes: Route[] = [];
-  private middleware: Map<string, GatewayMiddleware> = new Map();
+  private middlewareMap: Map<string, GatewayMiddleware> = new Map();
   private globalMiddleware: GatewayMiddleware[] = [];
   private serviceRegistry: ServiceRegistry;
   private requestMetrics: RequestMetrics = {
@@ -87,7 +87,7 @@ export class ApiGatewayImpl implements ApiGateway {
       return response;
     } catch (error) {
       // Track error
-      errorTrackingService.trackError(error, {
+      errorTrackingService.trackError(error as Error, {
         operation: 'api_gateway_route',
         service: 'api-gateway',
         timestamp: new Date(),
@@ -126,7 +126,7 @@ export class ApiGatewayImpl implements ApiGateway {
   }
 
   middleware(middleware: GatewayMiddleware): void {
-    this.middleware.set(middleware.name, middleware);
+    this.middlewareMap.set(middleware.name, middleware);
     logger.debug(`Middleware registered: ${middleware.name}`);
   }
 
@@ -134,6 +134,11 @@ export class ApiGatewayImpl implements ApiGateway {
   addGlobalMiddleware(middleware: GatewayMiddleware): void {
     this.globalMiddleware.push(middleware);
     logger.debug(`Global middleware added: ${middleware.name}`);
+  }
+
+  // Get middleware by name
+  getMiddleware(name: string): GatewayMiddleware | undefined {
+    return this.middlewareMap.get(name);
   }
 
   // Remove global middleware
@@ -158,7 +163,7 @@ export class ApiGatewayImpl implements ApiGateway {
   } {
     return {
       totalRoutes: this.routes.length,
-      totalMiddleware: this.middleware.size + this.globalMiddleware.length,
+      totalMiddleware: this.middlewareMap.size + this.globalMiddleware.length,
       metrics: { ...this.requestMetrics },
       routes: this.routes.map(route => ({
         pattern: route.pattern.source,
@@ -214,7 +219,7 @@ export class ApiGatewayImpl implements ApiGateway {
   ): Promise<ServiceResponse<T>> {
     const middlewareChain: GatewayMiddleware[] = [
       ...this.globalMiddleware,
-      ...(route.middleware?.map(name => this.middleware.get(name)).filter(Boolean) || [])
+      ...(route.middleware?.map(name => this.middlewareMap.get(name)).filter((m): m is GatewayMiddleware => m !== undefined) || [])
     ];
 
     let index = 0;
@@ -263,7 +268,7 @@ export class ApiGatewayImpl implements ApiGateway {
   }
 
   private generateRequestId(): string {
-    return `gw_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `gw_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
   }
 
   private updateMetrics(serviceName: string, endpoint: string, duration: number, success: boolean): void {
@@ -287,7 +292,7 @@ export class ApiGatewayImpl implements ApiGateway {
 
   private setupDefaultMiddleware(): void {
     // Logging middleware
-    this.middleware.set('logging', {
+    this.middlewareMap.set('logging', {
       name: 'logging',
       execute: async <T>(request: ServiceRequest<T>, next: () => Promise<ServiceResponse<T>>) => {
         const startTime = Date.now();
@@ -304,7 +309,7 @@ export class ApiGatewayImpl implements ApiGateway {
 
     // Rate limiting middleware (basic implementation)
     const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
-    this.middleware.set('rate-limit', {
+    this.middlewareMap.set('rate-limit', {
       name: 'rate-limit',
       execute: async <T>(request: ServiceRequest<T>, next: () => Promise<ServiceResponse<T>>) => {
         const clientId = request.headers?.['x-client-id'] || 'anonymous';
@@ -342,28 +347,19 @@ export class ApiGatewayImpl implements ApiGateway {
     });
 
     // CORS middleware
-    this.middleware.set('cors', {
+    this.middlewareMap.set('cors', {
       name: 'cors',
       execute: async <T>(request: ServiceRequest<T>, next: () => Promise<ServiceResponse<T>>) => {
         const response = await next();
         
         // Add CORS headers to response (in a real implementation)
-        if (response.metadata) {
-          response.metadata = {
-            ...response.metadata,
-            corsHeaders: {
-              'Access-Control-Allow-Origin': '*',
-              'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-              'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-            }
-          };
-        }
+        // Note: In a real implementation, these would be added to HTTP response headers
         
         return response;
       }
     });
 
     // Add default global middleware
-    this.addGlobalMiddleware(this.middleware.get('logging')!);
+    this.addGlobalMiddleware(this.middlewareMap.get('logging')!);
   }
 }

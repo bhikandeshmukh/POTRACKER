@@ -40,7 +40,9 @@ export default function PoDetailPage() {
   // Mutation for updating PO status
   const updateStatusMutation = useMutation({
     mutationFn: async ({ poId, status }: { poId: string; status: PurchaseOrder['status'] }) => {
-      if (!userData) throw new Error('User not authenticated');
+      if (!userData || !userData.uid || !userData.name || !userData.role) {
+        throw new Error('User not authenticated or missing required data');
+      }
       
       const result = await poService.updateStatus(
         poId,

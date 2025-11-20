@@ -115,7 +115,7 @@ export class POMicroservice extends BaseMicroservice {
       case 'GET':
         return await this.getPOs(params);
       case 'POST':
-        return await this.createPO(data);
+        return await this.handleCreatePO(data);
       default:
         return {
           success: false,
@@ -164,7 +164,12 @@ export class POMicroservice extends BaseMicroservice {
       };
     }
 
-    const result = await legacyPOService.createPO(data.poData, data.userContext);
+    const result = await legacyPOService.createPO(
+      data.poData, 
+      data.userContext, 
+      data.vendorName,
+      data.customPONumber
+    );
     
     if (result.success && result.data) {
       // Publish event
@@ -177,11 +182,11 @@ export class POMicroservice extends BaseMicroservice {
       });
     }
 
-    return result;
+    return this.convertApiResponse(result);
   }
 
   private async handleSearchPOs(params: any): Promise<ServiceResponse<any>> {
-    const { searchTerm, userId, role, limit } = params;
+    const { searchTerm, userId, role } = params;
     
     if (!searchTerm) {
       return {
@@ -194,18 +199,40 @@ export class POMicroservice extends BaseMicroservice {
       };
     }
 
-    return await legacyPOService.searchPOs(searchTerm, userId, role, limit);
+    const result = await legacyPOService.searchPOs(searchTerm, userId, role);
+    return this.convertApiResponse(result);
   }
 
   private async handlePOStats(): Promise<ServiceResponse<any>> {
-    return await legacyPOService.getPOStats();
+    // Since getPOStats doesn't exist, let's create a basic stats implementation
+    const result = await legacyPOService.findMany({ limit: 1000 });
+    
+    if (!result.success || !result.data) {
+      return this.convertApiResponse(result);
+    }
+
+    const pos = result.data.data;
+    const stats = {
+      total: pos.length,
+      byStatus: pos.reduce((acc: any, po: any) => {
+        acc[po.status] = (acc[po.status] || 0) + 1;
+        return acc;
+      }, {}),
+      totalAmount: pos.reduce((sum: number, po: any) => sum + po.totalAmount, 0)
+    };
+
+    return {
+      success: true,
+      data: stats
+    };
   }
 
   private async getPOs(params: any): Promise<ServiceResponse<any>> {
     const { userId, role, limit, status, vendorId } = params;
     
     if (userId && role) {
-      return await legacyPOService.getPOsForUser(userId, role, limit);
+      const result = await legacyPOService.getPOsForUser(userId, role, limit || 50);
+      return this.convertApiResponse(result);
     }
     
     // Build query options
@@ -217,11 +244,13 @@ export class POMicroservice extends BaseMicroservice {
       if (vendorId) queryOptions.where.push({ field: 'vendorId', operator: '==', value: vendorId });
     }
 
-    return await legacyPOService.findMany(queryOptions);
+    const result = await legacyPOService.findMany(queryOptions);
+    return this.convertApiResponse(result);
   }
 
   private async getPO(poId: string): Promise<ServiceResponse<PurchaseOrder>> {
-    return await legacyPOService.findById(poId);
+    const result = await legacyPOService.findById(poId);
+    return this.convertApiResponse(result);
   }
 
   private async updatePO(poId: string, data: any): Promise<ServiceResponse<PurchaseOrder>> {
@@ -238,7 +267,7 @@ export class POMicroservice extends BaseMicroservice {
 
     // Handle status updates specially
     if (data.updates.status) {
-      const result = await legacyPOService.updatePOStatus(
+      const result = await legacyPOService.updateStatus(
         poId, 
         data.updates.status, 
         data.userContext,
@@ -256,7 +285,7 @@ export class POMicroservice extends BaseMicroservice {
         });
       }
 
-      return result;
+      return this.convertApiResponse(result);
     }
 
     // Regular update
@@ -271,7 +300,7 @@ export class POMicroservice extends BaseMicroservice {
       });
     }
 
-    return result;
+    return this.convertApiResponse(result);
   }
 
   private async deletePO(poId: string, data: any): Promise<ServiceResponse<void>> {
@@ -286,7 +315,7 @@ export class POMicroservice extends BaseMicroservice {
       };
     }
 
-    const result = await legacyPOService.deletePO(poId, data.userContext);
+    const result = await legacyPOService.delete(poId);
     
     if (result.success) {
       // Publish delete event
@@ -296,7 +325,7 @@ export class POMicroservice extends BaseMicroservice {
       });
     }
 
-    return result;
+    return this.convertApiResponse(result);
   }
 
   // Event handlers
@@ -346,5 +375,24 @@ export class POMicroservice extends BaseMicroservice {
 
   async getPOsByStatus(status: string): Promise<ServiceResponse<any>> {
     return await this.getPOs({ status });
+  }
+
+  // Helper method to convert ApiResponse to ServiceResponse
+  private convertApiResponse<T>(apiResponse: any): ServiceResponse<T> {
+    if (apiResponse.success) {
+      return {
+        success: true,
+        data: apiResponse.data
+      };
+    } else {
+      return {
+        success: false,
+        error: {
+          code: 'SERVICE_ERROR',
+          message: apiResponse.error || 'Unknown error',
+          statusCode: 500
+        }
+      };
+    }
   }
 }

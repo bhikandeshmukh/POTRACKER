@@ -34,7 +34,10 @@ export default function PoTable({ pos, onRefresh }: PoTableProps) {
   };
 
   const handleStatusUpdate = async (poId: string) => {
-    if (!userData) return;
+    if (!userData || !userData.uid || !userData.name || !userData.role) {
+      console.error('User data not available');
+      return;
+    }
     
     try {
       const result = await poService.updateStatus(
@@ -61,18 +64,14 @@ export default function PoTable({ pos, onRefresh }: PoTableProps) {
   };
 
   const handleDelete = async (poId: string, poNumber: string) => {
-    if (!userData) return;
+    if (!userData || !userData.uid || !userData.name || !userData.role) {
+      console.error('User data not available');
+      return;
+    }
     
     if (confirm(`Are you sure you want to delete PO "${poNumber}"?`)) {
       try {
-        const result = await poService.deletePO(
-          poId,
-          {
-            uid: userData.uid,
-            name: userData.name,
-            role: userData.role
-          }
-        );
+        const result = await poService.delete(poId);
 
         if (result.success) {
           if (onRefresh) onRefresh();

@@ -288,8 +288,15 @@ export class MicroserviceOrchestrator {
     this.apiGateway.addRoute('^/api/v1/vendors', 'vendor-service');
     
     // Add global middleware
-    this.apiGateway.addGlobalMiddleware(this.apiGateway['middleware'].get('logging')!);
-    this.apiGateway.addGlobalMiddleware(this.apiGateway['middleware'].get('cors')!);
+    const loggingMiddleware = this.apiGateway.getMiddleware('logging');
+    const corsMiddleware = this.apiGateway.getMiddleware('cors');
+    
+    if (loggingMiddleware) {
+      this.apiGateway.addGlobalMiddleware(loggingMiddleware);
+    }
+    if (corsMiddleware) {
+      this.apiGateway.addGlobalMiddleware(corsMiddleware);
+    }
 
     logger.debug('API Gateway routes configured');
   }

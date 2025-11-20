@@ -161,7 +161,8 @@ export class VendorMicroservice extends BaseMicroservice {
       };
     }
 
-    return await legacyVendorService.searchVendors(searchTerm);
+    const result = await legacyVendorService.searchVendors(searchTerm);
+    return this.convertApiResponse(result);
   }
 
   private async handleVendorStats(): Promise<ServiceResponse<any>> {
@@ -169,13 +170,12 @@ export class VendorMicroservice extends BaseMicroservice {
     const vendorsResult = await legacyVendorService.findMany();
     
     if (!vendorsResult.success) {
-      return vendorsResult;
+      return this.convertApiResponse(vendorsResult);
     }
 
     const vendors = vendorsResult.data?.data || [];
     const stats = {
       totalVendors: vendors.length,
-      activeVendors: vendors.filter(v => v.active !== false).length,
       vendorsWithEmail: vendors.filter(v => v.email).length,
       vendorsWithGST: vendors.filter(v => v.gst).length,
       recentVendors: vendors
@@ -198,11 +198,13 @@ export class VendorMicroservice extends BaseMicroservice {
       queryOptions.where = [{ field: 'active', operator: '==', value: active === 'true' }];
     }
 
-    return await legacyVendorService.findMany(queryOptions);
+    const result = await legacyVendorService.findMany(queryOptions);
+    return this.convertApiResponse(result);
   }
 
   private async getVendor(vendorId: string): Promise<ServiceResponse<Vendor>> {
-    return await legacyVendorService.findById(vendorId);
+    const result = await legacyVendorService.findById(vendorId);
+    return this.convertApiResponse(result);
   }
 
   private async createVendor(data: any): Promise<ServiceResponse<Vendor>> {
@@ -229,7 +231,7 @@ export class VendorMicroservice extends BaseMicroservice {
       });
     }
 
-    return result;
+    return this.convertApiResponse(result);
   }
 
   private async updateVendor(vendorId: string, data: any): Promise<ServiceResponse<Vendor>> {
@@ -255,7 +257,7 @@ export class VendorMicroservice extends BaseMicroservice {
       });
     }
 
-    return result;
+    return this.convertApiResponse(result);
   }
 
   private async deleteVendor(vendorId: string, data: any): Promise<ServiceResponse<void>> {
@@ -280,7 +282,7 @@ export class VendorMicroservice extends BaseMicroservice {
       });
     }
 
-    return result;
+    return this.convertApiResponse(result);
   }
 
   // Event handlers
@@ -332,7 +334,7 @@ export class VendorMicroservice extends BaseMicroservice {
     const result = await legacyVendorService.findMany();
     
     if (!result.success) {
-      return result;
+      return this.convertApiResponse(result);
     }
 
     const vendors = result.data?.data || [];
@@ -401,5 +403,24 @@ export class VendorMicroservice extends BaseMicroservice {
     });
 
     return { success: true };
+  }
+
+  // Helper method to convert ApiResponse to ServiceResponse
+  private convertApiResponse<T>(apiResponse: any): ServiceResponse<T> {
+    if (apiResponse.success) {
+      return {
+        success: true,
+        data: apiResponse.data
+      };
+    } else {
+      return {
+        success: false,
+        error: {
+          code: 'SERVICE_ERROR',
+          message: apiResponse.error || 'Unknown error',
+          statusCode: 500
+        }
+      };
+    }
   }
 }

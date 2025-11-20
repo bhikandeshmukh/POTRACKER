@@ -213,7 +213,7 @@ export class RetryService {
         lastError = error;
 
         // Track the error
-        errorTrackingService.trackError(error, {
+        errorTrackingService.trackError(error as Error, {
           operation: context.operation,
           service: context.service,
           userId: context.userId,
@@ -236,7 +236,7 @@ export class RetryService {
             service: context.service,
             operation: context.operation,
             userId: context.userId,
-            error: error.message,
+            error: (error as Error).message,
             circuitBreakerState: circuitBreaker.getState()
           });
           break;
@@ -250,7 +250,7 @@ export class RetryService {
           operation: context.operation,
           attempt,
           maxAttempts: mergedOptions.maxAttempts,
-          error: error.message
+          error: (error as Error).message
         });
 
         // Call retry callback

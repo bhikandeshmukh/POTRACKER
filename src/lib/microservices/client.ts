@@ -63,7 +63,7 @@ export class MicroserviceClient {
         
         // Track error
         if (this.config.enableMetrics) {
-          errorTrackingService.trackError(error, {
+          errorTrackingService.trackError(error as Error, {
             operation: request.endpoint,
             service: 'microservice-client',
             timestamp: new Date(),

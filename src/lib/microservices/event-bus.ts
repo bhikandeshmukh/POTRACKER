@@ -212,7 +212,7 @@ export class InMemoryEventBus implements EventBus {
         );
 
         // Track error
-        errorTrackingService.trackError(error, {
+        errorTrackingService.trackError(error as Error, {
           operation: 'event_handler',
           service: 'event-bus',
           timestamp: new Date(),
