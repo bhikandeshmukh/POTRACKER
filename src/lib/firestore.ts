@@ -247,8 +247,18 @@ export const deleteVendor = async (id: string, userId?: string, userEmail?: stri
 };
 
 // PO operations - SIMPLIFIED (Regular structure only)
-export const createPO = async (po: Omit<PurchaseOrder, 'id' | 'poNumber'>) => {
-  const poNumber = await generatePONumber();
+// UPDATED: Now accepts optional poNumber. If provided (e.g. from import), it uses it. If not, it generates one.
+export const createPO = async (po: Omit<PurchaseOrder, 'id'> | Omit<PurchaseOrder, 'id' | 'poNumber'>) => {
+  let poNumber: string;
+
+  // Check if poNumber is provided in the input object
+  if ('poNumber' in po && po.poNumber) {
+    poNumber = po.poNumber;
+  } else {
+    // Generate new if not provided
+    poNumber = await generatePONumber();
+  }
+
   const poData = {
     ...po,
     poNumber,
@@ -263,9 +273,6 @@ export const createPO = async (po: Omit<PurchaseOrder, 'id' | 'poNumber'>) => {
   
   return { id: docId, poNumber };
 };
-
-// REMOVED: Organized structure - caused performance issues
-// All POs now use simple flat structure in /purchaseOrders/{poNumber}
 
 // Get POs with pagination support
 export const getPOs = async (
@@ -301,9 +308,6 @@ export const getPOs = async (
   }
 };
 
-// REMOVED: Complex organized structure function
-// Now using simple flat structure only - much faster!
-
 // Get single PO by ID
 export const getPO = async (id: string): Promise<PurchaseOrder | null> => {
   try {
@@ -319,8 +323,6 @@ export const getPO = async (id: string): Promise<PurchaseOrder | null> => {
   }
 };
 
-// REMOVED: Organized structure lookup - now using simple flat structure only
-
 export const updatePOStatus = async (
   id: string, 
   status: PurchaseOrder['status'], 
@@ -333,8 +335,6 @@ export const updatePOStatus = async (
   }
   return await updateDoc(docRef, updateData);
 };
-
-
 
 export const updatePO = async (id: string, po: Partial<PurchaseOrder>) => {
   try {
@@ -736,10 +736,6 @@ export const deleteUser = async (id: string) => {
   }
 };
 
-// Test function to check Firestore connectivity - REMOVED FOR PERFORMANCE
-// This was causing unnecessary reads on every page load
-// Use browser console and Firebase console to debug connection issues instead
-
 // Shipment operations
 export const createShipment = async (poNumber: string, shipmentData: Omit<Shipment, 'id'>) => {
   try {
@@ -821,8 +817,6 @@ export const updatePOWithShipment = async (poNumber: string, shipment: Shipment)
     throw new DatabaseError('Failed to update PO with shipment', error);
   }
 };
-
-// REMOVED: updatePOInOrganizedStructure - now using simple updatePO()
 
 export const getShipments = async (poNumber?: string): Promise<Shipment[]> => {
   try {
