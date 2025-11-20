@@ -34,7 +34,7 @@ export default function TeamNotifications({ className = '' }: TeamNotificationsP
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Mock notifications - in real app, fetch from Firestore
+  // Real notifications from Firestore
   useEffect(() => {
     if (user) {
       loadNotifications();

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { createPO, getVendors, Vendor, LineItem } from '@/lib/firestore';
+import { logAuditEvent } from '@/lib/auditLogs';
 import { Timestamp } from 'firebase/firestore';
 import { Plus, Trash2 } from 'lucide-react';
 
@@ -61,7 +62,7 @@ export default function PoForm() {
     try {
       const selectedVendor = vendors.find(v => v.id === formData.vendorId);
       
-      await createPO({
+      const result = await createPO({
         vendorId: formData.vendorId,
         vendorName: selectedVendor?.name || '',
         orderDate: Timestamp.fromDate(new Date(formData.orderDate)),
@@ -72,6 +73,24 @@ export default function PoForm() {
         createdBy_name: userData.name,
         lineItems,
       });
+
+      // Log audit event
+      await logAuditEvent(
+        user.uid,
+        userData.name,
+        'create',
+        'po',
+        result.id,
+        result.poNumber,
+        `Created PO ${result.poNumber} for vendor ${selectedVendor?.name} with total amount ₹${totalAmount.toLocaleString()}`,
+        undefined,
+        {
+          vendorName: selectedVendor?.name,
+          totalAmount,
+          itemCount: lineItems.length,
+          userRole: userData.role
+        }
+      );
 
       router.push('/pos');
     } catch (error) {

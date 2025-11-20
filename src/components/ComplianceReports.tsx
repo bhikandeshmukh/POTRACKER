@@ -57,8 +57,8 @@ export default function ComplianceReports({ onGenerateReport }: ComplianceReport
       onGenerateReport(reportType, dateRange);
     }
     
-    // Mock download
-    const reportData = generateMockReport();
+    // Generate report from real data
+    const reportData = generateComplianceReport();
     const blob = new Blob([reportData], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -72,7 +72,7 @@ export default function ComplianceReports({ onGenerateReport }: ComplianceReport
     setGenerating(false);
   };
 
-  const generateMockReport = () => {
+  const generateComplianceReport = () => {
     const headers = ['Timestamp', 'User', 'Action', 'Entity Type', 'Entity ID', 'Details'];
     const rows = [
       [

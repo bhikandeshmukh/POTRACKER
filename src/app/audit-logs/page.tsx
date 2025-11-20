@@ -5,24 +5,38 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Sidebar from '@/components/Sidebar';
-import { getAuditLogs, AuditLog, formatAuditAction, getAuditActionColor } from '@/lib/auditLogs';
-import { Shield, Clock, User, FileText, Filter, Calendar } from 'lucide-react';
-import { getThemeClasses } from '@/styles/theme';
-import LoadingSpinner from '@/components/LoadingSpinner';
-import { useToast } from '@/components/ToastContainer';
+import { getAuditLogs, AuditLog } from '@/lib/auditLogs';
+import { format } from 'date-fns';
+import { 
+  Activity, 
+  Filter, 
+  Download, 
+  Search, 
+  Calendar,
+  User,
+  FileText,
+  Building2,
+  Package,
+  MessageCircle,
+  CheckCircle,
+  XCircle,
+  Edit,
+  Trash2,
+  Plus
+} from 'lucide-react';
 
 export default function AuditLogsPage() {
   const { user, userData, loading } = useAuth();
   const router = useRouter();
-  const { showError } = useToast();
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
-  const [loadingData, setLoadingData] = useState(true);
-  const [filter, setFilter] = useState<{
-    entityType: 'all' | 'vendor' | 'po' | 'user';
-    dateRange: 'all' | 'today' | 'week' | 'month';
-  }>({
+  const [filteredLogs, setFilteredLogs] = useState<AuditLog[]>([]);
+  const [loadingLogs, setLoadingLogs] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filters, setFilters] = useState({
     entityType: 'all',
-    dateRange: 'all'
+    action: 'all',
+    dateRange: '7days',
+    userId: 'all'
   });
 
   useEffect(() => {
@@ -32,98 +46,152 @@ export default function AuditLogsPage() {
   }, [user, loading, router]);
 
   useEffect(() => {
-    if (user && userData?.role === 'Admin') {
+    if (user && userData) {
       loadAuditLogs();
     }
-  }, [user, userData, filter]);
+  }, [user, userData]);
+
+  useEffect(() => {
+    applyFilters();
+  }, [auditLogs, searchTerm, filters]);
 
   const loadAuditLogs = async () => {
+    setLoadingLogs(true);
     try {
-      setLoadingData(true);
-      const logs = await getAuditLogs(
-        filter.entityType === 'all' ? undefined : filter.entityType,
-        undefined,
-        200
-      );
-      
-      // Apply date filter
-      let filteredLogs = logs;
-      if (filter.dateRange !== 'all') {
-        const now = new Date();
-        const filterDate = new Date();
-        
-        switch (filter.dateRange) {
-          case 'today':
-            filterDate.setHours(0, 0, 0, 0);
-            break;
-          case 'week':
-            filterDate.setDate(now.getDate() - 7);
-            break;
-          case 'month':
-            filterDate.setMonth(now.getMonth() - 1);
-            break;
-        }
-        
-        filteredLogs = logs.filter(log => 
-          log.timestamp.toDate() >= filterDate
-        );
-      }
-      
-      setAuditLogs(filteredLogs);
-    } catch (error: any) {
-      console.error('Error loading audit logs:', error);
-      showError('Failed to Load Audit Logs', error.message);
+      const logs = await getAuditLogs(undefined, undefined, undefined, 200);
+      setAuditLogs(logs);
+    } catch (error) {
+      console.error('Failed to load audit logs:', error);
     } finally {
-      setLoadingData(false);
+      setLoadingLogs(false);
     }
   };
 
-  const formatTimestamp = (timestamp: any) => {
-    const date = timestamp.toDate();
-    return new Intl.DateTimeFormat('en-IN', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    }).format(date);
+  const applyFilters = () => {
+    let filtered = [...auditLogs];
+
+    // Search filter
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(log => 
+        log.entityName.toLowerCase().includes(searchLower) ||
+        log.userName.toLowerCase().includes(searchLower) ||
+        log.description.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Entity type filter
+    if (filters.entityType !== 'all') {
+      filtered = filtered.filter(log => log.entityType === filters.entityType);
+    }
+
+    // Action filter
+    if (filters.action !== 'all') {
+      filtered = filtered.filter(log => log.action === filters.action);
+    }
+
+    // Date range filter
+    if (filters.dateRange !== 'all') {
+      const now = new Date();
+      const cutoff = new Date();
+      
+      switch (filters.dateRange) {
+        case '1day':
+          cutoff.setDate(now.getDate() - 1);
+          break;
+        case '7days':
+          cutoff.setDate(now.getDate() - 7);
+          break;
+        case '30days':
+          cutoff.setDate(now.getDate() - 30);
+          break;
+        case '90days':
+          cutoff.setDate(now.getDate() - 90);
+          break;
+      }
+      
+      filtered = filtered.filter(log => log.timestamp.toDate() >= cutoff);
+    }
+
+    // User filter
+    if (filters.userId !== 'all') {
+      filtered = filtered.filter(log => log.userId === filters.userId);
+    }
+
+    setFilteredLogs(filtered);
+  };
+
+  const getActionIcon = (action: string) => {
+    switch (action) {
+      case 'create': return <Plus className="w-4 h-4" />;
+      case 'update': return <Edit className="w-4 h-4" />;
+      case 'delete': return <Trash2 className="w-4 h-4" />;
+      case 'approve': return <CheckCircle className="w-4 h-4" />;
+      case 'reject': return <XCircle className="w-4 h-4" />;
+      case 'login': return <User className="w-4 h-4" />;
+      case 'comment': return <MessageCircle className="w-4 h-4" />;
+      default: return <Activity className="w-4 h-4" />;
+    }
   };
 
   const getEntityIcon = (entityType: string) => {
     switch (entityType) {
-      case 'vendor':
-        return '🏢';
-      case 'po':
-        return '📋';
-      case 'user':
-        return '👤';
-      default:
-        return '📄';
+      case 'po': return <FileText className="w-4 h-4" />;
+      case 'vendor': return <Building2 className="w-4 h-4" />;
+      case 'shipment': return <Package className="w-4 h-4" />;
+      case 'user': return <User className="w-4 h-4" />;
+      case 'comment': return <MessageCircle className="w-4 h-4" />;
+      default: return <Activity className="w-4 h-4" />;
     }
   };
 
-  if (loading || loadingData) {
+  const getActionColor = (action: string) => {
+    switch (action) {
+      case 'create': return 'bg-green-50 text-green-700 border-green-200';
+      case 'update': return 'bg-blue-50 text-blue-700 border-blue-200';
+      case 'delete': return 'bg-red-50 text-red-700 border-red-200';
+      case 'approve': return 'bg-purple-50 text-purple-700 border-purple-200';
+      case 'reject': return 'bg-red-50 text-red-700 border-red-200';
+      case 'login': return 'bg-gray-50 text-gray-700 border-gray-200';
+      case 'comment': return 'bg-blue-50 text-blue-700 border-blue-200';
+      default: return 'bg-gray-50 text-gray-700 border-gray-200';
+    }
+  };
+
+  const exportLogs = () => {
+    const csvContent = [
+      ['Timestamp', 'User', 'Action', 'Entity Type', 'Entity Name', 'Description'].join(','),
+      ...filteredLogs.map(log => [
+        format(log.timestamp.toDate(), 'yyyy-MM-dd HH:mm:ss'),
+        `"${log.userName}"`,
+        log.action,
+        log.entityType,
+        `"${log.entityName}"`,
+        `"${log.description}"`
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `audit-logs-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const uniqueUsers = Array.from(new Set(auditLogs.map(log => log.userId)))
+    .map(userId => {
+      const log = auditLogs.find(l => l.userId === userId);
+      return { id: userId, name: log?.userName || 'Unknown' };
+    });
+
+  if (loading || loadingLogs) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="lg" text="Loading audit logs..." />
-      </div>
-    );
-  }
-
-  if (userData?.role !== 'Admin') {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
-        <Sidebar />
-        <div className="pt-16">
-          <main className={`w-full ${getThemeClasses.pagePadding()}`}>
-            <div className="text-center py-12">
-              <Shield className={`${getThemeClasses.icon('extraLarge')} text-red-400 mx-auto mb-4`} />
-              <h1 className={`${getThemeClasses.pageTitle()} mb-2`}>Access Denied</h1>
-              <p className={getThemeClasses.description()}>Only administrators can view audit logs.</p>
-            </div>
-          </main>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading audit logs...</p>
         </div>
       </div>
     );
@@ -135,125 +203,179 @@ export default function AuditLogsPage() {
       <Sidebar />
       
       <div className="pt-16">
-        <main className={`w-full ${getThemeClasses.pagePadding()}`}>
-          <div className={`flex items-center justify-between ${getThemeClasses.sectionMargin()}`}>
-            <div className="flex items-center space-x-3">
-              <Shield className={`${getThemeClasses.icon('extraLarge')} text-blue-600`} />
-              <h1 className={getThemeClasses.pageTitle()}>Audit Logs</h1>
+        <main className="w-full pl-64 pr-6 py-6">
+          {/* Header */}
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Audit Logs</h1>
+            <p className="text-gray-600">Track all system activities and changes</p>
+          </div>
+
+          {/* Filters */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
+              <button
+                onClick={exportLogs}
+                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                <Download className="w-4 h-4" />
+                <span>Export CSV</span>
+              </button>
             </div>
-            
-            {/* Filters */}
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <Filter className={`${getThemeClasses.icon('small')} text-gray-500`} />
-                <select
-                  value={filter.entityType}
-                  onChange={(e) => setFilter(prev => ({ ...prev, entityType: e.target.value as any }))}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="all">All Types</option>
-                  <option value="vendor">Vendors</option>
-                  <option value="po">Purchase Orders</option>
-                  <option value="user">Users</option>
-                </select>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search logs..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
               </div>
-              
-              <div className="flex items-center space-x-2">
-                <Calendar className={`${getThemeClasses.icon('small')} text-gray-500`} />
-                <select
-                  value={filter.dateRange}
-                  onChange={(e) => setFilter(prev => ({ ...prev, dateRange: e.target.value as any }))}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="all">All Time</option>
-                  <option value="today">Today</option>
-                  <option value="week">Last 7 Days</option>
-                  <option value="month">Last 30 Days</option>
-                </select>
-              </div>
+
+              {/* Entity Type */}
+              <select
+                value={filters.entityType}
+                onChange={(e) => setFilters(prev => ({ ...prev, entityType: e.target.value }))}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="all">All Entity Types</option>
+                <option value="po">Purchase Orders</option>
+                <option value="vendor">Vendors</option>
+                <option value="shipment">Shipments</option>
+                <option value="user">Users</option>
+                <option value="comment">Comments</option>
+              </select>
+
+              {/* Action */}
+              <select
+                value={filters.action}
+                onChange={(e) => setFilters(prev => ({ ...prev, action: e.target.value }))}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="all">All Actions</option>
+                <option value="create">Create</option>
+                <option value="update">Update</option>
+                <option value="delete">Delete</option>
+                <option value="approve">Approve</option>
+                <option value="reject">Reject</option>
+                <option value="login">Login</option>
+                <option value="comment">Comment</option>
+              </select>
+
+              {/* Date Range */}
+              <select
+                value={filters.dateRange}
+                onChange={(e) => setFilters(prev => ({ ...prev, dateRange: e.target.value }))}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="1day">Last 24 Hours</option>
+                <option value="7days">Last 7 Days</option>
+                <option value="30days">Last 30 Days</option>
+                <option value="90days">Last 90 Days</option>
+                <option value="all">All Time</option>
+              </select>
+
+              {/* User */}
+              <select
+                value={filters.userId}
+                onChange={(e) => setFilters(prev => ({ ...prev, userId: e.target.value }))}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="all">All Users</option>
+                {uniqueUsers.map(user => (
+                  <option key={user.id} value={user.id}>{user.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="mt-4 text-sm text-gray-600">
+              Showing {filteredLogs.length} of {auditLogs.length} logs
             </div>
           </div>
 
-          {/* Audit Logs List */}
-          <div className={getThemeClasses.card()}>
-            {auditLogs.length === 0 ? (
+          {/* Logs Table */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Timestamp
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      User
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Action
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Entity
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Description
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredLogs.map((log) => (
+                    <tr key={log.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {format(log.timestamp.toDate(), 'MMM dd, yyyy HH:mm:ss')}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-8 w-8 bg-gray-200 rounded-full flex items-center justify-center">
+                            <User className="w-4 h-4 text-gray-600" />
+                          </div>
+                          <div className="ml-3">
+                            <div className="text-sm font-medium text-gray-900">{log.userName}</div>
+                            <div className="text-sm text-gray-500">{log.userRole}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getActionColor(log.action)}`}>
+                          {getActionIcon(log.action)}
+                          <span className="ml-1 capitalize">{log.action}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          {getEntityIcon(log.entityType)}
+                          <div className="ml-2">
+                            <div className="text-sm font-medium text-gray-900">{log.entityName}</div>
+                            <div className="text-sm text-gray-500 capitalize">{log.entityType}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-900 max-w-md">
+                        <div className="truncate" title={log.description}>
+                          {log.description}
+                        </div>
+                        {log.changes && Object.keys(log.changes).length > 0 && (
+                          <div className="mt-1 text-xs text-gray-500">
+                            Changed: {Object.keys(log.changes).join(', ')}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {filteredLogs.length === 0 && (
               <div className="text-center py-12">
-                <FileText className={`${getThemeClasses.icon('extraLarge')} text-gray-400 mx-auto mb-4`} />
-                <p className={getThemeClasses.description()}>No audit logs found for the selected filters.</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-gray-200">
-                {auditLogs.map((log) => (
-                  <div key={log.id} className="p-6 hover:bg-gray-50 transition-colors">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start space-x-4">
-                        <div className="text-2xl">{getEntityIcon(log.entityType)}</div>
-                        
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-1">
-                            <span className={`font-medium ${getAuditActionColor(log.action)}`}>
-                              {formatAuditAction(log)}
-                            </span>
-                            <span className="text-gray-400">•</span>
-                            <span className="text-gray-600 capitalize">{log.entityType}</span>
-                          </div>
-                          
-                          <p className={`${getThemeClasses.cardTitle()} mb-1`}>
-                            {log.entityName}
-                          </p>
-                          
-                          <div className={`flex items-center space-x-4 ${getThemeClasses.description()}`}>
-                            <div className="flex items-center space-x-1">
-                              <User className={getThemeClasses.icon('small')} />
-                              <span>{log.userEmail}</span>
-                            </div>
-                            <div className="flex items-center space-x-1">
-                              <Clock className={getThemeClasses.icon('small')} />
-                              <span>{formatTimestamp(log.timestamp)}</span>
-                            </div>
-                          </div>
-                          
-                          {log.changes && Object.keys(log.changes).length > 0 && (
-                            <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                              <p className={`${getThemeClasses.description()} font-medium text-gray-700 mb-2`}>Changes:</p>
-                              <div className="space-y-1">
-                                {Object.entries(log.changes).map(([field, change]) => (
-                                  <div key={field} className={getThemeClasses.description()}>
-                                    <span className="font-medium text-gray-600">{field}:</span>
-                                    <span className="text-red-600 ml-2">"{change.old}"</span>
-                                    <span className="text-gray-400 mx-2">→</span>
-                                    <span className="text-green-600">"{change.new}"</span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                          
-                          {log.metadata && Object.keys(log.metadata).length > 0 && (
-                            <div className={`mt-2 ${getThemeClasses.smallText()}`}>
-                              <span>Additional info: {JSON.stringify(log.metadata)}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className="text-right">
-                        <div className={`${getThemeClasses.smallText()} text-gray-400`}>
-                          ID: {log.entityId.slice(-8)}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                <Activity className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No audit logs found</h3>
+                <p className="text-gray-500">Try adjusting your filters or search terms</p>
               </div>
             )}
           </div>
-          
-          {auditLogs.length > 0 && (
-            <div className={`mt-6 text-center ${getThemeClasses.description()}`}>
-              Showing {auditLogs.length} audit log entries
-            </div>
-          )}
         </main>
       </div>
     </div>

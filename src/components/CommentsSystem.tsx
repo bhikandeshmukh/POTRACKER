@@ -1,23 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { MessageCircle, Send, Reply, MoreVertical, Edit, Trash2, Heart, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/components/ToastContainer';
-
-interface Comment {
-  id: string;
-  poId: string;
-  userId: string;
-  userName: string;
-  userRole: string;
-  content: string;
-  timestamp: Date;
-  parentId?: string; // For replies
-  likes: string[]; // Array of user IDs who liked
-  isEdited?: boolean;
-  mentions?: string[]; // Array of mentioned user IDs
-}
+import { commentService } from '@/lib/services';
+import { useDataFetching } from '@/hooks/useDataFetching';
+import { useAsyncOperation } from '@/hooks/useAsyncOperation';
+import { Comment } from '@/lib/types';
+import { Timestamp } from 'firebase/firestore';
 
 interface CommentsSystemProps {
   poId: string;
@@ -27,115 +18,77 @@ interface CommentsSystemProps {
 export default function CommentsSystem({ poId, className = '' }: CommentsSystemProps) {
   const { user, userData } = useAuth();
   const { showSuccess, showError } = useToast();
-  const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [editingComment, setEditingComment] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
-  const [loading, setLoading] = useState(false);
 
-  // Mock comments data - in real app, fetch from Firestore
-  useEffect(() => {
-    loadComments();
+  const fetchComments = useCallback(async () => {
+    return commentService.getCommentsForPO(poId);
   }, [poId]);
 
-  const loadComments = async () => {
-    // Mock data - replace with actual Firestore query
-    const mockComments: Comment[] = [
-      {
-        id: '1',
-        poId,
-        userId: 'user1',
-        userName: 'Bhikan Deshmukh',
-        userRole: 'Admin',
-        content: 'Please review the specifications for this order. The delivery date seems tight.',
-        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-        likes: ['user2'],
-        mentions: []
-      },
-      {
-        id: '2',
-        poId,
-        userId: 'user2',
-        userName: 'Rajesh Kumar',
-        userRole: 'Manager',
-        content: 'I agree with @Bhikan. We should extend the delivery date by 3 days to ensure quality.',
-        timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000), // 1 hour ago
-        likes: ['user1'],
-        mentions: ['user1'],
-        parentId: '1'
-      },
-      {
-        id: '3',
-        poId,
-        userId: 'user3',
-        userName: 'Priya Sharma',
-        userRole: 'Employee',
-        content: 'The vendor has confirmed they can meet the original timeline. Should we proceed?',
-        timestamp: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
-        likes: [],
-        mentions: []
-      }
-    ];
-    setComments(mockComments);
-  };
+  const { data: commentsResponse, loading, refetch } = useDataFetching(fetchComments);
+  const comments = commentsResponse?.data || [];
+
+  const { execute: executeAddComment, loading: addingComment } = useAsyncOperation(
+    (content: string, parentId?: string) => 
+      commentService.addComment(poId, { uid: user!.uid, name: userData!.name, role: userData!.role }, content, parentId)
+  );
+
+  const { execute: executeUpdateComment } = useAsyncOperation(
+    (commentId: string, content: string) => 
+      commentService.updateComment(commentId, content, { uid: user!.uid, name: userData!.name, role: userData!.role })
+  );
+
+  const { execute: executeDeleteComment } = useAsyncOperation(
+    (commentId: string) => 
+      commentService.deleteComment(commentId, { uid: user!.uid, name: userData!.name, role: userData!.role })
+  );
+
+  const { execute: executeLikeComment } = useAsyncOperation(
+    (commentId: string, isLiking: boolean) => 
+      commentService.likeComment(commentId, user!.uid, isLiking)
+  );
 
   const handleSubmitComment = async () => {
-    if (!newComment.trim() || !user) return;
+    if (!newComment.trim() || !user || !userData) return;
 
-    setLoading(true);
-    try {
-      const comment: Comment = {
-        id: Date.now().toString(),
-        poId,
-        userId: user.uid,
-        userName: userData?.name || 'Unknown User',
-        userRole: userData?.role || 'Employee',
-        content: newComment,
-        timestamp: new Date(),
-        likes: [],
-        mentions: extractMentions(newComment),
-        parentId: replyingTo || undefined
-      };
-
-      // In real app, save to Firestore
-      setComments(prev => [...prev, comment]);
+    const result = await executeAddComment(newComment, replyingTo || undefined);
+    
+    if (result) {
       setNewComment('');
       setReplyingTo(null);
-      
+      await refetch();
       showSuccess('Comment Added', 'Your comment has been posted successfully');
-    } catch (error) {
+    } else {
       showError('Failed to Post Comment', 'Please try again');
-    } finally {
-      setLoading(false);
     }
   };
 
   const handleEditComment = async (commentId: string) => {
-    if (!editContent.trim()) return;
+    if (!editContent.trim() || !user || !userData) return;
 
-    try {
-      setComments(prev => prev.map(comment => 
-        comment.id === commentId 
-          ? { ...comment, content: editContent, isEdited: true }
-          : comment
-      ));
-      
+    const result = await executeUpdateComment(commentId, editContent);
+    
+    if (result) {
       setEditingComment(null);
       setEditContent('');
+      await refetch();
       showSuccess('Comment Updated', 'Your comment has been updated');
-    } catch (error) {
+    } else {
       showError('Failed to Update Comment', 'Please try again');
     }
   };
 
   const handleDeleteComment = async (commentId: string) => {
-    if (!confirm('Are you sure you want to delete this comment?')) return;
+    if (!confirm('Are you sure you want to delete this comment?') || !user || !userData) return;
 
-    try {
-      setComments(prev => prev.filter(comment => comment.id !== commentId));
+    const result = await executeDeleteComment(commentId);
+    
+    if (result) {
+      await refetch();
       showSuccess('Comment Deleted', 'Comment has been removed');
-    } catch (error) {
+    } else {
       showError('Failed to Delete Comment', 'Please try again');
     }
   };
@@ -143,17 +96,16 @@ export default function CommentsSystem({ poId, className = '' }: CommentsSystemP
   const handleLikeComment = async (commentId: string) => {
     if (!user) return;
 
-    try {
-      setComments(prev => prev.map(comment => {
-        if (comment.id === commentId) {
-          const likes = comment.likes.includes(user.uid)
-            ? comment.likes.filter(id => id !== user.uid)
-            : [...comment.likes, user.uid];
-          return { ...comment, likes };
-        }
-        return comment;
-      }));
-    } catch (error) {
+    const comment = comments.find(c => c.id === commentId);
+    if (!comment) return;
+    
+    const isCurrentlyLiked = comment.likes.includes(user.uid);
+    
+    const result = await executeLikeComment(commentId, !isCurrentlyLiked);
+    
+    if (result) {
+      await refetch();
+    } else {
       showError('Failed to Like Comment', 'Please try again');
     }
   };
@@ -168,9 +120,10 @@ export default function CommentsSystem({ poId, className = '' }: CommentsSystemP
     return mentions;
   };
 
-  const formatTimestamp = (timestamp: Date) => {
+  const formatTimestamp = (timestamp: Date | Timestamp) => {
+    const date = timestamp instanceof Date ? timestamp : timestamp.toDate();
     const now = new Date();
-    const diff = now.getTime() - timestamp.getTime();
+    const diff = now.getTime() - date.getTime();
     const minutes = Math.floor(diff / 60000);
     const hours = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);
@@ -179,7 +132,7 @@ export default function CommentsSystem({ poId, className = '' }: CommentsSystemP
     if (minutes < 60) return `${minutes}m ago`;
     if (hours < 24) return `${hours}h ago`;
     if (days < 7) return `${days}d ago`;
-    return timestamp.toLocaleDateString();
+    return date.toLocaleDateString();
   };
 
   const renderComment = (comment: Comment, isReply = false) => {
@@ -211,7 +164,7 @@ export default function CommentsSystem({ poId, className = '' }: CommentsSystemP
                   }`}>
                     {comment.userRole}
                   </span>
-                  <span className="text-xs text-gray-500">{formatTimestamp(comment.timestamp)}</span>
+                  <span className="text-xs text-gray-500">{formatTimestamp(comment.timestamp instanceof Date ? comment.timestamp : comment.timestamp.toDate())}</span>
                   {comment.isEdited && (
                     <span className="text-xs text-gray-400">(edited)</span>
                   )}
@@ -226,7 +179,7 @@ export default function CommentsSystem({ poId, className = '' }: CommentsSystemP
                     <div className="absolute right-0 top-6 bg-white border border-gray-200 rounded-lg shadow-lg py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
                       <button
                         onClick={() => {
-                          setEditingComment(comment.id);
+                          setEditingComment(comment.id || '');
                           setEditContent(comment.content);
                         }}
                         className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
@@ -235,7 +188,7 @@ export default function CommentsSystem({ poId, className = '' }: CommentsSystemP
                         <span>Edit</span>
                       </button>
                       <button
-                        onClick={() => handleDeleteComment(comment.id)}
+                        onClick={() => handleDeleteComment(comment.id || '')}
                         className="flex items-center space-x-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -257,7 +210,7 @@ export default function CommentsSystem({ poId, className = '' }: CommentsSystemP
                   />
                   <div className="flex space-x-2">
                     <button
-                      onClick={() => handleEditComment(comment.id)}
+                      onClick={() => handleEditComment(comment.id || '')}
                       className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
                     >
                       Save
@@ -289,7 +242,7 @@ export default function CommentsSystem({ poId, className = '' }: CommentsSystemP
             {/* Actions */}
             <div className="flex items-center space-x-4 mt-2 text-sm">
               <button
-                onClick={() => handleLikeComment(comment.id)}
+                onClick={() => handleLikeComment(comment.id || '')}
                 className={`flex items-center space-x-1 ${
                   isLiked ? 'text-red-600' : 'text-gray-500 hover:text-red-600'
                 }`}
@@ -300,7 +253,7 @@ export default function CommentsSystem({ poId, className = '' }: CommentsSystemP
 
               {!isReply && (
                 <button
-                  onClick={() => setReplyingTo(comment.id)}
+                  onClick={() => setReplyingTo(comment.id || '')}
                   className="flex items-center space-x-1 text-gray-500 hover:text-blue-600"
                 >
                   <Reply className="w-4 h-4" />
@@ -316,7 +269,7 @@ export default function CommentsSystem({ poId, className = '' }: CommentsSystemP
             }
 
             {/* Reply Form */}
-            {replyingTo === comment.id && (
+            {replyingTo === comment.id && comment.id && (
               <div className="mt-3 ml-12">
                 <div className="flex space-x-3">
                   <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
@@ -391,7 +344,7 @@ export default function CommentsSystem({ poId, className = '' }: CommentsSystemP
                 </span>
                 <button
                   onClick={handleSubmitComment}
-                  disabled={!newComment.trim() || loading}
+                  disabled={!newComment.trim() || addingComment}
                   className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Send className="w-4 h-4" />

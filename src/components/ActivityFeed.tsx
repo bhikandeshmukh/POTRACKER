@@ -1,26 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { Activity, User, FileText, Building2, CheckCircle, XCircle, MessageCircle, Clock, Filter } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-
-interface ActivityItem {
-  id: string;
-  type: 'po_created' | 'po_approved' | 'po_rejected' | 'vendor_added' | 'comment_added' | 'user_login' | 'po_shipped' | 'po_received';
-  user: {
-    id: string;
-    name: string;
-    role: string;
-  };
-  entity?: {
-    type: 'po' | 'vendor' | 'user';
-    id: string;
-    name: string;
-  };
-  description: string;
-  timestamp: Date;
-  metadata?: Record<string, any>;
-}
+import { auditService } from '@/lib/services';
+import { useDataFetching } from '@/hooks/useDataFetching';
+import { ActivityItem } from '@/lib/types';
 
 interface ActivityFeedProps {
   entityType?: 'all' | 'po' | 'vendor' | 'user';
@@ -38,28 +23,42 @@ export default function ActivityFeed({
   className = '' 
 }: ActivityFeedProps) {
   const { user, userData } = useAuth();
-  const [activities, setActivities] = useState<ActivityItem[]>([]);
-  const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState({
     type: 'all' as 'all' | 'po' | 'vendor' | 'user' | 'comment',
     timeRange: 'week' as 'today' | 'week' | 'month' | 'all'
   });
 
-  useEffect(() => {
-    loadActivities();
-  }, [entityType, entityId, filter]);
-
-  const loadActivities = async () => {
-    setLoading(true);
+  const fetchActivities = useCallback(async () => {
+    let auditLogsResult;
     
-    // TODO: Fetch real activities from Firestore audit logs
-    const mockActivities: ActivityItem[] = [];
+    if (entityId) {
+      // Get activities for specific entity
+      auditLogsResult = await auditService.getEntityHistory(entityId, limit);
+    } else if (entityType !== 'all') {
+      // Get activities for specific entity type
+      const entityTypeMap = {
+        'po': 'po',
+        'vendor': 'vendor',
+        'user': 'user'
+      };
+      auditLogsResult = await auditService.getEntityTypeActivity(entityTypeMap[entityType], limit);
+    } else if (userData?.role === 'Employee' && user) {
+      // Employee sees only their activities
+      auditLogsResult = await auditService.getUserActivity(user.uid, limit);
+    } else {
+      // Admin/Manager sees all activities
+      auditLogsResult = await auditService.findMany({ limit, orderBy: 'timestamp', orderDirection: 'desc' });
+    }
+    
+    if (!auditLogsResult.success) {
+      return { success: false, error: auditLogsResult.error };
+    }
+
+    let activities = auditService.convertToActivityItems(auditLogsResult.data?.data || []);
 
     // Apply filters
-    let filteredActivities = mockActivities;
-
     if (filter.type !== 'all') {
-      filteredActivities = filteredActivities.filter(activity => {
+      activities = activities.filter(activity => {
         if (filter.type === 'po') return activity.type.startsWith('po_');
         if (filter.type === 'vendor') return activity.type.startsWith('vendor_');
         if (filter.type === 'user') return activity.type.startsWith('user_');
@@ -84,26 +83,18 @@ export default function ActivityFeed({
           break;
       }
       
-      filteredActivities = filteredActivities.filter(activity => 
+      activities = activities.filter(activity => 
         activity.timestamp >= cutoff
       );
     }
 
-    if (entityType !== 'all') {
-      filteredActivities = filteredActivities.filter(activity => 
-        activity.entity?.type === entityType
-      );
-    }
+    return { success: true, data: activities.slice(0, limit) };
+  }, [entityType, entityId, limit, userData?.role, user, filter]);
 
-    if (entityId) {
-      filteredActivities = filteredActivities.filter(activity => 
-        activity.entity?.id === entityId
-      );
-    }
-
-    setActivities(filteredActivities.slice(0, limit));
-    setLoading(false);
-  };
+  const { data: activities, loading, error } = useDataFetching(
+    fetchActivities,
+    { dependencies: [filter] }
+  );
 
   const getActivityIcon = (type: string) => {
     switch (type) {
@@ -172,7 +163,7 @@ export default function ActivityFeed({
         <div className="flex items-center space-x-2">
           <Activity className="w-5 h-5 text-blue-600" />
           <h3 className="text-lg font-semibold text-gray-900">Activity Feed</h3>
-          <span className="text-sm text-gray-500">({activities.length} activities)</span>
+          <span className="text-sm text-gray-500">({activities?.length || 0} activities)</span>
         </div>
 
         {showFilters && (
@@ -210,9 +201,9 @@ export default function ActivityFeed({
             <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
             <span className="ml-2 text-gray-600">Loading activities...</span>
           </div>
-        ) : activities.length > 0 ? (
+        ) : activities && activities.length > 0 ? (
           <div className="space-y-4">
-            {activities.map((activity, index) => (
+            {(activities || []).map((activity, index) => (
               <div key={activity.id} className="relative">
                 {/* Timeline line */}
                 {index < activities.length - 1 && (

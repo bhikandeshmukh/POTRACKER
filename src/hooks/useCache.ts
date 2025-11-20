@@ -126,6 +126,7 @@ export function useCache<T>(
   // Initial fetch
   useEffect(() => {
     fetchData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchData, ...dependencies]);
 
   return {

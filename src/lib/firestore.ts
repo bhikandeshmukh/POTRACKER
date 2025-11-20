@@ -1,3 +1,7 @@
+// Legacy firestore.ts - DEPRECATED
+// Use services from @/lib/services instead
+// This file is kept for backward compatibility only
+
 import { 
   collection, 
   addDoc, 
@@ -15,135 +19,37 @@ import {
   serverTimestamp
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { logAuditEvent } from './auditLogs';
+import { auditService } from './services';
 import { logger } from './logger';
 import { DatabaseError, NotFoundError } from './errors';
 
-export interface User {
-  email: string;
-  name: string;
-  role: 'Admin' | 'Manager' | 'Employee';
-  uid?: string; // Firebase UID for reference
-}
+// Re-export types for backward compatibility
+export type {
+  User,
+  Vendor,
+  Transporter,
+  ReturnOrderItem,
+  ReturnOrder,
+  LineItem,
+  Shipment,
+  ShipmentLineItem,
+  PurchaseOrder,
+  AuditLog
+};
 
-export interface Vendor {
-  id?: string;
-  name: string;
-  contactPerson: string;
-  phone: string;
-  email?: string;
-  gst?: string;
-  address?: string;
-}
-
-export interface Transporter {
-  id?: string;
-  name: string;
-  contactPerson: string;
-  phone: string;
-  email?: string;
-  vehicleNumber?: string;
-  vehicleType?: string;
-  driverName?: string;
-  driverPhone?: string;
-  address?: string;
-  gst?: string;
-  panNumber?: string;
-  active?: boolean;
-  createdAt?: any;
-  updatedAt?: any;
-}
-
-export interface ReturnOrderItem {
-  itemName: string;
-  barcode?: string;
-  sku?: string;
-  size?: string;
-  returnQty: number;
-  unitPrice: number;
-  total: number;
-  reason: string;
-  condition?: 'Damaged' | 'Defective' | 'Wrong Item' | 'Excess' | 'Other';
-}
-
-export interface ReturnOrder {
-  id?: string;
-  roNumber: string;
-  poNumber: string;
-  poId: string;
-  vendorId: string;
-  vendorName: string;
-  returnDate: Timestamp;
-  totalAmount: number;
-  status: 'Pending' | 'Approved' | 'Rejected' | 'Completed';
-  createdBy_uid: string;
-  createdBy_name: string;
-  approvedBy_uid?: string;
-  approvedBy_name?: string;
-  lineItems: ReturnOrderItem[];
-  notes?: string;
-  createdAt?: any;
-  updatedAt?: any;
-}
-
-export interface LineItem {
-  itemName: string;
-  barcode?: string;
-  sku?: string;
-  size?: string;
-  quantity: number;
-  unitPrice: number;
-  total: number;
-  sentQty?: number;
-  pendingQty?: number;
-  receivedQty?: number;
-}
-
-export interface Shipment {
-  id?: string;
-  poNumber: string;
-  appointmentId: string;
-  invoiceNumber: string;
-  shipmentDate: Timestamp;
-  expectedDeliveryDate?: Timestamp;
-  actualDeliveryDate?: Timestamp;
-  status: 'Prepared' | 'Shipped' | 'In Transit' | 'Delivered' | 'Cancelled';
-  carrier?: string;
-  trackingNumber?: string;
-  notes?: string;
-  createdBy_uid: string;
-  createdBy_name: string;
-  lineItems: ShipmentLineItem[];
-  totalAmount: number;
-}
-
-export interface ShipmentLineItem {
-  itemName: string;
-  barcode?: string;
-  sku?: string;
-  size?: string;
-  shippedQty: number;
-  unitPrice: number;
-  total: number;
-}
-
-export interface PurchaseOrder {
-  id?: string;
-  poNumber: string;
-  vendorId: string;
-  vendorName: string;
-  orderDate: Timestamp;
-  expectedDeliveryDate: Timestamp;
-  totalAmount: number;
-  status: 'Pending' | 'Approved' | 'Rejected' | 'Shipped' | 'Received' | 'Partial';
-  createdBy_uid: string;
-  createdBy_name: string;
-  approvedBy_uid?: string;
-  lineItems: LineItem[];
-  shipments?: Shipment[];
-  totalShippedAmount?: number;
-  totalReceivedAmount?: number;
-}
+// Import types from centralized location
+import type {
+  User,
+  Vendor,
+  Transporter,
+  ReturnOrderItem,
+  ReturnOrder,
+  LineItem,
+  Shipment,
+  ShipmentLineItem,
+  PurchaseOrder,
+  AuditLog
+} from './types';
 
 // Generate PO Number
 export const generatePONumber = async (): Promise<string> => {
@@ -170,9 +76,10 @@ export const addVendor = async (vendor: Omit<Vendor, 'id'>, userId?: string, use
     
     // Log audit event
     if (userId && userEmail) {
-      await logAuditEvent(
+      await auditService.logEvent(
         userId,
         userEmail,
+        'Unknown', // userRole - should be passed from caller
         'create',
         'vendor',
         docId,
@@ -211,9 +118,10 @@ export const updateVendor = async (id: string, vendor: Partial<Vendor>, userId?:
     
     // Log audit event
     if (userId && userEmail && vendor.name) {
-      await logAuditEvent(
+      await auditService.logEvent(
         userId,
         userEmail,
+        'Unknown', // userRole - should be passed from caller
         'update',
         'vendor',
         id,
@@ -232,9 +140,10 @@ export const deleteVendor = async (id: string, userId?: string, userEmail?: stri
     
     // Log audit event
     if (userId && userEmail && vendorName) {
-      await logAuditEvent(
+      await auditService.logEvent(
         userId,
         userEmail,
+        'Unknown', // userRole - should be passed from caller
         'delete',
         'vendor',
         id,
@@ -386,9 +295,10 @@ export const addTransporter = async (transporter: Omit<Transporter, 'id'>, userI
     
     // Log audit event
     if (userId && userEmail) {
-      await logAuditEvent(
+      await auditService.logEvent(
         userId,
         userEmail,
+        'Unknown', // userRole - should be passed from caller
         'create',
         'transporter',
         docId,
@@ -436,9 +346,10 @@ export const updateTransporter = async (id: string, transporter: Partial<Transpo
     
     // Log audit event
     if (userId && userEmail && transporter.name) {
-      await logAuditEvent(
+      await auditService.logEvent(
         userId,
         userEmail,
+        'Unknown', // userRole - should be passed from caller
         'update',
         'transporter',
         id,
@@ -457,9 +368,10 @@ export const deleteTransporter = async (id: string, userId?: string, userEmail?:
     
     // Log audit event
     if (userId && userEmail && transporterName) {
-      await logAuditEvent(
+      await auditService.logEvent(
         userId,
         userEmail,
+        'Unknown', // userRole - should be passed from caller
         'delete',
         'transporter',
         id,
@@ -492,9 +404,10 @@ export const createReturnOrder = async (ro: Omit<ReturnOrder, 'id' | 'roNumber'>
   const docRef = await addDoc(collection(db, 'returnOrders'), roData);
   
   // Log audit event
-  await logAuditEvent(
+  await auditService.logEvent(
     ro.createdBy_uid,
     ro.createdBy_name,
+    'Unknown', // userRole - should be passed from caller
     'create',
     'ro',
     docRef.id,
@@ -568,9 +481,10 @@ export const updateReturnOrderStatus = async (
     
     // Log audit event
     if (approvedBy) {
-      await logAuditEvent(
+      await auditService.logEvent(
         approvedBy.uid,
         approvedBy.name,
+        'Unknown', // userRole - should be passed from caller
         'update',
         'ro',
         id,
@@ -601,9 +515,10 @@ export const deleteReturnOrder = async (id: string, userId?: string, userName?: 
     
     // Log audit event
     if (userId && userName) {
-      await logAuditEvent(
+      await auditService.logEvent(
         userId,
         userName,
+        'Unknown', // userRole - should be passed from caller
         'delete',
         'ro',
         id,
@@ -615,21 +530,7 @@ export const deleteReturnOrder = async (id: string, userId?: string, userName?: 
   }
 };
 
-// Audit Log Interface
-export interface AuditLog {
-  id?: string;
-  action: 'create' | 'update' | 'delete' | 'approve' | 'reject';
-  entityType: 'user' | 'vendor' | 'po';
-  entityId: string;
-  entityName: string;
-  userId: string;
-  userName: string;
-  userRole: string;
-  changes?: Record<string, { old: any; new: any }>;
-  timestamp: Timestamp;
-  ipAddress?: string;
-  userAgent?: string;
-}
+// AuditLog type is now imported from types.ts
 
 // Audit Log Operations
 export const createAuditLog = async (log: Omit<AuditLog, 'id' | 'timestamp'>) => {
@@ -674,23 +575,24 @@ export const createUser = async (uid: string, user: User) => {
   const result = await setDoc(userRef, userData);
   
   // Create audit log
-  await createAuditLog({
-    action: 'create',
-    entityType: 'user',
-    entityId: docId,
-    entityName: user.name,
-    userId: uid,
-    userName: user.name,
-    userRole: user.role || 'Unknown'
-  });
+  await auditService.logEvent(
+    uid,
+    user.name,
+    user.role || 'Unknown',
+    'create',
+    'user',
+    docId,
+    user.name,
+    `Created user ${user.name} with role ${user.role}`
+  );
   
   return result;
 };
 
 export const getUser = async (uid: string): Promise<User | null> => {
   // First try to get by UID (for backward compatibility)
-  let docRef = doc(db, 'users', uid);
-  let docSnap = await getDoc(docRef);
+  const docRef = doc(db, 'users', uid);
+  const docSnap = await getDoc(docRef);
   
   if (docSnap.exists()) {
     return docSnap.data() as User;
@@ -748,7 +650,7 @@ export const createShipment = async (poNumber: string, shipmentData: Omit<Shipme
       ...shipmentData,
       id: shipmentId,
       poNumber,
-      createdAt: serverTimestamp(),
+      createdAt: serverTimestamp() as Timestamp,
     };
     
     await setDoc(shipmentRef, shipmentWithId);

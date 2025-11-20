@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Clock, User, FileText, Edit, Trash, Plus, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
+import { getAuditLogs, AuditLog } from '@/lib/auditLogs';
 
 interface VersionHistoryEntry {
   id: string;
@@ -10,7 +11,7 @@ interface VersionHistoryEntry {
   userId: string;
   userName: string;
   userRole: string;
-  action: 'created' | 'updated' | 'deleted' | 'approved' | 'rejected';
+  action: 'create' | 'update' | 'delete' | 'approve' | 'reject' | 'login' | 'logout' | 'comment' | 'ship' | 'receive';
   changes: {
     field: string;
     oldValue: any;
@@ -37,65 +38,51 @@ export default function VersionHistory({ entityId, entityType, onRestore }: Vers
   const loadVersionHistory = async () => {
     setLoading(true);
     
-    // Mock data - replace with actual Firestore query
-    const mockVersions: VersionHistoryEntry[] = [
-      {
-        id: '1',
-        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-        userId: 'user1',
-        userName: 'Rajesh Kumar',
-        userRole: 'Manager',
-        action: 'updated',
-        changes: [
-          { field: 'status', oldValue: 'Pending', newValue: 'Approved' },
-          { field: 'totalAmount', oldValue: 50000, newValue: 55000 }
-        ],
-        description: 'Updated PO status and amount'
-      },
-      {
-        id: '2',
-        timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
-        userId: 'user2',
-        userName: 'Priya Sharma',
-        userRole: 'Employee',
-        action: 'updated',
-        changes: [
-          { field: 'vendorName', oldValue: 'ABC Corp', newValue: 'ABC Technologies' }
-        ],
-        description: 'Updated vendor name'
-      },
-      {
-        id: '3',
-        timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-        userId: 'user2',
-        userName: 'Priya Sharma',
-        userRole: 'Employee',
-        action: 'created',
-        changes: [],
-        description: 'Created purchase order'
-      }
-    ];
+    try {
+      const auditLogs = await getAuditLogs(entityId, entityType, undefined, 50);
+      
+      const versionEntries: VersionHistoryEntry[] = auditLogs.map(log => ({
+        id: log.id || '',
+        timestamp: log.timestamp.toDate(),
+        userId: log.userId,
+        userName: log.userName,
+        userRole: log.userRole,
+        action: log.action,
+        changes: log.changes ? Object.entries(log.changes).map(([field, change]) => ({
+          field,
+          oldValue: change.old,
+          newValue: change.new
+        })) : [],
+        description: log.description
+      }));
 
-    setVersions(mockVersions);
-    setLoading(false);
+      setVersions(versionEntries);
+    } catch (error) {
+      console.error('Failed to load version history:', error);
+      setVersions([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getActionIcon = (action: string) => {
     switch (action) {
-      case 'created': return <Plus className="w-4 h-4" />;
-      case 'updated': return <Edit className="w-4 h-4" />;
-      case 'deleted': return <Trash className="w-4 h-4" />;
-      case 'approved': return <CheckCircle className="w-4 h-4" />;
+      case 'create': return <Plus className="w-4 h-4" />;
+      case 'update': return <Edit className="w-4 h-4" />;
+      case 'delete': return <Trash className="w-4 h-4" />;
+      case 'approve': return <CheckCircle className="w-4 h-4" />;
+      case 'reject': return <Trash className="w-4 h-4" />;
       default: return <FileText className="w-4 h-4" />;
     }
   };
 
   const getActionColor = (action: string) => {
     switch (action) {
-      case 'created': return 'bg-green-50 text-green-600 border-green-200';
-      case 'updated': return 'bg-blue-50 text-blue-600 border-blue-200';
-      case 'deleted': return 'bg-red-50 text-red-600 border-red-200';
-      case 'approved': return 'bg-purple-50 text-purple-600 border-purple-200';
+      case 'create': return 'bg-green-50 text-green-600 border-green-200';
+      case 'update': return 'bg-blue-50 text-blue-600 border-blue-200';
+      case 'delete': return 'bg-red-50 text-red-600 border-red-200';
+      case 'approve': return 'bg-purple-50 text-purple-600 border-purple-200';
+      case 'reject': return 'bg-red-50 text-red-600 border-red-200';
       default: return 'bg-gray-50 text-gray-600 border-gray-200';
     }
   };
@@ -189,7 +176,7 @@ export default function VersionHistory({ entityId, entityType, onRestore }: Vers
                   </div>
                 )}
 
-                {onRestore && version.action !== 'created' && (
+                {onRestore && version.action !== 'create' && (
                   <button
                     onClick={() => onRestore(version.id)}
                     className="mt-3 text-sm text-blue-600 hover:text-blue-800 font-medium"

@@ -1,20 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { Clock, FileText, User, Package, CheckCircle, XCircle, Truck, MessageCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
-
-interface Activity {
-  id: string;
-  type: 'po_created' | 'po_updated' | 'po_approved' | 'po_rejected' | 'shipment_created' | 'comment_added';
-  title: string;
-  description: string;
-  timestamp: Date;
-  entityId?: string;
-  entityType?: 'po' | 'vendor' | 'shipment';
-  metadata?: Record<string, any>;
-}
+import { auditService } from '@/lib/services';
+import { useDataFetching } from '@/hooks/useDataFetching';
+import { ActivityItem } from '@/lib/types';
 
 interface RecentActivityProps {
   userId?: string;
@@ -24,34 +16,36 @@ interface RecentActivityProps {
 
 export default function RecentActivity({ userId, limit = 10, showFilters = true }: RecentActivityProps) {
   const { user, userData } = useAuth();
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'po' | 'shipment' | 'comment'>('all');
 
-  useEffect(() => {
-    loadActivities();
-  }, [userId, filter]);
-
-  const loadActivities = async () => {
-    setLoading(true);
-
-    // TODO: Fetch real activities from Firestore audit logs
-    const mockActivities: Activity[] = [];
-
-    // Filter activities
-    let filtered = mockActivities;
-    if (filter !== 'all') {
-      filtered = mockActivities.filter(activity => {
-        if (filter === 'po') return activity.type.startsWith('po_');
-        if (filter === 'shipment') return activity.type === 'shipment_created';
-        if (filter === 'comment') return activity.type === 'comment_added';
-        return true;
-      });
+  const fetchActivities = useCallback(async () => {
+    const targetUserId = userId || (userData?.role === 'Employee' ? user?.uid : undefined);
+    
+    let auditLogs;
+    if (userData?.role === 'Employee' && targetUserId) {
+      const result = await auditService.getUserActivity(targetUserId, limit);
+      auditLogs = result.success ? result.data?.data || [] : [];
+    } else if (filter !== 'all') {
+      const entityTypeMap = {
+        'po': 'po',
+        'shipment': 'shipment',
+        'comment': 'comment'
+      };
+      const result = await auditService.getEntityTypeActivity(entityTypeMap[filter], limit);
+      auditLogs = result.success ? result.data?.data || [] : [];
+    } else {
+      const result = await auditService.findMany({ limit, orderBy: 'timestamp', orderDirection: 'desc' });
+      auditLogs = result.success ? result.data?.data || [] : [];
     }
+    
+    const activities = auditService.convertToActivityItems(auditLogs);
+    return { success: true, data: activities };
+  }, [userId, userData?.role, user?.uid, limit, filter]);
 
-    setActivities(filtered.slice(0, limit));
-    setLoading(false);
-  };
+  const { data: activities, loading, error, refetch } = useDataFetching(
+    fetchActivities,
+    { dependencies: [filter] }
+  );
 
   const getActivityIcon = (type: string) => {
     switch (type) {
@@ -149,13 +143,13 @@ export default function RecentActivity({ userId, limit = 10, showFilters = true 
       </div>
 
       <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
-        {activities.map((activity, index) => (
+        {(activities || []).map((activity, index) => (
           <div
             key={activity.id}
             className="p-4 hover:bg-gray-50 transition-colors cursor-pointer"
             onClick={() => {
-              if (activity.entityId && activity.entityType === 'po') {
-                window.location.href = `/pos/${activity.entityId}`;
+              if (activity.entity?.id && activity.entity?.type === 'po') {
+                window.location.href = `/pos/${activity.entity.id}`;
               }
             }}
           >
@@ -166,21 +160,29 @@ export default function RecentActivity({ userId, limit = 10, showFilters = true 
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1">
-                  <p className="text-sm font-medium text-gray-900">{activity.title}</p>
+                  <p className="text-sm font-medium text-gray-900">{activity.user.name}</p>
                   <span className="text-xs text-gray-500">{formatTimestamp(activity.timestamp)}</span>
                 </div>
                 <p className="text-sm text-gray-600">{activity.description}</p>
                 
+                {activity.entity && (
+                  <div className="flex items-center space-x-2 mt-2">
+                    <span className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded">
+                      {activity.entity.name}
+                    </span>
+                  </div>
+                )}
+                
                 {activity.metadata && (
                   <div className="flex items-center space-x-2 mt-2">
-                    {activity.metadata.poNumber && (
-                      <span className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded">
-                        {activity.metadata.poNumber}
-                      </span>
-                    )}
                     {activity.metadata.amount && (
                       <span className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded">
                         ₹{activity.metadata.amount.toLocaleString()}
+                      </span>
+                    )}
+                    {activity.metadata.reason && (
+                      <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-700 rounded">
+                        {activity.metadata.reason}
                       </span>
                     )}
                   </div>
@@ -191,14 +193,14 @@ export default function RecentActivity({ userId, limit = 10, showFilters = true 
         ))}
       </div>
 
-      {activities.length === 0 && (
+      {(!activities || activities.length === 0) && !loading && (
         <div className="text-center p-8 text-gray-500">
           <Clock className="w-8 h-8 mx-auto mb-2 text-gray-300" />
           <p>No recent activity</p>
         </div>
       )}
 
-      {activities.length > 0 && (
+      {activities && activities.length > 0 && (
         <div className="p-3 border-t border-gray-200 bg-gray-50">
           <button
             onClick={() => window.location.href = '/activity'}

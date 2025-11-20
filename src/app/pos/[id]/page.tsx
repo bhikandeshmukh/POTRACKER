@@ -7,6 +7,7 @@ import Navbar from '@/components/Navbar';
 import Sidebar from '@/components/Sidebar';
 import StatusBadge from '@/components/StatusBadge';
 import { getPO, updatePOStatus, PurchaseOrder } from '@/lib/firestore';
+import { logPOStatusChange } from '@/lib/auditLogs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { CheckCircle, XCircle, Truck, Package, Mail, ChevronLeft, ChevronRight, Settings, Eye, EyeOff, RotateCcw } from 'lucide-react';
@@ -119,7 +120,14 @@ export default function PoDetailPage() {
 
   // REGULAR FUNCTIONS AFTER ALL HOOKS
   const handleStatusUpdate = async (status: PurchaseOrder['status']) => {
-    if (!po || !user) return;
+    if (!po || !user || !userData) return;
+    
+    const oldStatus = po.status;
+    const reason = status === 'Rejected' ? prompt('Please provide a reason for rejection:') : undefined;
+    
+    if (status === 'Rejected' && !reason) {
+      return; // User cancelled
+    }
     
     setUpdating(true);
     try {
@@ -128,6 +136,18 @@ export default function PoDetailPage() {
         status,
         userId: user.uid,
       });
+
+      // Log the status change
+      await logPOStatusChange(
+        po.id || po.poNumber,
+        po.poNumber,
+        oldStatus,
+        status,
+        user.uid,
+        userData.name,
+        userData.role,
+        reason || undefined
+      );
     } catch (error) {
       console.error('Error updating status:', error);
       alert('Failed to update status');

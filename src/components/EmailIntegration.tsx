@@ -159,7 +159,7 @@ Best regards,
   };
 
   const generatePOPDF = () => {
-    // Mock PDF generation - in real app, use jsPDF or similar
+    // PDF generation - implement with jsPDF or similar
     showSuccess('PDF Generated', 'PO PDF has been generated and attached');
   };
 

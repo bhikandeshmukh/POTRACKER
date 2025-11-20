@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Search, X, FileText, Users, Package } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { getPOs, getVendors, getAllUsers } from '@/lib/firestore';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface SearchResult {
   id: string;
@@ -19,8 +21,8 @@ export default function GlobalSearch() {
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+  const { user, userData } = useAuth();
 
-  // Mock search function - replace with actual API call
   const performSearch = async (searchQuery: string) => {
     if (!searchQuery.trim()) {
       setResults([]);
@@ -29,32 +31,78 @@ export default function GlobalSearch() {
 
     setLoading(true);
     
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    // Mock results
-    const mockResults = [
-      {
-        id: '1',
-        type: 'po' as const,
-        title: `PO-2024-001`,
-        subtitle: 'ABC Company - ₹50,000',
-        url: '/pos/1'
-      },
-      {
-        id: '2',
-        type: 'vendor' as const,
-        title: 'ABC Technologies',
-        subtitle: 'Vendor - GST: 22AAAAA0000A1Z5',
-        url: '/vendors'
-      }
-    ].filter(item => 
-      item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.subtitle.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    try {
+      const searchResults: SearchResult[] = [];
+      const searchLower = searchQuery.toLowerCase();
 
-    setResults(mockResults);
-    setLoading(false);
+      // Search POs
+      const pos = await getPOs(
+        userData?.role === 'Employee' ? user?.uid : undefined,
+        userData?.role,
+        20
+      );
+      
+      pos.forEach(po => {
+        if (
+          po.poNumber.toLowerCase().includes(searchLower) ||
+          po.vendorName.toLowerCase().includes(searchLower)
+        ) {
+          searchResults.push({
+            id: po.id || '',
+            type: 'po',
+            title: po.poNumber,
+            subtitle: `${po.vendorName} - ₹${po.totalAmount.toLocaleString()} - ${po.status}`,
+            url: `/pos/${po.id}`
+          });
+        }
+      });
+
+      // Search Vendors (only for Admin/Manager)
+      if (userData?.role !== 'Employee') {
+        const vendors = await getVendors();
+        vendors.forEach(vendor => {
+          if (
+            vendor.name.toLowerCase().includes(searchLower) ||
+            vendor.contactPerson.toLowerCase().includes(searchLower) ||
+            (vendor.gst && vendor.gst.toLowerCase().includes(searchLower))
+          ) {
+            searchResults.push({
+              id: vendor.id || '',
+              type: 'vendor',
+              title: vendor.name,
+              subtitle: `${vendor.contactPerson} - ${vendor.phone}${vendor.gst ? ` - GST: ${vendor.gst}` : ''}`,
+              url: '/vendors'
+            });
+          }
+        });
+
+        // Search Users (only for Admin)
+        if (userData?.role === 'Admin') {
+          const users = await getAllUsers();
+          users.forEach(user => {
+            if (
+              user.name.toLowerCase().includes(searchLower) ||
+              user.email.toLowerCase().includes(searchLower)
+            ) {
+              searchResults.push({
+                id: user.id,
+                type: 'user',
+                title: user.name,
+                subtitle: `${user.email} - ${user.role}`,
+                url: '/admin/users'
+              });
+            }
+          });
+        }
+      }
+
+      setResults(searchResults.slice(0, 10)); // Limit to 10 results
+    } catch (error) {
+      console.error('Search error:', error);
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {

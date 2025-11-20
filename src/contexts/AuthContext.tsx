@@ -10,6 +10,7 @@ import {
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { getUser, getUserByEmail, createUser, User } from '@/lib/firestore';
+import { logUserLogin } from '@/lib/auditLogs';
 
 interface AuthContextType {
   user: FirebaseUser | null;
@@ -43,7 +44,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
           
           setUserData(data);
+          
+          // Log user login (only on successful authentication)
+          if (data) {
+            await logUserLogin(user.uid, data.name, data.role);
+          }
         } catch (error) {
+          console.error('Error fetching user data:', error);
           setUserData(null);
         }
       } else {
