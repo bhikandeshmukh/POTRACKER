@@ -6,8 +6,8 @@ import { useRouter, useParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Sidebar from '@/components/Sidebar';
 import StatusBadge from '@/components/StatusBadge';
-import { getPO, updatePOStatus, PurchaseOrder } from '@/lib/firestore';
-import { logPOStatusChange } from '@/lib/auditLogs';
+import { poService } from '@/lib/services';
+import { PurchaseOrder } from '@/lib/types';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { CheckCircle, XCircle, Truck, Package, Mail, ChevronLeft, ChevronRight, Settings, Eye, EyeOff, RotateCcw } from 'lucide-react';
@@ -25,17 +25,39 @@ export default function PoDetailPage() {
   const [updating, setUpdating] = useState(false);
 
   // Use React Query for PO data with caching
-  const { data: po, isLoading: loadingData, refetch } = useQuery({
+  const { data: poResult, isLoading: loadingData, refetch } = useQuery({
     queryKey: ['po', params.id],
-    queryFn: () => getPO(params.id as string),
+    queryFn: async () => {
+      const result = await poService.findById(params.id as string);
+      return result.success ? result.data : null;
+    },
     enabled: !!params.id,
     staleTime: 2 * 60 * 1000, // 2 minutes for detail page
   });
 
+  const po = poResult;
+
   // Mutation for updating PO status
   const updateStatusMutation = useMutation({
-    mutationFn: ({ poNumber, status, userId }: { poNumber: string; status: PurchaseOrder['status']; userId: string }) =>
-      updatePOStatus(poNumber, status, userId),
+    mutationFn: async ({ poId, status }: { poId: string; status: PurchaseOrder['status'] }) => {
+      if (!userData) throw new Error('User not authenticated');
+      
+      const result = await poService.updateStatus(
+        poId,
+        status,
+        {
+          uid: userData.uid,
+          name: userData.name,
+          role: userData.role
+        }
+      );
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to update status');
+      }
+      
+      return result.data;
+    },
     onSuccess: () => {
       // Invalidate and refetch
       queryClient.invalidateQueries({ queryKey: ['po', params.id] });
@@ -132,22 +154,11 @@ export default function PoDetailPage() {
     setUpdating(true);
     try {
       await updateStatusMutation.mutateAsync({
-        poNumber: po.poNumber,
+        poId: po.id || params.id as string,
         status,
-        userId: user.uid,
       });
 
-      // Log the status change
-      await logPOStatusChange(
-        po.id || po.poNumber,
-        po.poNumber,
-        oldStatus,
-        status,
-        user.uid,
-        userData.name,
-        userData.role,
-        reason || undefined
-      );
+      // Audit logging is now handled automatically by the service
     } catch (error) {
       console.error('Error updating status:', error);
       alert('Failed to update status');

@@ -37,7 +37,7 @@ export default function PoTable({ pos, onRefresh }: PoTableProps) {
     if (!userData) return;
     
     try {
-      const result = await poService.updatePOStatus(
+      const result = await poService.updateStatus(
         poId,
         newStatus,
         {
