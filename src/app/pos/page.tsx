@@ -14,6 +14,7 @@ import DataImportExport from '@/components/DataImportExport';
 import AdvancedSearch from '@/components/AdvancedSearch';
 import AdvancedFilters, { FilterConfig } from '@/components/AdvancedFilters';
 import ExportOptions from '@/components/ExportOptions';
+import ExcelExportButton from '@/components/ExcelExportButton';
 import Pagination, { usePagination } from '@/components/Pagination';
 import ModernButton from '@/components/ModernButton';
 import { getThemeClasses } from '@/styles/theme';
@@ -161,6 +162,15 @@ export default function PosPage() {
                 filters={filterConfigs}
                 selectedFilters={selectedFilters}
                 onFiltersChange={setSelectedFilters}
+              />
+
+              {/* Excel Export */}
+              <ExcelExportButton
+                pos={pos}
+                filteredPOs={filteredPOs}
+                filters={selectedFilters}
+                variant="dropdown"
+                size="md"
               />
 
               {/* Export Options */}

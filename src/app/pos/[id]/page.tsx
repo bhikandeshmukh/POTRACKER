@@ -14,6 +14,7 @@ import { CheckCircle, XCircle, Truck, Package, Mail, ChevronLeft, ChevronRight, 
 import CommentsSystem from '@/components/CommentsSystem';
 import EmailIntegration from '@/components/EmailIntegration';
 import ShipmentManagement from '@/components/ShipmentManagement';
+import ExcelExportButton from '@/components/ExcelExportButton';
 import { getThemeClasses } from '@/styles/theme';
 
 export default function PoDetailPage() {
@@ -268,6 +269,13 @@ export default function PoDetailPage() {
             
             {/* Action Buttons */}
             <div className="flex items-center space-x-3">
+              {/* Excel Export Button */}
+              <ExcelExportButton
+                po={po}
+                variant="single"
+                size="md"
+              />
+
               <button
                 onClick={() => setShowEmailModal(true)}
                 className={`flex items-center space-x-2 ${getThemeClasses.buttonPadding()} ${getThemeClasses.button('primary')}`}
