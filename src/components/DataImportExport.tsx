@@ -55,11 +55,11 @@ export default function DataImportExport({ type, isOpen, onClose, onImportComple
   ];
 
   const poTemplate = [
-    ['PO Number', 'Vendor Name', 'Order Date', 'Delivery Date', 'Barcode', 'SKU', 'Size', 'Order Qty', 'Item Price', 'Sent Qty', 'Pending Qty', 'Line Total'],
-    ['PO-2024-001', 'ABC Electronics Ltd', '15/01/2024', '30/01/2024', 'DELL123456789ABC', 'DELL-INS-15', '15 inch', '100', '25000', '0', '100', '2500000'],
-    ['PO-2024-001', 'ABC Electronics Ltd', '15/01/2024', '30/01/2024', 'MOUSE-WL-789XYZ', 'MOUSE-WL-01', 'Standard', '200', '500', '0', '200', '100000'],
-    ['PO-2024-002', 'XYZ Suppliers', '16/01/2024', '01/02/2024', 'CHAIR456789DEF', 'CHAIR-EXE-BLK', 'Large', '50', '3000', '0', '50', '150000'],
-    ['PO-2024-002', 'XYZ Suppliers', '16/01/2024', '01/02/2024', 'DESK-OFF-123GHI', 'DESK-OFF-WD', '4x2 feet', '25', '8000', '0', '25', '200000'],
+    ['PO Number', 'Vendor Name', 'Order Date', 'Delivery Date', 'Barcode', 'SKU', 'Size', 'Order Qty', 'Item Price', 'Sent Qty', 'Pending Qty', 'Line Total', 'Warehouse'],
+    ['PO-2024-001', 'ABC Electronics Ltd', '15/01/2024', '30/01/2024', 'DELL123456789ABC', 'DELL-INS-15', '15 inch', '100', '25000', '0', '100', '2500000', 'Main Warehouse'],
+    ['PO-2024-001', 'ABC Electronics Ltd', '15/01/2024', '30/01/2024', 'MOUSE-WL-789XYZ', 'MOUSE-WL-01', 'Standard', '200', '500', '0', '200', '100000', 'Main Warehouse'],
+    ['PO-2024-002', 'XYZ Suppliers', '16/01/2024', '01/02/2024', 'CHAIR456789DEF', 'CHAIR-EXE-BLK', 'Large', '50', '3000', '0', '50', '150000', 'Distribution Center'],
+    ['PO-2024-002', 'XYZ Suppliers', '16/01/2024', '01/02/2024', 'DESK-OFF-123GHI', 'DESK-OFF-WD', '4x2 feet', '25', '8000', '0', '25', '200000', 'Storage Facility'],
   ];
 
   const shipmentTemplate = [
@@ -331,6 +331,7 @@ export default function DataImportExport({ type, isOpen, onClose, onImportComple
               barcode: row[4],
               sku: row[5],
               size: row[6] || '',
+              warehouse: row[12] || 'Main Warehouse', // New warehouse field
               quantity: orderQty,
               unitPrice: itemPrice,
               total: lineTotal,
@@ -731,7 +732,7 @@ export default function DataImportExport({ type, isOpen, onClose, onImportComple
         const pos = await getPOs(user.uid, userData?.role);
         
         const exportData = [
-          ['PO Number', 'Vendor Name', 'Order Date', 'Delivery Date', 'Status', 'Item Name', 'Barcode', 'SKU', 'Size', 'Order Qty', 'Item Price', 'Sent Qty', 'Pending Qty', 'Line Total']
+          ['PO Number', 'Vendor Name', 'Order Date', 'Delivery Date', 'Status', 'Item Name', 'Barcode', 'SKU', 'Size', 'Warehouse', 'Order Qty', 'Item Price', 'Sent Qty', 'Pending Qty', 'Line Total']
         ];
         
         // Convert POs to CSV rows (each line item becomes a row)
@@ -751,6 +752,7 @@ export default function DataImportExport({ type, isOpen, onClose, onImportComple
                 item.barcode || '',
                 item.sku || '',
                 item.size || '',
+                item.warehouse || 'Main Warehouse',
                 item.quantity?.toString() || '0',
                 item.unitPrice?.toString() || '0',
                 item.sentQty?.toString() || '0',
@@ -766,7 +768,7 @@ export default function DataImportExport({ type, isOpen, onClose, onImportComple
               orderDate,
               deliveryDate,
               po.status || '',
-              '', '', '', '', '0', '0', '0', '0', '0'
+              '', '', '', '', 'Main Warehouse', '0', '0', '0', '0', '0'
             ]);
           }
         });

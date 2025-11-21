@@ -194,6 +194,8 @@ export default function PoDetailPage() {
     { key: 'orderDate', label: 'Order Date', minWidth: 100 },
     { key: 'deliveryDate', label: 'Delivery Date', minWidth: 100 },
     { key: 'status', label: 'Status', minWidth: 80 },
+    { key: 'warehouse', label: 'Warehouse', minWidth: 120 },
+    { key: 'itemName', label: 'Item Name', minWidth: 200 },
     { key: 'barcode', label: 'Barcode', minWidth: 120 },
     { key: 'sku', label: 'SKU', minWidth: 80 },
     { key: 'size', label: 'Size', minWidth: 80 },
@@ -524,14 +526,18 @@ export default function PoDetailPage() {
                         {!hiddenColumns.has('orderDate') && (
                           <td className="px-4 text-sm text-gray-900 border-r border-gray-200 overflow-hidden"
                               style={getCellStyle('orderDate')}>
-                            <div className="truncate">{format(po.orderDate.toDate(), 'yyyy-MM-dd')}</div>
+                            <div className="truncate">
+                              {po.orderDate?.toDate ? format(po.orderDate.toDate(), 'dd/MM/yyyy') : '-'}
+                            </div>
                           </td>
                         )}
                         
                         {!hiddenColumns.has('deliveryDate') && (
                           <td className="px-4 text-sm text-gray-900 border-r border-gray-200 overflow-hidden"
                               style={getCellStyle('deliveryDate')}>
-                            <div className="truncate">{format(po.expectedDeliveryDate.toDate(), 'yyyy-MM-dd')}</div>
+                            <div className="truncate">
+                              {po.expectedDeliveryDate?.toDate ? format(po.expectedDeliveryDate.toDate(), 'dd/MM/yyyy') : '-'}
+                            </div>
                           </td>
                         )}
                         
@@ -541,6 +547,13 @@ export default function PoDetailPage() {
                             <div className="flex items-center justify-center" style={{ height: `${rowHeight}px` }}>
                               <StatusBadge status={po.status} />
                             </div>
+                          </td>
+                        )}
+                        
+                        {!hiddenColumns.has('warehouse') && (
+                          <td className="px-4 text-sm text-gray-900 border-r border-gray-200 overflow-hidden"
+                              style={getCellStyle('warehouse')}>
+                            <div className="truncate">{item.warehouse || 'Main Warehouse'}</div>
                           </td>
                         )}
                         

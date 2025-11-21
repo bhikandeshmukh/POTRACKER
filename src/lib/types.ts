@@ -57,6 +57,7 @@ export interface LineItem {
   barcode?: string;
   sku?: string;
   size?: string;
+  warehouse?: string;
   quantity: number;
   unitPrice: number;
   total: number;

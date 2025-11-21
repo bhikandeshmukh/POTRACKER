@@ -25,6 +25,7 @@ export default function PoForm() {
       barcode: '', 
       sku: '', 
       size: '', 
+      warehouse: 'Main Warehouse',
       quantity: 1, 
       unitPrice: 0, 
       total: 0,
@@ -57,6 +58,7 @@ export default function PoForm() {
       barcode: '', 
       sku: '', 
       size: '', 
+      warehouse: 'Main Warehouse',
       quantity: 1, 
       unitPrice: 0, 
       total: 0,
@@ -119,6 +121,7 @@ export default function PoForm() {
               barcode: values[4] || '',
               sku: values[5] || '',
               size: values[6] || '',
+              warehouse: values[12] || 'Main Warehouse', // New warehouse field
               quantity: orderQty,
               unitPrice: itemPrice,
               total: lineTotal,
@@ -416,6 +419,23 @@ PO-2024-002,XYZ Suppliers,16/01/2024,01/02/2024,DESK-OFF-123GHI,DESK-OFF-WD,4x2 
                 />
               </div>
 
+              {/* Warehouse */}
+              <div className="col-span-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Warehouse
+                </label>
+                <select
+                  value={item.warehouse || 'Main Warehouse'}
+                  onChange={(e) => updateLineItem(index, 'warehouse', e.target.value)}
+                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-transparent"
+                >
+                  <option value="Main Warehouse">Main Warehouse</option>
+                  <option value="Secondary Warehouse">Secondary Warehouse</option>
+                  <option value="Distribution Center">Distribution Center</option>
+                  <option value="Storage Facility">Storage Facility</option>
+                </select>
+              </div>
+
               {/* Order Qty */}
               <div className="col-span-1">
                 <label className="block text-xs font-medium text-gray-700 mb-1">
@@ -476,7 +496,7 @@ PO-2024-002,XYZ Suppliers,16/01/2024,01/02/2024,DESK-OFF-123GHI,DESK-OFF-WD,4x2 
               </div>
 
               {/* Line Total */}
-              <div className="col-span-2">
+              <div className="col-span-1">
                 <label className="block text-xs font-medium text-gray-700 mb-1">
                   Line Total
                 </label>
