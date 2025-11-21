@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { LayoutDashboard, FileText, Users, Settings, UserPlus, X, User, LogOut, Shield, Calendar } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, Settings, UserPlus, X, User, LogOut, Shield, Calendar, Activity } from 'lucide-react';
 import { getThemeClasses } from '@/styles/theme';
 
 const navigation = [
@@ -12,6 +12,7 @@ const navigation = [
   { name: 'Purchase Orders', href: '/pos', icon: FileText },
   { name: 'PO Appointments', href: '/appointments', icon: Calendar },
   { name: 'Return Orders', href: '/ros', icon: FileText },
+  { name: 'Recent Activity', href: '/activity', icon: Activity },
   { name: 'Vendors', href: '/vendors', icon: Users },
   { name: 'Transporters', href: '/transporters', icon: Users },
 ];
@@ -84,7 +85,7 @@ export default function Sidebar() {
       <div 
         id="sidebar"
         className={`
-          fixed top-0 left-0 z-40 w-64 bg-white shadow-lg border-r border-gray-200 min-h-screen pt-4 flex flex-col
+          fixed top-0 left-0 z-40 w-64 bg-white shadow-lg border-r border-gray-200 h-screen pt-4 flex flex-col
           transform transition-transform duration-300 ease-in-out
           ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         `}
@@ -92,7 +93,7 @@ export default function Sidebar() {
         {/* Header space for navbar */}
         <div className="h-16"></div>
         
-        <nav className="mt-4 px-4 space-y-2 flex-1">
+        <nav className="mt-4 px-4 space-y-2 flex-1 overflow-y-auto">
         {navigation.map((item) => {
           const isActive = pathname === item.href;
           return (
@@ -140,7 +141,7 @@ export default function Sidebar() {
         </nav>
 
         {/* User Info Section at Bottom */}
-        <div className="border-t border-gray-200 p-4">
+        <div className="border-t border-gray-200 p-4 flex-shrink-0">
           <div className="flex items-center space-x-3 mb-3">
             <div className="p-1.5 bg-gray-100 rounded-lg">
               <User className={`${getThemeClasses.icon('small')} text-gray-600`} />
@@ -153,7 +154,7 @@ export default function Sidebar() {
           
           <button
             onClick={signOut}
-            className={`w-full flex items-center space-x-3 px-3 py-2 ${getThemeClasses.description()} hover:bg-gray-100 rounded-lg transition`}
+            className="w-full flex items-center space-x-3 px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
           >
             <LogOut className={getThemeClasses.icon('small')} />
             <span className={getThemeClasses.smallText()}>Logout</span>

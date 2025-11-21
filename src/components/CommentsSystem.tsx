@@ -1,14 +1,16 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { MessageCircle, Send, Reply, MoreVertical, Edit, Trash2, Heart, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/components/ToastContainer';
 import { commentService } from '@/lib/services';
+import { getUserInfo } from '@/lib/utils/userUtils';
 import { useDataFetching } from '@/hooks/useDataFetching';
 import { useAsyncOperation } from '@/hooks/useAsyncOperation';
-import { Comment } from '@/lib/types';
+import { Comment, User as UserType } from '@/lib/types';
 import { Timestamp } from 'firebase/firestore';
+import { getAllUsers } from '@/lib/firestore';
 
 interface CommentsSystemProps {
   poId: string;
@@ -22,22 +24,55 @@ export default function CommentsSystem({ poId, className = '' }: CommentsSystemP
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [editingComment, setEditingComment] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
+  const [users, setUsers] = useState<(UserType & { id: string })[]>([]);
+  const [showMentions, setShowMentions] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState('');
+  const [cursorPosition, setCursorPosition] = useState(0);
+  const [selectedMentionIndex, setSelectedMentionIndex] = useState(0);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const fetchComments = useCallback(async () => {
     return commentService.getCommentsForPO(poId);
   }, [poId]);
+
+  const loadUsers = useCallback(async () => {
+    try {
+      const allUsers = await getAllUsers();
+      setUsers(allUsers);
+    } catch (error) {
+      console.error('Failed to load users:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadUsers();
+  }, [loadUsers]);
+
+  // Close mention dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (textareaRef.current && !textareaRef.current.contains(event.target as Node)) {
+        setShowMentions(false);
+      }
+    };
+
+    if (showMentions) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showMentions]);
 
   const { data: commentsResponse, loading, refetch } = useDataFetching(fetchComments);
   const comments = commentsResponse?.data || [];
 
   const { execute: executeAddComment, loading: addingComment } = useAsyncOperation(
     (content: string, parentId?: string) => 
-      commentService.addComment(poId, { uid: user!.uid, name: userData!.name, role: userData!.role }, content, parentId)
+      commentService.addComment(poId, getUserInfo(user, userData), content, parentId)
   );
 
   const { execute: executeUpdateComment } = useAsyncOperation(
     (commentId: string, content: string) => 
-      commentService.updateComment(commentId, content, { uid: user!.uid, name: userData!.name, role: userData!.role })
+      commentService.updateComment(commentId, content, getUserInfo(user, userData))
   );
 
   const { execute: executeDeleteComment } = useAsyncOperation(
@@ -119,6 +154,81 @@ export default function CommentsSystem({ poId, className = '' }: CommentsSystemP
     }
     return mentions;
   };
+
+  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    const cursorPos = e.target.selectionStart;
+    
+    setNewComment(value);
+    setCursorPosition(cursorPos);
+    
+    // Check if user is typing a mention
+    const textBeforeCursor = value.substring(0, cursorPos);
+    const mentionMatch = textBeforeCursor.match(/@(\w*)$/);
+    
+    if (mentionMatch) {
+      setMentionQuery(mentionMatch[1]);
+      setShowMentions(true);
+      setSelectedMentionIndex(0);
+    } else {
+      setShowMentions(false);
+      setMentionQuery('');
+      setSelectedMentionIndex(0);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (showMentions && filteredUsers.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSelectedMentionIndex(prev => 
+          prev < filteredUsers.length - 1 ? prev + 1 : 0
+        );
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSelectedMentionIndex(prev => 
+          prev > 0 ? prev - 1 : filteredUsers.length - 1
+        );
+      } else if (e.key === 'Enter' || e.key === 'Tab') {
+        e.preventDefault();
+        insertMention(filteredUsers[selectedMentionIndex].name);
+      } else if (e.key === 'Escape') {
+        setShowMentions(false);
+        setMentionQuery('');
+      }
+    }
+  };
+
+  const insertMention = (userName: string) => {
+    const textBeforeCursor = newComment.substring(0, cursorPosition);
+    const textAfterCursor = newComment.substring(cursorPosition);
+    
+    // Find the @ symbol position
+    const atIndex = textBeforeCursor.lastIndexOf('@');
+    
+    if (atIndex !== -1) {
+      const beforeAt = textBeforeCursor.substring(0, atIndex);
+      const newText = beforeAt + `@${userName} ` + textAfterCursor;
+      
+      setNewComment(newText);
+      setShowMentions(false);
+      setMentionQuery('');
+      
+      // Focus back to textarea
+      setTimeout(() => {
+        if (textareaRef.current) {
+          const newCursorPos = beforeAt.length + userName.length + 2;
+          textareaRef.current.focus();
+          textareaRef.current.setSelectionRange(newCursorPos, newCursorPos);
+        }
+      }, 0);
+    }
+  };
+
+  const filteredUsers = users.filter(u => 
+    u.name.toLowerCase().includes(mentionQuery.toLowerCase()) && 
+    u.id !== user?.uid // Don't show current user
+  ).slice(0, 5); // Limit to 5 suggestions
 
   const formatTimestamp = (timestamp: Date | Timestamp) => {
     const date = timestamp instanceof Date ? timestamp : timestamp.toDate();
@@ -230,7 +340,13 @@ export default function CommentsSystem({ poId, className = '' }: CommentsSystemP
                 <p className="text-gray-800 text-sm leading-relaxed">
                   {comment.content.split(/(@\w+)/).map((part, index) => 
                     part.startsWith('@') ? (
-                      <span key={index} className="text-blue-600 font-medium">{part}</span>
+                      <span 
+                        key={index} 
+                        className="text-blue-600 font-medium hover:text-blue-800 cursor-pointer bg-blue-50 px-1 rounded"
+                        title={`Mentioned user: ${part}`}
+                      >
+                        {part}
+                      </span>
                     ) : (
                       part
                     )
@@ -275,14 +391,39 @@ export default function CommentsSystem({ poId, className = '' }: CommentsSystemP
                   <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
                     <User className="w-3 h-3 text-white" />
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 relative">
                     <textarea
+                      ref={textareaRef}
                       value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      placeholder={`Reply to ${comment.userName}...`}
+                      onChange={handleTextareaChange}
+                      onKeyDown={handleKeyDown}
+                      placeholder={`Reply to ${comment.userName}... Use @username to mention`}
                       className="w-full p-2 border border-gray-300 rounded resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       rows={2}
                     />
+                    
+                    {/* Mention Dropdown for Reply */}
+                    {showMentions && filteredUsers.length > 0 && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                        {filteredUsers.map((mentionUser, index) => (
+                          <button
+                            key={mentionUser.id}
+                            onClick={() => insertMention(mentionUser.name)}
+                            className={`w-full px-3 py-2 text-left flex items-center space-x-2 border-b border-gray-100 last:border-b-0 ${
+                              index === selectedMentionIndex ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-50'
+                            }`}
+                          >
+                            <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                              <User className="w-3 h-3 text-white" />
+                            </div>
+                            <div>
+                              <div className="font-medium text-sm text-gray-900">{mentionUser.name}</div>
+                              <div className="text-xs text-gray-500">{mentionUser.role}</div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                     <div className="flex space-x-2 mt-2">
                       <button
                         onClick={handleSubmitComment}
@@ -330,14 +471,39 @@ export default function CommentsSystem({ poId, className = '' }: CommentsSystemP
             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
               <User className="w-4 h-4 text-white" />
             </div>
-            <div className="flex-1">
+            <div className="flex-1 relative">
               <textarea
+                ref={textareaRef}
                 value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
+                onChange={handleTextareaChange}
+                onKeyDown={handleKeyDown}
                 placeholder="Add a comment... Use @username to mention someone"
                 className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 rows={3}
               />
+              
+              {/* Mention Dropdown */}
+              {showMentions && filteredUsers.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                  {filteredUsers.map((mentionUser, index) => (
+                    <button
+                      key={mentionUser.id}
+                      onClick={() => insertMention(mentionUser.name)}
+                      className={`w-full px-3 py-2 text-left flex items-center space-x-2 border-b border-gray-100 last:border-b-0 ${
+                        index === selectedMentionIndex ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                        <User className="w-3 h-3 text-white" />
+                      </div>
+                      <div>
+                        <div className="font-medium text-sm text-gray-900">{mentionUser.name}</div>
+                        <div className="text-xs text-gray-500">{mentionUser.role}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
               <div className="flex justify-between items-center mt-2">
                 <span className="text-xs text-gray-500">
                   Tip: Use @username to mention team members

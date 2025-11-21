@@ -5,10 +5,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Sidebar from '@/components/Sidebar';
-import { getTransporters, addTransporter, updateTransporter, deleteTransporter, Transporter } from '@/lib/firestore';
-import { Truck, Plus, Edit, Trash2, Phone, Mail, User, MapPin, FileText, X, Save, Search } from 'lucide-react';
+import { getTransporters, addTransporter, updateTransporter, deleteTransporter, Transporter, Warehouse } from '@/lib/firestore';
+import { Truck, Plus, Edit, Trash2, Phone, Mail, User, MapPin, FileText, X, Save, Search, ChevronDown, ChevronRight, Warehouse as WarehouseIcon, Download } from 'lucide-react';
 import { getThemeClasses } from '@/styles/theme';
 import { useToast } from '@/components/ToastContainer';
+import LoadingSpinner from '@/components/LoadingSpinner';
+import DataImportExport from '@/components/DataImportExport';
 
 export default function TransportersPage() {
   const { user, userData, loading } = useAuth();
@@ -16,10 +18,14 @@ export default function TransportersPage() {
   const { showSuccess, showError } = useToast();
   const [transporters, setTransporters] = useState<Transporter[]>([]);
   const [loadingData, setLoadingData] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [editingTransporter, setEditingTransporter] = useState<Transporter | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [formData, setFormData] = useState({
+  const [showForm, setShowForm] = useState(false);
+  const [editingTransporter, setEditingTransporter] = useState<string | null>(null);
+  const [showImportExport, setShowImportExport] = useState(false);
+  const [expandedTransporters, setExpandedTransporters] = useState<Set<string>>(new Set());
+  const [showWarehouseForm, setShowWarehouseForm] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const [formData, setFormData] = useState<Transporter>({
     name: '',
     contactPerson: '',
     phone: '',
@@ -31,9 +37,29 @@ export default function TransportersPage() {
     address: '',
     gst: '',
     panNumber: '',
-    active: true
+    warehouses: []
   });
-  const [saving, setSaving] = useState(false);
+
+  const [warehouseFormData, setWarehouseFormData] = useState<Warehouse>({
+    id: '',
+    name: '',
+    address: '',
+    contactPerson: '',
+    phone: '',
+    email: '',
+    capacity: 0,
+    type: 'main',
+    isActive: true
+  });
+
+  // Filter transporters based on search term
+  const filteredTransporters = transporters.filter(transporter =>
+    transporter.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    transporter.contactPerson.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    transporter.phone.includes(searchTerm) ||
+    (transporter.email && transporter.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (transporter.vehicleNumber && transporter.vehicleNumber.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
   useEffect(() => {
     if (!loading && !user) {
@@ -59,48 +85,6 @@ export default function TransportersPage() {
     }
   };
 
-  const handleOpenModal = (transporter?: Transporter) => {
-    if (transporter) {
-      setEditingTransporter(transporter);
-      setFormData({
-        name: transporter.name || '',
-        contactPerson: transporter.contactPerson || '',
-        phone: transporter.phone || '',
-        email: transporter.email || '',
-        vehicleNumber: transporter.vehicleNumber || '',
-        vehicleType: transporter.vehicleType || '',
-        driverName: transporter.driverName || '',
-        driverPhone: transporter.driverPhone || '',
-        address: transporter.address || '',
-        gst: transporter.gst || '',
-        panNumber: transporter.panNumber || '',
-        active: transporter.active !== false
-      });
-    } else {
-      setEditingTransporter(null);
-      setFormData({
-        name: '',
-        contactPerson: '',
-        phone: '',
-        email: '',
-        vehicleNumber: '',
-        vehicleType: '',
-        driverName: '',
-        driverPhone: '',
-        address: '',
-        gst: '',
-        panNumber: '',
-        active: true
-      });
-    }
-    setShowModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setShowModal(false);
-    setEditingTransporter(null);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -109,56 +93,141 @@ export default function TransportersPage() {
       return;
     }
 
-    setSaving(true);
     try {
-      if (editingTransporter) {
-        await updateTransporter(editingTransporter.id!, formData, user?.uid, user?.email || '');
-        showSuccess('Success', 'Transporter updated successfully');
-      } else {
-        await addTransporter(formData, user?.uid, user?.email || '');
-        showSuccess('Success', 'Transporter added successfully');
+      await addTransporter(formData, user?.uid || undefined, user?.email || undefined);
+      showSuccess('Transporter Added', `${formData.name} has been added successfully`);
+      resetForm();
+      setShowForm(false);
+      loadTransporters();
+    } catch (error: any) {
+      console.error('Error adding transporter:', error);
+      showError('Failed to Add Transporter', error.message);
+    }
+  };
+
+  const handleEdit = (transporter: Transporter) => {
+    setEditingTransporter(transporter.id!);
+    setFormData(transporter);
+  };
+
+  const handleUpdate = async (transporterId: string) => {
+    try {
+      await updateTransporter(transporterId, formData, user?.uid || undefined, user?.email || undefined);
+      showSuccess('Transporter Updated', `${formData.name} has been updated successfully`);
+      setEditingTransporter(null);
+      resetForm();
+      loadTransporters();
+    } catch (error: any) {
+      console.error('Error updating transporter:', error);
+      showError('Failed to Update Transporter', error.message);
+    }
+  };
+
+  const handleDelete = async (transporterId: string, transporterName: string) => {
+    if (confirm(`Are you sure you want to delete "${transporterName}"?`)) {
+      try {
+        await deleteTransporter(transporterId, user?.uid || undefined, user?.email || undefined, transporterName);
+        showSuccess('Transporter Deleted', `${transporterName} has been deleted successfully`);
+        loadTransporters();
+      } catch (error: any) {
+        console.error('Error deleting transporter:', error);
+        showError('Failed to Delete Transporter', error.message);
       }
-      
-      await loadTransporters();
-      handleCloseModal();
-    } catch (error) {
-      console.error('Error saving transporter:', error);
-      showError('Error', 'Failed to save transporter');
-    } finally {
-      setSaving(false);
     }
   };
 
-  const handleDelete = async (transporter: Transporter) => {
-    if (!confirm(`Are you sure you want to delete ${transporter.name}?`)) {
-      return;
-    }
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      contactPerson: '',
+      phone: '',
+      email: '',
+      vehicleNumber: '',
+      vehicleType: '',
+      driverName: '',
+      driverPhone: '',
+      address: '',
+      gst: '',
+      panNumber: '',
+      warehouses: []
+    });
+  };
 
+  const toggleTransporterExpansion = (transporterId: string) => {
+    const newExpanded = new Set(expandedTransporters);
+    if (newExpanded.has(transporterId)) {
+      newExpanded.delete(transporterId);
+    } else {
+      newExpanded.add(transporterId);
+    }
+    setExpandedTransporters(newExpanded);
+  };
+
+  const handleAddWarehouse = (transporterId: string) => {
+    setShowWarehouseForm(transporterId);
+    setWarehouseFormData({
+      id: '',
+      name: '',
+      address: '',
+      contactPerson: '',
+      phone: '',
+      email: '',
+      capacity: 0,
+      type: 'main',
+      isActive: true
+    });
+  };
+
+  const handleWarehouseSubmit = async (transporterId: string) => {
     try {
-      await deleteTransporter(transporter.id!, user?.uid, user?.email || '', transporter.name);
-      showSuccess('Success', 'Transporter deleted successfully');
-      await loadTransporters();
-    } catch (error) {
-      console.error('Error deleting transporter:', error);
-      showError('Error', 'Failed to delete transporter');
+      const transporter = transporters.find(t => t.id === transporterId);
+      if (!transporter) return;
+
+      const newWarehouse: Warehouse = {
+        ...warehouseFormData,
+        id: `WH-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      };
+
+      const updatedTransporter = {
+        ...transporter,
+        warehouses: [...(transporter.warehouses || []), newWarehouse]
+      };
+
+      await updateTransporter(transporterId, updatedTransporter, user?.uid || undefined, user?.email || undefined);
+      showSuccess('Warehouse Added', `${newWarehouse.name} has been added successfully`);
+      setShowWarehouseForm(null);
+      loadTransporters();
+    } catch (error: any) {
+      console.error('Error adding warehouse:', error);
+      showError('Failed to Add Warehouse', error.message);
     }
   };
 
-  const filteredTransporters = transporters.filter(t =>
-    t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    t.contactPerson.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    t.phone.includes(searchQuery) ||
-    t.vehicleNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    t.driverName?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleDeleteWarehouse = async (transporterId: string, warehouseId: string) => {
+    if (confirm('Are you sure you want to delete this warehouse?')) {
+      try {
+        const transporter = transporters.find(t => t.id === transporterId);
+        if (!transporter) return;
+
+        const updatedTransporter = {
+          ...transporter,
+          warehouses: (transporter.warehouses || []).filter(w => w.id !== warehouseId)
+        };
+
+        await updateTransporter(transporterId, updatedTransporter, user?.uid || undefined, user?.email || undefined);
+        showSuccess('Warehouse Deleted', 'Warehouse has been deleted successfully');
+        loadTransporters();
+      } catch (error: any) {
+        console.error('Error deleting warehouse:', error);
+        showError('Failed to Delete Warehouse', error.message);
+      }
+    }
+  };
 
   if (loading || loadingData) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
+        <LoadingSpinner size="lg" text="Loading transporters..." />
       </div>
     );
   }
@@ -169,417 +238,584 @@ export default function TransportersPage() {
       <Sidebar />
       
       <div className="pt-16">
-        <main className={`w-full ${getThemeClasses.pagePadding()}`}>
+        <main className="w-full p-8">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className={getThemeClasses.pageTitle()}>Transporters</h1>
-              <p className="text-sm text-gray-600 mt-1">
-                {filteredTransporters.length} transporter{filteredTransporters.length !== 1 ? 's' : ''}
-              </p>
+              <h1 className={getThemeClasses.pageTitle()}>Transporters ({filteredTransporters.length})</h1>
+              <p className={getThemeClasses.description()}>Manage your transportation network and warehouses</p>
             </div>
-            
             <div className="flex items-center space-x-3">
-              {/* Search */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search transporters..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
-                />
-              </div>
-
-              <button
-                onClick={() => handleOpenModal()}
-                className={`flex items-center space-x-2 ${getThemeClasses.buttonPadding()} ${getThemeClasses.button('primary')}`}
-              >
-                <Plus className={getThemeClasses.icon('small')} />
-                <span>Add Transporter</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Transporters Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredTransporters.map((transporter) => (
-              <div
-                key={transporter.id}
-                className={`${getThemeClasses.card()} ${getThemeClasses.cardPadding()} hover:shadow-lg transition-shadow`}
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center space-x-3">
-                    <div className={`p-3 ${getThemeClasses.color('blue')} rounded-lg`}>
-                      <Truck className={getThemeClasses.icon('medium')} />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{transporter.name}</h3>
-                      {transporter.active !== false ? (
-                        <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full">Active</span>
-                      ) : (
-                        <span className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded-full">Inactive</span>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => handleOpenModal(transporter)}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                      title="Edit"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(transporter)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Delete"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center space-x-2 text-gray-600">
-                    <User className="w-4 h-4 flex-shrink-0" />
-                    <span>{transporter.contactPerson}</span>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2 text-gray-600">
-                    <Phone className="w-4 h-4 flex-shrink-0" />
-                    <span>{transporter.phone}</span>
-                  </div>
-                  
-                  {transporter.email && (
-                    <div className="flex items-center space-x-2 text-gray-600">
-                      <Mail className="w-4 h-4 flex-shrink-0" />
-                      <span className="truncate">{transporter.email}</span>
-                    </div>
-                  )}
-                  
-                  {transporter.vehicleNumber && (
-                    <div className="flex items-center space-x-2 text-gray-600">
-                      <Truck className="w-4 h-4 flex-shrink-0" />
-                      <span className="font-mono">{transporter.vehicleNumber}</span>
-                      {transporter.vehicleType && (
-                        <span className="text-xs px-2 py-0.5 bg-gray-100 rounded">
-                          {transporter.vehicleType}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                  
-                  {transporter.driverName && (
-                    <div className="flex items-center space-x-2 text-gray-600">
-                      <User className="w-4 h-4 flex-shrink-0" />
-                      <span>Driver: {transporter.driverName}</span>
-                      {transporter.driverPhone && (
-                        <span className="text-xs">({transporter.driverPhone})</span>
-                      )}
-                    </div>
-                  )}
-                  
-                  {transporter.address && (
-                    <div className="flex items-start space-x-2 text-gray-600">
-                      <MapPin className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                      <span className="line-clamp-2">{transporter.address}</span>
-                    </div>
-                  )}
-                  
-                  {(transporter.gst || transporter.panNumber) && (
-                    <div className="pt-2 border-t border-gray-200 space-y-1">
-                      {transporter.gst && (
-                        <div className="flex items-center space-x-2 text-xs text-gray-500">
-                          <FileText className="w-3 h-3" />
-                          <span>GST: {transporter.gst}</span>
-                        </div>
-                      )}
-                      {transporter.panNumber && (
-                        <div className="flex items-center space-x-2 text-xs text-gray-500">
-                          <FileText className="w-3 h-3" />
-                          <span>PAN: {transporter.panNumber}</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Empty State */}
-          {filteredTransporters.length === 0 && (
-            <div className={`${getThemeClasses.card()} ${getThemeClasses.cardPadding()} text-center py-12`}>
-              <Truck className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                {searchQuery ? 'No transporters found' : 'No transporters yet'}
-              </h3>
-              <p className="text-gray-600 mb-4">
-                {searchQuery 
-                  ? 'Try adjusting your search query' 
-                  : 'Get started by adding your first transporter'}
-              </p>
-              {!searchQuery && (
+              {/* Import/Export Button */}
+              {userData?.role === 'Admin' && (
                 <button
-                  onClick={() => handleOpenModal()}
-                  className={`${getThemeClasses.buttonPadding()} ${getThemeClasses.button('primary')}`}
+                  onClick={() => setShowImportExport(true)}
+                  className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
                 >
-                  <Plus className="w-4 h-4 inline mr-2" />
-                  Add Transporter
+                  <Download className="w-5 h-5" />
+                  <span>Import/Export</span>
+                </button>
+              )}
+
+              {/* Add Transporter Button */}
+              {userData?.role === 'Admin' && (
+                <button
+                  onClick={() => setShowForm(!showForm)}
+                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                >
+                  <Plus className="w-5 h-5" />
+                  <span>Add Transporter</span>
                 </button>
               )}
             </div>
-          )}
-        </main>
-      </div>
+          </div>
 
-      {/* Add/Edit Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="fixed inset-0 bg-black bg-opacity-50" onClick={handleCloseModal} />
-          
-          <div className="relative min-h-screen flex items-center justify-center p-4">
-            <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-              <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-gray-900">
-                  {editingTransporter ? 'Edit Transporter' : 'Add New Transporter'}
-                </h2>
-                <button
-                  onClick={handleCloseModal}
-                  className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+          {/* Search Bar */}
+          <div className="mb-6">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="text"
+                placeholder="Search transporters by name, contact person, phone, email, or vehicle number..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+          </div>
 
-              <form onSubmit={handleSubmit} className="p-6 space-y-6">
-                {/* Basic Information */}
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900 mb-3">Basic Information</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Transporter Name <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Enter transporter name"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Contact Person <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={formData.contactPerson}
-                        onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Enter contact person"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Phone <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="tel"
-                        required
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Enter phone number"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Email
-                      </label>
-                      <input
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Enter email"
-                      />
-                    </div>
+          {/* Add/Edit Transporter Form */}
+          {showForm && (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                {editingTransporter ? 'Edit Transporter' : 'Add New Transporter'}
+              </h2>
+              <form onSubmit={editingTransporter ? () => handleUpdate(editingTransporter) : handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Company Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="ABC Transport Ltd"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Contact Person *</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.contactPerson}
+                      onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="John Doe"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Phone *</label>
+                    <input
+                      type="tel"
+                      required
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="9876543210"
+                    />
                   </div>
                 </div>
 
-                {/* Vehicle Information */}
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900 mb-3">Vehicle Information</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Vehicle Number
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.vehicleNumber}
-                        onChange={(e) => setFormData({ ...formData, vehicleNumber: e.target.value.toUpperCase() })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
-                        placeholder="MH12AB1234"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Vehicle Type
-                      </label>
-                      <select
-                        value={formData.vehicleType}
-                        onChange={(e) => setFormData({ ...formData, vehicleType: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="">Select type</option>
-                        <option value="Truck">Truck</option>
-                        <option value="Tempo">Tempo</option>
-                        <option value="Van">Van</option>
-                        <option value="Container">Container</option>
-                        <option value="Mini Truck">Mini Truck</option>
-                        <option value="Other">Other</option>
-                      </select>
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <input
+                      type="email"
+                      value={formData.email || ''}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="transport@company.com"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">GST Number</label>
+                    <input
+                      type="text"
+                      value={formData.gst || ''}
+                      onChange={(e) => setFormData({ ...formData, gst: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="22AAAAA0000A1Z5"
+                    />
                   </div>
                 </div>
 
-                {/* Driver Information */}
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900 mb-3">Driver Information</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Driver Name
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.driverName}
-                        onChange={(e) => setFormData({ ...formData, driverName: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Enter driver name"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Driver Phone
-                      </label>
-                      <input
-                        type="tel"
-                        value={formData.driverPhone}
-                        onChange={(e) => setFormData({ ...formData, driverPhone: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Enter driver phone"
-                      />
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Vehicle Number</label>
+                    <input
+                      type="text"
+                      value={formData.vehicleNumber || ''}
+                      onChange={(e) => setFormData({ ...formData, vehicleNumber: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="MH12AB1234"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Vehicle Type</label>
+                    <select
+                      value={formData.vehicleType || ''}
+                      onChange={(e) => setFormData({ ...formData, vehicleType: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select Type</option>
+                      <option value="truck">Truck</option>
+                      <option value="trailer">Trailer</option>
+                      <option value="van">Van</option>
+                      <option value="container">Container</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">PAN Number</label>
+                    <input
+                      type="text"
+                      value={formData.panNumber || ''}
+                      onChange={(e) => setFormData({ ...formData, panNumber: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="ABCDE1234F"
+                    />
                   </div>
                 </div>
 
-                {/* Additional Information */}
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900 mb-3">Additional Information</h3>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Address
-                      </label>
-                      <textarea
-                        rows={3}
-                        value={formData.address}
-                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Enter complete address"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          GST Number
-                        </label>
-                        <input
-                          type="text"
-                          value={formData.gst}
-                          onChange={(e) => setFormData({ ...formData, gst: e.target.value.toUpperCase() })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
-                          placeholder="22AAAAA0000A1Z5"
-                          maxLength={15}
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          PAN Number
-                        </label>
-                        <input
-                          type="text"
-                          value={formData.panNumber}
-                          onChange={(e) => setFormData({ ...formData, panNumber: e.target.value.toUpperCase() })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
-                          placeholder="ABCDE1234F"
-                          maxLength={10}
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          checked={formData.active}
-                          onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
-                          className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-                        />
-                        <span className="text-sm font-medium text-gray-700">Active Transporter</span>
-                      </label>
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Driver Name</label>
+                    <input
+                      type="text"
+                      value={formData.driverName || ''}
+                      onChange={(e) => setFormData({ ...formData, driverName: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="Driver Name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Driver Phone</label>
+                    <input
+                      type="tel"
+                      value={formData.driverPhone || ''}
+                      onChange={(e) => setFormData({ ...formData, driverPhone: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="9876543210"
+                    />
                   </div>
                 </div>
 
-                {/* Form Actions */}
-                <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                  <textarea
+                    value={formData.address || ''}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    rows={3}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="Complete address with city, state, pincode"
+                  />
+                </div>
+
+                <div className="flex justify-end space-x-3">
                   <button
                     type="button"
-                    onClick={handleCloseModal}
-                    className={`${getThemeClasses.buttonPadding()} ${getThemeClasses.button('secondary')}`}
+                    onClick={() => {
+                      setShowForm(false);
+                      setEditingTransporter(null);
+                      resetForm();
+                    }}
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    disabled={saving}
-                    className={`flex items-center space-x-2 ${getThemeClasses.buttonPadding()} ${getThemeClasses.button('primary')} disabled:opacity-50`}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
                   >
-                    {saving ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        <span>Saving...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Save className="w-4 h-4" />
-                        <span>{editingTransporter ? 'Update' : 'Add'} Transporter</span>
-                      </>
-                    )}
+                    {editingTransporter ? 'Update' : 'Add'} Transporter
                   </button>
                 </div>
               </form>
             </div>
+          )}
+
+          {/* Transporters List */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+            {filteredTransporters.length === 0 ? (
+              <div className="text-center py-12">
+                <Truck className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No Transporters Found</h3>
+                <p className="text-gray-500 mb-4">
+                  {searchTerm ? 'No transporters match your search criteria' : 'Add your first transporter to get started'}
+                </p>
+                {userData?.role === 'Admin' && !searchTerm && (
+                  <button
+                    onClick={() => setShowForm(true)}
+                    className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                  >
+                    <Plus className="w-5 h-5" />
+                    <span>Add Transporter</span>
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-200">
+                {filteredTransporters.map((transporter) => (
+                  <div key={transporter.id} className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start space-x-4 flex-1">
+                        <div className="p-3 bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-lg">
+                          <Truck className="w-6 h-6" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <h3 className="text-lg font-semibold text-gray-900">{transporter.name}</h3>
+                            <button
+                              onClick={() => toggleTransporterExpansion(transporter.id!)}
+                              className="p-1 text-gray-400 hover:text-gray-600 rounded"
+                            >
+                              {expandedTransporters.has(transporter.id!) ? (
+                                <ChevronDown className="w-5 h-5" />
+                              ) : (
+                                <ChevronRight className="w-5 h-5" />
+                              )}
+                            </button>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+                            <div className="flex items-center space-x-2">
+                              <User className="w-4 h-4 text-gray-400" />
+                              <span>{transporter.contactPerson}</span>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Phone className="w-4 h-4 text-gray-400" />
+                              <span>{transporter.phone}</span>
+                            </div>
+                            {transporter.email && (
+                              <div className="flex items-center space-x-2">
+                                <Mail className="w-4 h-4 text-gray-400" />
+                                <span>{transporter.email}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Vehicle Information */}
+                          {(transporter.vehicleNumber || transporter.vehicleType) && (
+                            <div className="mt-2 flex items-center space-x-4 text-sm text-gray-600">
+                              {transporter.vehicleNumber && (
+                                <div className="flex items-center space-x-2">
+                                  <FileText className="w-4 h-4 text-gray-400" />
+                                  <span>{transporter.vehicleNumber}</span>
+                                </div>
+                              )}
+                              {transporter.vehicleType && (
+                                <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full capitalize">
+                                  {transporter.vehicleType}
+                                </span>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Driver Information */}
+                          {transporter.driverName && (
+                            <div className="mt-2 text-sm text-gray-600">
+                              <span className="font-medium">Driver:</span> {transporter.driverName}
+                              {transporter.driverPhone && <span> • {transporter.driverPhone}</span>}
+                            </div>
+                          )}
+
+                          {transporter.address && (
+                            <div className="mt-2 text-sm text-gray-600">
+                              <div className="flex items-start space-x-2">
+                                <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
+                                <span>{transporter.address}</span>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Warehouses Summary */}
+                          {transporter.warehouses && transporter.warehouses.length > 0 && (
+                            <div className="mt-3 flex items-center space-x-2 text-sm">
+                              <WarehouseIcon className="w-4 h-4 text-blue-500" />
+                              <span className="text-blue-600 font-medium">
+                                {transporter.warehouses.length} Warehouse{transporter.warehouses.length > 1 ? 's' : ''}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      {userData?.role === 'Admin' && (
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => handleAddWarehouse(transporter.id!)}
+                            className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition"
+                            title="Add Warehouse"
+                          >
+                            <WarehouseIcon className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={() => handleEdit(transporter)}
+                            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                            title="Edit Transporter"
+                          >
+                            <Edit className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(transporter.id!, transporter.name)}
+                            className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition"
+                            title="Delete Transporter"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Expanded Warehouses Section */}
+                    {expandedTransporters.has(transporter.id!) && (
+                      <div className="mt-6 pl-16">
+                        <div className="border-t border-gray-200 pt-4">
+                          <div className="flex items-center justify-between mb-4">
+                            <h4 className="text-md font-medium text-gray-900">Warehouses</h4>
+                            {userData?.role === 'Admin' && (
+                              <button
+                                onClick={() => handleAddWarehouse(transporter.id!)}
+                                className="flex items-center space-x-2 px-3 py-1 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                              >
+                                <Plus className="w-4 h-4" />
+                                <span>Add Warehouse</span>
+                              </button>
+                            )}
+                          </div>
+
+                          {transporter.warehouses && transporter.warehouses.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {transporter.warehouses.map((warehouse) => (
+                                <div key={warehouse.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                  <div className="flex items-start justify-between">
+                                    <div className="flex-1">
+                                      <div className="flex items-center space-x-2 mb-2">
+                                        <h5 className="font-medium text-gray-900">{warehouse.name}</h5>
+                                        <span className={`px-2 py-1 text-xs rounded-full ${
+                                          warehouse.isActive 
+                                            ? 'bg-green-100 text-green-800' 
+                                            : 'bg-red-100 text-red-800'
+                                        }`}>
+                                          {warehouse.isActive ? 'Active' : 'Inactive'}
+                                        </span>
+                                        <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full capitalize">
+                                          {warehouse.type}
+                                        </span>
+                                      </div>
+                                      <div className="text-sm text-gray-600 space-y-1">
+                                        <div className="flex items-start space-x-2">
+                                          <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
+                                          <span>{warehouse.address}</span>
+                                        </div>
+                                        {warehouse.contactPerson && (
+                                          <div className="flex items-center space-x-2">
+                                            <User className="w-4 h-4 text-gray-400" />
+                                            <span>{warehouse.contactPerson}</span>
+                                          </div>
+                                        )}
+                                        {warehouse.phone && (
+                                          <div className="flex items-center space-x-2">
+                                            <Phone className="w-4 h-4 text-gray-400" />
+                                            <span>{warehouse.phone}</span>
+                                          </div>
+                                        )}
+                                        {warehouse.capacity && (
+                                          <div className="text-xs text-gray-500">
+                                            Capacity: {warehouse.capacity} units
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                    {userData?.role === 'Admin' && (
+                                      <button
+                                        onClick={() => handleDeleteWarehouse(transporter.id!, warehouse.id)}
+                                        className="p-1 text-red-600 hover:bg-red-100 rounded transition"
+                                        title="Delete Warehouse"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-center py-8 text-gray-500">
+                              <WarehouseIcon className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+                              <p>No warehouses added yet</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        </main>
+
+        {/* Warehouse Form Modal */}
+        {showWarehouseForm && (
+          <div className="fixed inset-0 z-50 overflow-y-auto">
+            <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setShowWarehouseForm(null)} />
+            <div className="relative min-h-screen flex items-center justify-center p-4">
+              <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl">
+                <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                  <h3 className="text-lg font-semibold text-gray-900">Add New Warehouse</h3>
+                  <button
+                    onClick={() => setShowWarehouseForm(null)}
+                    className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                
+                <div className="p-6">
+                  <form onSubmit={(e) => {
+                    e.preventDefault();
+                    handleWarehouseSubmit(showWarehouseForm);
+                  }} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Warehouse Name *</label>
+                        <input
+                          type="text"
+                          required
+                          value={warehouseFormData.name}
+                          onChange={(e) => setWarehouseFormData({ ...warehouseFormData, name: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                          placeholder="Main Warehouse"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                        <select
+                          value={warehouseFormData.type}
+                          onChange={(e) => setWarehouseFormData({ ...warehouseFormData, type: e.target.value as any })}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="main">Main</option>
+                          <option value="secondary">Secondary</option>
+                          <option value="distribution">Distribution</option>
+                          <option value="storage">Storage</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Address *</label>
+                      <textarea
+                        required
+                        value={warehouseFormData.address}
+                        onChange={(e) => setWarehouseFormData({ ...warehouseFormData, address: e.target.value })}
+                        rows={3}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder="Complete warehouse address"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Contact Person</label>
+                        <input
+                          type="text"
+                          value={warehouseFormData.contactPerson || ''}
+                          onChange={(e) => setWarehouseFormData({ ...warehouseFormData, contactPerson: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                          placeholder="Warehouse Manager"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                        <input
+                          type="tel"
+                          value={warehouseFormData.phone || ''}
+                          onChange={(e) => setWarehouseFormData({ ...warehouseFormData, phone: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                          placeholder="9876543210"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                        <input
+                          type="email"
+                          value={warehouseFormData.email || ''}
+                          onChange={(e) => setWarehouseFormData({ ...warehouseFormData, email: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                          placeholder="warehouse@company.com"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Capacity (units)</label>
+                        <input
+                          type="number"
+                          value={warehouseFormData.capacity || ''}
+                          onChange={(e) => setWarehouseFormData({ ...warehouseFormData, capacity: parseInt(e.target.value) || 0 })}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                          placeholder="1000"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="isActive"
+                        checked={warehouseFormData.isActive}
+                        onChange={(e) => setWarehouseFormData({ ...warehouseFormData, isActive: e.target.checked })}
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <label htmlFor="isActive" className="ml-2 text-sm text-gray-700">
+                        Active warehouse
+                      </label>
+                    </div>
+
+                    <div className="flex justify-end space-x-3 pt-4">
+                      <button
+                        type="button"
+                        onClick={() => setShowWarehouseForm(null)}
+                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                      >
+                        Add Warehouse
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Import/Export Modal */}
+        <DataImportExport
+          type="vendors"
+          isOpen={showImportExport}
+          onClose={() => setShowImportExport(false)}
+          onImportComplete={loadTransporters}
+        />
+      </div>
     </div>
   );
 }

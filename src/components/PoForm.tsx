@@ -20,8 +20,19 @@ export default function PoForm() {
   });
 
   const [lineItems, setLineItems] = useState<LineItem[]>([
-    { itemName: '', quantity: 1, unitPrice: 0, total: 0 }
+    { 
+      itemName: '', 
+      barcode: '', 
+      sku: '', 
+      size: '', 
+      quantity: 1, 
+      unitPrice: 0, 
+      total: 0,
+      sentQty: 0,
+      pendingQty: 1
+    }
   ]);
+  const [showImport, setShowImport] = useState(false);
 
   useEffect(() => {
     loadVendors();
@@ -41,7 +52,125 @@ export default function PoForm() {
   };
 
   const addLineItem = () => {
-    setLineItems([...lineItems, { itemName: '', quantity: 1, unitPrice: 0, total: 0 }]);
+    setLineItems([...lineItems, { 
+      itemName: '', 
+      barcode: '', 
+      sku: '', 
+      size: '', 
+      quantity: 1, 
+      unitPrice: 0, 
+      total: 0,
+      sentQty: 0,
+      pendingQty: 1
+    }]);
+  };
+
+  const handleCSVImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const csv = e.target?.result as string;
+        const lines = csv.split('\n').filter(line => line.trim()); // Remove empty lines
+        
+        if (lines.length < 2) {
+          alert('CSV file must have at least a header and one data row');
+          return;
+        }
+
+        const headers = lines[0].split(',').map(h => h.trim());
+        console.log('CSV Headers:', headers);
+        
+        // Expected headers: PO Number, Vendor Name, Order Date, Delivery Date, Barcode, SKU, Size, Order Qty, Item Price, Sent Qty, Pending Qty, Line Total
+        const importedItems: LineItem[] = [];
+        
+        for (let i = 1; i < lines.length; i++) {
+          const values = lines[i].split(',').map(v => v.trim());
+          console.log(`Row ${i}:`, values);
+          
+          if (values.length >= 12 && values[0]) { // Ensure we have all required fields
+            const orderQty = parseInt(values[7]) || 1;
+            const itemPrice = parseFloat(values[8]) || 0;
+            const sentQty = parseInt(values[9]) || 0;
+            const pendingQty = parseInt(values[10]) || 0;
+            const lineTotal = parseFloat(values[11]) || (orderQty * itemPrice);
+            
+            // Validate the data
+            if (orderQty <= 0) {
+              console.warn(`Row ${i}: Invalid Order Qty (${orderQty})`);
+              continue;
+            }
+            
+            if (sentQty > orderQty) {
+              console.warn(`Row ${i}: Sent Qty (${sentQty}) cannot be greater than Order Qty (${orderQty})`);
+              continue;
+            }
+            
+            // Auto-calculate pending qty if it doesn't match
+            const calculatedPendingQty = Math.max(0, orderQty - sentQty);
+            if (pendingQty !== calculatedPendingQty) {
+              console.warn(`Row ${i}: Adjusting Pending Qty from ${pendingQty} to ${calculatedPendingQty}`);
+            }
+            
+            importedItems.push({
+              itemName: values[5] || values[4] || '', // Use SKU as item name, fallback to barcode
+              barcode: values[4] || '',
+              sku: values[5] || '',
+              size: values[6] || '',
+              quantity: orderQty,
+              unitPrice: itemPrice,
+              total: lineTotal,
+              sentQty: sentQty,
+              pendingQty: Math.max(0, orderQty - sentQty) // Always calculate correctly
+            });
+          }
+        }
+        
+        console.log('Final imported items:', importedItems);
+        
+        if (importedItems.length > 0) {
+          setLineItems(importedItems);
+          
+          // Set PO details from first row
+          const firstRow = lines[1].split(',').map(v => v.trim());
+          if (firstRow.length >= 4) {
+            // Parse dates in DD/MM/YYYY format
+            const parseDate = (dateStr: string) => {
+              const parts = dateStr.split('/');
+              if (parts.length === 3) {
+                const day = parts[0];
+                const month = parts[1];
+                const year = parts[2];
+                return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+              }
+              return '';
+            };
+            
+            const orderDate = parseDate(firstRow[2]);
+            const deliveryDate = parseDate(firstRow[3]);
+            
+            console.log('Parsed dates:', { orderDate, deliveryDate });
+            
+            setFormData({
+              ...formData,
+              orderDate: orderDate || formData.orderDate,
+              expectedDeliveryDate: deliveryDate || formData.expectedDeliveryDate
+            });
+          }
+          
+          setShowImport(false);
+          alert(`Successfully imported ${importedItems.length} items from CSV`);
+        } else {
+          alert('No valid items found in CSV file. Please check the format and data.');
+        }
+      } catch (error) {
+        console.error('CSV Import Error:', error);
+        alert('Error parsing CSV file. Please check the format.');
+      }
+    };
+    reader.readAsText(file);
   };
 
   const removeLineItem = (index: number) => {
@@ -52,8 +181,16 @@ export default function PoForm() {
     const updated = [...lineItems];
     updated[index] = { ...updated[index], [field]: value };
     
+    // Auto-calculate total when quantity or unitPrice changes
     if (field === 'quantity' || field === 'unitPrice') {
       updated[index].total = updated[index].quantity * updated[index].unitPrice;
+    }
+    
+    // Auto-calculate pending quantity when quantity or sentQty changes
+    if (field === 'quantity' || field === 'sentQty') {
+      const orderQty = updated[index].quantity || 0;
+      const sentQty = updated[index].sentQty || 0;
+      updated[index].pendingQty = Math.max(0, orderQty - sentQty);
     }
     
     setLineItems(updated);
@@ -156,35 +293,133 @@ export default function PoForm() {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900">Line Items</h2>
-          <button
-            type="button"
-            onClick={addLineItem}
-            className="flex items-center space-x-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add Item</span>
-          </button>
+          <div className="flex space-x-2">
+            <button
+              type="button"
+              onClick={() => setShowImport(!showImport)}
+              className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+            >
+              <span>Import CSV</span>
+            </button>
+            <button
+              type="button"
+              onClick={addLineItem}
+              className="flex items-center space-x-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Item</span>
+            </button>
+          </div>
         </div>
+
+        {/* CSV Import Section */}
+        {showImport && (
+          <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <h3 className="font-medium text-blue-900 mb-2">Import from CSV</h3>
+            <p className="text-sm text-blue-800 mb-3">
+              Upload a CSV file with the exact format shown in the template. Dates should be in DD/MM/YYYY format.
+            </p>
+            <div className="text-xs text-blue-700 mb-3">
+              <strong>Required columns:</strong> PO Number, Vendor Name, Order Date, Delivery Date, Barcode, SKU, Size, Order Qty, Item Price, Sent Qty, Pending Qty, Line Total
+            </div>
+            <div className="flex space-x-3 mb-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setLineItems([{ 
+                    itemName: '', 
+                    barcode: '', 
+                    sku: '', 
+                    size: '', 
+                    quantity: 1, 
+                    unitPrice: 0, 
+                    total: 0,
+                    sentQty: 0,
+                    pendingQty: 1
+                  }]);
+                }}
+                className="px-3 py-1 bg-gray-600 text-white text-sm rounded hover:bg-gray-700"
+              >
+                Clear All
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const csvContent = `PO Number,Vendor Name,Order Date,Delivery Date,Barcode,SKU,Size,Order Qty,Item Price,Sent Qty,Pending Qty,Line Total
+PO-2024-001,ABC Electronics Ltd,15/01/2024,30/01/2024,DELL123456789ABC,DELL-INS-15,15 inch,100,25000,0,100,2500000
+PO-2024-001,ABC Electronics Ltd,15/01/2024,30/01/2024,MOUSE-WL-789XYZ,MOUSE-WL-01,Standard,200,500,0,200,100000
+PO-2024-002,XYZ Suppliers,16/01/2024,01/02/2024,CHAIR456789DEF,CHAIR-EXE-BLK,Large,50,3000,0,50,150000
+PO-2024-002,XYZ Suppliers,16/01/2024,01/02/2024,DESK-OFF-123GHI,DESK-OFF-WD,4x2 feet,25,8000,0,25,200000`;
+                  
+                  const blob = new Blob([csvContent], { type: 'text/csv' });
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = 'po-import-template.csv';
+                  a.click();
+                  window.URL.revokeObjectURL(url);
+                }}
+                className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+              >
+                Download Template
+              </button>
+            </div>
+            <input
+              type="file"
+              accept=".csv"
+              onChange={handleCSVImport}
+              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            />
+          </div>
+        )}
 
         <div className="space-y-4">
           {lineItems.map((item, index) => (
-            <div key={index} className="flex items-end gap-4">
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Item Name
+            <div key={index} className="grid grid-cols-12 gap-2 items-end">
+              {/* Barcode */}
+              <div className="col-span-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Barcode
+                </label>
+                <input
+                  type="text"
+                  value={item.barcode || ''}
+                  onChange={(e) => updateLineItem(index, 'barcode', e.target.value)}
+                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* SKU */}
+              <div className="col-span-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  SKU
                 </label>
                 <input
                   type="text"
                   required
-                  value={item.itemName}
-                  onChange={(e) => updateLineItem(index, 'itemName', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  value={item.sku || ''}
+                  onChange={(e) => updateLineItem(index, 'sku', e.target.value)}
+                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
 
-              <div className="w-24">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Quantity
+              {/* Size */}
+              <div className="col-span-1">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Size
+                </label>
+                <input
+                  type="text"
+                  value={item.size || ''}
+                  onChange={(e) => updateLineItem(index, 'size', e.target.value)}
+                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* Order Qty */}
+              <div className="col-span-1">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Order Qty
                 </label>
                 <input
                   type="number"
@@ -192,13 +427,14 @@ export default function PoForm() {
                   min="1"
                   value={item.quantity}
                   onChange={(e) => updateLineItem(index, 'quantity', parseInt(e.target.value))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
 
-              <div className="w-32">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Unit Price (₹)
+              {/* Item Price */}
+              <div className="col-span-1">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Item Price
                 </label>
                 <input
                   type="number"
@@ -207,30 +443,62 @@ export default function PoForm() {
                   step="0.01"
                   value={item.unitPrice}
                   onChange={(e) => updateLineItem(index, 'unitPrice', parseFloat(e.target.value))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
 
-              <div className="w-32">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Total (₹)
+              {/* Sent Qty */}
+              <div className="col-span-1">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Sent Qty
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={item.sentQty || 0}
+                  onChange={(e) => updateLineItem(index, 'sentQty', parseInt(e.target.value))}
+                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* Pending Qty */}
+              <div className="col-span-1">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Pending Qty
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={item.pendingQty || 0}
+                  onChange={(e) => updateLineItem(index, 'pendingQty', parseInt(e.target.value))}
+                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* Line Total */}
+              <div className="col-span-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Line Total
                 </label>
                 <input
                   type="text"
                   disabled
                   value={item.total.toFixed(2)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700"
+                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded bg-gray-50 text-gray-700"
                 />
               </div>
 
+              {/* Remove Button */}
               {lineItems.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => removeLineItem(index)}
-                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
+                <div className="col-span-1">
+                  <button
+                    type="button"
+                    onClick={() => removeLineItem(index)}
+                    className="p-1 text-red-600 hover:bg-red-50 rounded transition"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               )}
             </div>
           ))}

@@ -2,12 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { createShipment, getShipments, updateShipmentStatus, Shipment, PurchaseOrder, ShipmentLineItem } from '@/lib/firestore';
+import { getShipments, Shipment, PurchaseOrder, ShipmentLineItem } from '@/lib/firestore';
+import { shipmentService } from '@/lib/services';
 import { useToast } from '@/components/ToastContainer';
 import { Timestamp } from 'firebase/firestore';
 import { format } from 'date-fns';
-import { Plus, Truck, Package, CheckCircle, XCircle, Eye, Edit } from 'lucide-react';
+import { Plus, Truck, Package, CheckCircle, XCircle, Eye, Edit, Download } from 'lucide-react';
 import StatusBadge from '@/components/StatusBadge';
+import DataImportExport from '@/components/DataImportExport';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { auditService, commentService } from '@/lib/services';
+import { getUserInfo, getUserDisplayName } from '@/lib/utils/userUtils';
 
 // Custom StatusBadge for Shipments
 function ShipmentStatusBadge({ status }: { status: Shipment['status'] }) {
@@ -165,11 +171,68 @@ export default function ShipmentManagement({ po, onUpdate }: ShipmentManagementP
             setShowDetailModal(false);
             setSelectedShipment(null);
           }}
-          onStatusUpdate={(status) => {
-            if (selectedShipment) {
-              updateShipmentStatus(selectedShipment.id!, status);
-              loadShipments();
-              onUpdate();
+          onStatusUpdate={async (status) => {
+            if (selectedShipment && user && userData) {
+              try {
+                const oldStatus = selectedShipment.status;
+                
+                // Update shipment status (this will also sync appointment status)
+                await shipmentService.updateShipmentStatus(
+                  selectedShipment.id!,
+                  status,
+                  {
+                    uid: user.uid,
+                    name: user.displayName || user.email || 'Unknown',
+                    role: userData?.role || 'User'
+                  }
+                );
+                
+                // Log audit event for status change
+                const userInfo = getUserInfo(user, userData);
+                await auditService.logEvent(
+                  userInfo.uid,
+                  userInfo.name,
+                  userInfo.role,
+                  'update',
+                  'shipment',
+                  selectedShipment.id!,
+                  `Shipment ${selectedShipment.id}`,
+                  `Shipment status changed from ${oldStatus} to ${status}`,
+                  { status: { old: oldStatus, new: status } },
+                  {
+                    poNumber: selectedShipment.poNumber,
+                    invoiceNumber: selectedShipment.invoiceNumber
+                  }
+                );
+
+                // Add automatic comment to PO
+                const statusMessages: Record<string, string> = {
+                  'Prepared': '📋 Shipment prepared',
+                  'Shipped': '🚚 Shipment shipped',
+                  'In Transit': '🛣️ Shipment in transit',
+                  'Delivered': '📦 Shipment delivered',
+                  'Cancelled': '❌ Shipment cancelled'
+                };
+
+                const commentContent = `${statusMessages[status] || `Shipment status: ${status}`} (${selectedShipment.id})`;
+                
+                try {
+                  await commentService.addComment(
+                    po.id!,
+                    getUserInfo(user, userData),
+                    commentContent
+                  );
+                } catch (commentError) {
+                  console.error('Failed to add shipment status comment:', commentError);
+                }
+
+                loadShipments();
+                onUpdate();
+                showSuccess('Success', `Shipment status updated to ${status}`);
+              } catch (error) {
+                console.error('Error updating shipment status:', error);
+                showError('Error', 'Failed to update shipment status');
+              }
             }
           }}
           canUpdate={canUpdateShipment}
@@ -186,8 +249,9 @@ function CreateShipmentModal({ po, isOpen, onClose, onSuccess }: {
   onClose: () => void;
   onSuccess: () => void;
 }) {
-  const { user } = useAuth();
+  const { user, userData } = useAuth();
   const { showSuccess, showError } = useToast();
+  const [showImportModal, setShowImportModal] = useState(false);
   const [formData, setFormData] = useState({
     appointmentId: '',
     invoiceNumber: '',
@@ -238,25 +302,103 @@ function CreateShipmentModal({ po, isOpen, onClose, onSuccess }: {
 
     setLoading(true);
     try {
-      const shipmentData: Omit<Shipment, 'id'> = {
+      const shipmentData: any = {
         poNumber: po.poNumber,
         appointmentId: formData.appointmentId,
         invoiceNumber: formData.invoiceNumber,
         shipmentDate: Timestamp.fromDate(new Date(formData.shipmentDate)),
-        expectedDeliveryDate: formData.expectedDeliveryDate 
-          ? Timestamp.fromDate(new Date(formData.expectedDeliveryDate))
-          : undefined,
         status: 'Prepared',
-        carrier: formData.carrier || undefined,
-        trackingNumber: formData.trackingNumber || undefined,
-        notes: formData.notes || undefined,
         createdBy_uid: user.uid,
-        createdBy_name: user.displayName || user.email || 'Unknown',
+        createdBy_name: getUserDisplayName(user, userData),
         lineItems: itemsToShip,
         totalAmount
       };
 
-      await createShipment(po.poNumber, shipmentData);
+      // Only add optional fields if they have values
+      if (formData.expectedDeliveryDate) {
+        shipmentData.expectedDeliveryDate = Timestamp.fromDate(new Date(formData.expectedDeliveryDate));
+      }
+      if (formData.carrier) {
+        shipmentData.carrier = formData.carrier;
+      }
+      if (formData.trackingNumber) {
+        shipmentData.trackingNumber = formData.trackingNumber;
+      }
+      if (formData.notes) {
+        shipmentData.notes = formData.notes;
+      }
+
+      // Generate shipment ID and create directly
+      const shipmentId = `SHP-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const shipmentRef = doc(db, 'shipments', shipmentId);
+      const shipmentWithId = {
+        ...shipmentData,
+        id: shipmentId,
+        poNumber: po.poNumber,
+        createdAt: serverTimestamp() as Timestamp,
+      };
+      
+      await setDoc(shipmentRef, shipmentWithId);
+
+      // Create appointment for this shipment
+      const appointmentId = `APT-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const appointmentRef = doc(db, 'appointments', appointmentId);
+      const appointmentData = {
+        id: appointmentId,
+        appointmentId: formData.appointmentId || appointmentId,
+        poNumber: po.poNumber,
+        poId: po.id,
+        vendorName: po.vendorName,
+        appointmentDate: shipmentData.shipmentDate,
+        appointmentTime: '10:00', // Default time
+        location: 'Warehouse', // Default location
+        contactPerson: formData.carrier || 'TBD',
+        notes: `Shipment appointment for ${shipmentId}`,
+        status: 'scheduled',
+        purpose: 'delivery',
+        transporterId: '',
+        transporterName: formData.carrier || '',
+        transporterEmail: '',
+        docketNumber: formData.trackingNumber || '',
+        createdBy: getUserDisplayName(user, userData),
+        createdAt: serverTimestamp(),
+        shipmentId: shipmentId // Link to shipment
+      };
+      
+      await setDoc(appointmentRef, appointmentData);
+
+      // Log audit event for shipment creation
+      const userInfo = getUserInfo(user, userData);
+      await auditService.logEvent(
+        userInfo.uid,
+        userInfo.name,
+        userInfo.role,
+        'create',
+        'shipment',
+        shipmentId,
+        `Shipment ${shipmentId}`,
+        `Created shipment for PO ${po.poNumber} with ${itemsToShip.length} items`,
+        undefined,
+        {
+          poNumber: po.poNumber,
+          appointmentId: formData.appointmentId,
+          invoiceNumber: formData.invoiceNumber,
+          totalAmount: totalAmount,
+          itemCount: itemsToShip.length
+        }
+      );
+
+      // Add automatic comment to PO
+      try {
+        await commentService.addComment(
+          po.id!,
+          getUserInfo(user, userData),
+          `📦 Shipment created: ${shipmentId} (Invoice: ${formData.invoiceNumber})`
+        );
+      } catch (commentError) {
+        console.error('Failed to add shipment comment:', commentError);
+      }
+
       showSuccess('Success', 'Shipment created successfully');
       onSuccess();
     } catch (error) {
@@ -276,9 +418,18 @@ function CreateShipmentModal({ po, isOpen, onClose, onSuccess }: {
         <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <h2 className="text-xl font-semibold text-gray-900">Create Shipment</h2>
-            <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600">
-              <XCircle className="w-5 h-5" />
-            </button>
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={() => setShowImportModal(true)}
+                className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm"
+              >
+                <Download className="w-4 h-4" />
+                <span>Import</span>
+              </button>
+              <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600">
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           <form onSubmit={handleSubmit} className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
@@ -450,6 +601,19 @@ function CreateShipmentModal({ po, isOpen, onClose, onSuccess }: {
           </form>
         </div>
       </div>
+
+      {/* Import Modal */}
+      {showImportModal && (
+        <DataImportExport
+          type="shipments"
+          isOpen={showImportModal}
+          onClose={() => setShowImportModal(false)}
+          onImportComplete={() => {
+            setShowImportModal(false);
+            onSuccess();
+          }}
+        />
+      )}
     </div>
   );
 }

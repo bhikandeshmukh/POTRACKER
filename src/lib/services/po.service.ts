@@ -1,6 +1,7 @@
 import { PurchaseOrder, CreatePOForm } from '../types';
 import { BaseService } from './base.service';
 import { auditService } from './audit.service';
+import { commentService } from './comment.service';
 import { Timestamp } from 'firebase/firestore';
 
 export class POService extends BaseService<PurchaseOrder> {
@@ -125,6 +126,42 @@ export class POService extends BaseService<PurchaseOrder> {
           updatedBy.role,
           reason
         );
+
+        // Add automatic comment for status change (only for significant status changes)
+        if (oldStatus !== status && ['Approved', 'Rejected', 'Shipped', 'Received'].includes(status)) {
+          const statusMessages: Record<string, string> = {
+            'Approved': `✅ PO has been approved by ${updatedBy.name}`,
+            'Rejected': `❌ PO has been rejected by ${updatedBy.name}${reason ? ` - Reason: ${reason}` : ''}`,
+            'Shipped': `🚚 PO has been marked as shipped by ${updatedBy.name}`,
+            'Received': `📦 PO has been marked as received by ${updatedBy.name}`
+          };
+
+          const commentContent = statusMessages[status];
+          
+          if (commentContent) {
+            try {
+              // Check if similar comment already exists to prevent duplicates
+              const existingComments = await commentService.getCommentsForPO(id);
+              const isDuplicate = existingComments.success && 
+                existingComments.data?.data.some(comment => 
+                  comment.content === commentContent && 
+                  comment.userId === updatedBy.uid &&
+                  Math.abs(new Date().getTime() - comment.timestamp.toDate().getTime()) < 60000 // Within 1 minute
+                );
+
+              if (!isDuplicate) {
+                await commentService.addComment(
+                  id,
+                  updatedBy,
+                  commentContent
+                );
+              }
+            } catch (commentError) {
+              console.error('Failed to add status change comment:', commentError);
+              // Don't fail the main operation if comment fails
+            }
+          }
+        }
       }
 
       return result;

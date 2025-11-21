@@ -21,6 +21,9 @@ export class AuditService extends BaseService<AuditLog> {
     metadata?: Record<string, any>
   ): Promise<void> {
     try {
+      console.log('Audit Service - Logging event:', { 
+        userId, userName, userRole, action, entityType, entityId, entityName, description 
+      });
       const auditLog: Omit<AuditLog, 'id' | 'createdAt' | 'updatedAt'> = {
         action,
         entityType,
@@ -30,14 +33,29 @@ export class AuditService extends BaseService<AuditLog> {
         userName,
         userRole,
         description: description || `${action} ${entityType} ${entityName}`,
-        changes,
-        metadata,
-        timestamp: serverTimestamp() as Timestamp,
-        ipAddress: typeof window !== 'undefined' ? window.location.hostname : undefined,
-        userAgent: typeof window !== 'undefined' ? navigator.userAgent : undefined
+        timestamp: serverTimestamp() as Timestamp
       };
 
-      await this.create(auditLog);
+      // Only add optional fields if they have values (Firestore doesn't allow undefined)
+      if (changes) {
+        auditLog.changes = changes;
+      }
+      if (metadata) {
+        auditLog.metadata = metadata;
+      }
+      
+      // Add browser info only if available (server-side rendering safe)
+      if (typeof window !== 'undefined') {
+        if (window.location.hostname) {
+          auditLog.ipAddress = window.location.hostname;
+        }
+        if (navigator.userAgent) {
+          auditLog.userAgent = navigator.userAgent;
+        }
+      }
+
+      const result = await this.create(auditLog);
+      console.log('Audit Service - Log created successfully:', result);
       logger.debug('Audit log created', { action, entityType, entityId });
     } catch (error) {
       logger.error('Failed to create audit log', error);

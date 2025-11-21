@@ -5,9 +5,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Sidebar from '@/components/Sidebar';
-import { Calendar, Clock, MapPin, User, FileText, Plus, Edit, Trash2, CheckCircle, XCircle, Mail } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, FileText, Plus, Edit, Trash2, CheckCircle, XCircle, Mail, Upload } from 'lucide-react';
 import { getThemeClasses } from '@/styles/theme';
-import { Timestamp } from 'firebase/firestore';
+import { Timestamp, collection, query, orderBy, getDocs, doc, setDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { getPOs, getTransporters } from '@/lib/firestore';
+import DataImportExport from '@/components/DataImportExport';
+import { getUserInfo } from '@/lib/utils/userUtils';
 
 interface Appointment {
   id?: string;
@@ -24,7 +28,7 @@ interface Appointment {
   location: string;
   docketNumber?: string;
   purpose: 'delivery' | 'inspection' | 'meeting' | 'pickup';
-  status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled';
+  status: 'scheduled' | 'confirmed' | 'prepared' | 'shipped' | 'in-transit' | 'delivered' | 'cancelled';
   notes?: string;
   createdBy?: string;
   createdAt?: Date;
@@ -41,6 +45,7 @@ export default function AppointmentsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [poInputMode, setPOInputMode] = useState<'dropdown' | 'manual'>('dropdown');
+  const [showImportModal, setShowImportModal] = useState(false);
   const [formData, setFormData] = useState<Partial<Appointment>>({
     appointmentId: '',
     poNumber: '',
@@ -74,10 +79,21 @@ export default function AppointmentsPage() {
   const loadAppointments = async () => {
     setLoadingData(true);
     try {
-      // TODO: Fetch from Firestore
-      setAppointments([]);
+      // Fetch appointments from Firestore
+      const appointmentsRef = collection(db, 'appointments');
+      const q = query(appointmentsRef, orderBy('appointmentDate', 'desc'));
+      const snapshot = await getDocs(q);
+      
+      const appointmentsList = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        appointmentDate: doc.data().appointmentDate?.toDate() || new Date()
+      } as Appointment));
+      
+      setAppointments(appointmentsList);
     } catch (error) {
       console.error('Error loading appointments:', error);
+      setAppointments([]);
     } finally {
       setLoadingData(false);
     }
@@ -85,26 +101,62 @@ export default function AppointmentsPage() {
 
   const loadPOs = async () => {
     try {
-      // TODO: Fetch POs from Firestore
-      setPOs([]);
+      const posList = await getPOs(user?.uid, userData?.role);
+      setPOs(posList);
     } catch (error) {
       console.error('Error loading POs:', error);
+      setPOs([]);
     }
   };
 
   const loadTransporters = async () => {
     try {
-      // TODO: Fetch transporters from Firestore
-      setTransporters([]);
+      const transportersList = await getTransporters();
+      setTransporters(transportersList);
     } catch (error) {
       console.error('Error loading transporters:', error);
+      setTransporters([]);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      // TODO: Save to Firestore
+      const appointmentData = {
+        appointmentId: formData.appointmentId,
+        poNumber: formData.poNumber,
+        poId: formData.poId,
+        vendorName: formData.vendorName,
+        transporterId: formData.transporterId,
+        transporterName: formData.transporterName,
+        transporterEmail: formData.transporterEmail,
+        transporterPhone: formData.transporterPhone,
+        appointmentDate: Timestamp.fromDate(new Date(formData.appointmentDate!)),
+        appointmentTime: formData.appointmentTime,
+        location: formData.location,
+        docketNumber: formData.docketNumber,
+        purpose: formData.purpose,
+        status: formData.status,
+        notes: formData.notes,
+        createdBy: user?.displayName || user?.email || 'Unknown',
+        updatedAt: serverTimestamp()
+      };
+
+      if (editingId) {
+        // Update existing appointment
+        const appointmentRef = doc(db, 'appointments', editingId);
+        await updateDoc(appointmentRef, appointmentData);
+      } else {
+        // Create new appointment
+        const appointmentId = `APT-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const appointmentRef = doc(db, 'appointments', appointmentId);
+        await setDoc(appointmentRef, {
+          ...appointmentData,
+          id: appointmentId,
+          createdAt: serverTimestamp()
+        });
+      }
+
       setShowForm(false);
       setEditingId(null);
       resetForm();
@@ -121,9 +173,59 @@ export default function AppointmentsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this appointment?')) {
+    if (confirm('Are you sure you want to delete this appointment? This will also remove the associated shipment if linked.')) {
       try {
-        // TODO: Delete from Firestore
+        // Find the appointment to get shipment info
+        const appointment = appointments.find(apt => apt.id === id);
+        
+        // Delete the appointment
+        const appointmentRef = doc(db, 'appointments', id);
+        await deleteDoc(appointmentRef);
+
+        // If appointment has linked shipment, delete shipment too
+        if (appointment && (appointment as any).shipmentId) {
+          const shipmentId = (appointment as any).shipmentId;
+          const shipmentRef = doc(db, 'shipments', shipmentId);
+          await deleteDoc(shipmentRef);
+
+          // Add comment to PO about deletion
+          if (appointment.poId) {
+            try {
+              const { commentService } = await import('@/lib/services');
+              await commentService.addComment(
+                appointment.poId,
+                getUserInfo(user, userData),
+                `🗑️ Appointment & Shipment deleted: ${appointment.appointmentId} (Shipment: ${shipmentId})`
+              );
+            } catch (commentError) {
+              console.error('Failed to add deletion comment:', commentError);
+            }
+          }
+
+          // Log audit event
+          try {
+            const { auditService } = await import('@/lib/services');
+            await auditService.logEvent(
+              user?.uid || '',
+              user?.displayName || user?.email || 'Unknown',
+              userData?.role || 'User',
+              'delete',
+              'system',
+              id,
+              `Appointment ${appointment.appointmentId}`,
+              `Deleted appointment and linked shipment: ${shipmentId}`,
+              undefined,
+              {
+                appointmentId: appointment.appointmentId,
+                shipmentId: shipmentId,
+                deletionType: 'appointment_with_shipment'
+              }
+            );
+          } catch (auditError) {
+            console.error('Failed to log audit event:', auditError);
+          }
+        }
+
         loadAppointments();
       } catch (error) {
         console.error('Error deleting appointment:', error);
@@ -133,7 +235,83 @@ export default function AppointmentsPage() {
 
   const handleStatusChange = async (id: string, status: Appointment['status']) => {
     try {
-      // TODO: Update status in Firestore
+      // Find the appointment to get shipment info
+      const appointment = appointments.find(apt => apt.id === id);
+      
+      // Update appointment status
+      const appointmentRef = doc(db, 'appointments', id);
+      await updateDoc(appointmentRef, {
+        status: status,
+        updatedAt: serverTimestamp(),
+        updatedBy: user?.displayName || user?.email || 'Unknown'
+      });
+
+      // If appointment has linked shipment, update shipment status too
+      if (appointment && (appointment as any).shipmentId) {
+        const shipmentId = (appointment as any).shipmentId;
+        
+        // Map appointment status to shipment status
+        const shipmentStatusMap: Record<string, string> = {
+          'scheduled': 'Prepared',
+          'confirmed': 'Prepared', 
+          'prepared': 'Prepared',
+          'shipped': 'Shipped',
+          'in-transit': 'In Transit',
+          'delivered': 'Delivered',
+          'cancelled': 'Cancelled'
+        };
+        
+        const shipmentStatus = shipmentStatusMap[status];
+        if (shipmentStatus) {
+          const shipmentRef = doc(db, 'shipments', shipmentId);
+          await updateDoc(shipmentRef, {
+            status: shipmentStatus,
+            updatedAt: serverTimestamp(),
+            updatedBy_uid: user?.uid,
+            updatedBy_name: user?.displayName || user?.email || 'Unknown'
+          });
+
+          // Add comment to PO about status change
+          if (appointment.poId) {
+            try {
+              const { commentService } = await import('@/lib/services');
+              await commentService.addComment(
+                appointment.poId,
+                getUserInfo(user, userData),
+                `📋 Appointment & Shipment status updated: ${status.toUpperCase()} (${appointment.appointmentId})`
+              );
+            } catch (commentError) {
+              console.error('Failed to add status update comment:', commentError);
+            }
+          }
+
+          // Log audit event
+          try {
+            const { auditService } = await import('@/lib/services');
+            await auditService.logEvent(
+              user?.uid || '',
+              user?.displayName || user?.email || 'Unknown',
+              userData?.role || 'User',
+              'update',
+              'system',
+              id,
+              `Appointment ${appointment.appointmentId}`,
+              `Status updated from appointment to ${status} (shipment: ${shipmentStatus})`,
+              undefined,
+              {
+                appointmentId: appointment.appointmentId,
+                shipmentId: shipmentId,
+                oldStatus: appointment.status,
+                newStatus: status,
+                shipmentStatus: shipmentStatus
+              }
+            );
+          } catch (auditError) {
+            console.error('Failed to log audit event:', auditError);
+          }
+        }
+      }
+
       loadAppointments();
     } catch (error) {
       console.error('Error updating status:', error);
@@ -207,7 +385,10 @@ export default function AppointmentsPage() {
     switch (status) {
       case 'scheduled': return 'bg-blue-100 text-blue-800';
       case 'confirmed': return 'bg-green-100 text-green-800';
-      case 'completed': return 'bg-gray-100 text-gray-800';
+      case 'prepared': return 'bg-yellow-100 text-yellow-800';
+      case 'shipped': return 'bg-purple-100 text-purple-800';
+      case 'in-transit': return 'bg-orange-100 text-orange-800';
+      case 'delivered': return 'bg-gray-100 text-gray-800';
       case 'cancelled': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
@@ -237,16 +418,25 @@ export default function AppointmentsPage() {
               <h1 className={getThemeClasses.pageTitle()}>PO Appointments</h1>
               <p className={getThemeClasses.description()}>Schedule and manage purchase order appointments</p>
             </div>
-            <button
-              onClick={() => {
-                resetForm();
-                setShowForm(true);
-              }}
-              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-            >
-              <Plus className="w-5 h-5" />
-              <span>New Appointment</span>
-            </button>
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setShowImportModal(true)}
+                className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+              >
+                <Upload className="w-5 h-5" />
+                <span>Import CSV</span>
+              </button>
+              <button
+                onClick={() => {
+                  resetForm();
+                  setShowForm(true);
+                }}
+                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+              >
+                <Plus className="w-5 h-5" />
+                <span>New Appointment</span>
+              </button>
+            </div>
           </div>
 
           {/* Add/Edit Form */}
@@ -371,6 +561,24 @@ export default function AppointmentsPage() {
                       <option value="inspection">Inspection</option>
                       <option value="meeting">Meeting</option>
                       <option value="pickup">Pickup</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Status *</label>
+                    <select
+                      required
+                      value={formData.status}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="scheduled">📅 Scheduled</option>
+                      <option value="confirmed">✅ Confirmed</option>
+                      <option value="prepared">📦 Prepared</option>
+                      <option value="shipped">🚚 Shipped</option>
+                      <option value="in-transit">🛣️ In Transit</option>
+                      <option value="delivered">📍 Delivered</option>
+                      <option value="cancelled">❌ Cancelled</option>
                     </select>
                   </div>
 
@@ -512,12 +720,15 @@ export default function AppointmentsPage() {
                           <select
                             value={appointment.status}
                             onChange={(e) => handleStatusChange(appointment.id!, e.target.value as any)}
-                            className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(appointment.status)}`}
+                            className={`px-3 py-1 rounded-full text-xs font-semibold border-0 ${getStatusColor(appointment.status)}`}
                           >
-                            <option value="scheduled">Scheduled</option>
-                            <option value="confirmed">Confirmed</option>
-                            <option value="completed">Completed</option>
-                            <option value="cancelled">Cancelled</option>
+                            <option value="scheduled">📅 Scheduled</option>
+                            <option value="confirmed">✅ Confirmed</option>
+                            <option value="prepared">📦 Prepared</option>
+                            <option value="shipped">🚚 Shipped</option>
+                            <option value="in-transit">🛣️ In Transit</option>
+                            <option value="delivered">📍 Delivered</option>
+                            <option value="cancelled">❌ Cancelled</option>
                           </select>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -547,6 +758,17 @@ export default function AppointmentsPage() {
           </div>
         </main>
       </div>
+
+      {/* Import Modal */}
+      <DataImportExport
+        type="appointments"
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImportComplete={() => {
+          setShowImportModal(false);
+          loadAppointments();
+        }}
+      />
     </div>
   );
 }

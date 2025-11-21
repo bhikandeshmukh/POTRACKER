@@ -3,9 +3,12 @@
 import { useState } from 'react';
 import { Upload, Download, FileText, AlertCircle, CheckCircle, X, Eye } from 'lucide-react';
 import { useToast } from '@/components/ToastContainer';
-import { addVendor, Vendor, PurchaseOrder, getPOs, getVendors, vendorNameToDocId, createPO } from '@/lib/firestore';
+import { addVendor, Vendor, PurchaseOrder, getPOs, getVendors, vendorNameToDocId } from '@/lib/firestore';
+import { poService, auditService, commentService } from '@/lib/services';
+import { getUserInfo, getUserDisplayName } from '@/lib/utils/userUtils';
 import { useAuth } from '@/contexts/AuthContext';
-import { Timestamp } from 'firebase/firestore';
+import { Timestamp, doc, setDoc, serverTimestamp, collection, query, orderBy, getDocs } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 interface ImportResult {
   success: number;
@@ -14,7 +17,7 @@ interface ImportResult {
 }
 
 interface DataImportExportProps {
-  type: 'vendors' | 'pos';
+  type: 'vendors' | 'pos' | 'shipments' | 'appointments';
   isOpen: boolean;
   onClose: () => void;
   onImportComplete?: () => void;
@@ -29,20 +32,46 @@ export default function DataImportExport({ type, isOpen, onClose, onImportComple
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [previewData, setPreviewData] = useState<any[]>([]);
   const [showPreview, setShowPreview] = useState(false);
+
+  // Helper function to parse dates in DD/MM/YYYY or YYYY-MM-DD format
+  const parseDate = (dateStr: string): Date => {
+    if (!dateStr) return new Date();
+    
+    // Check if it's DD/MM/YYYY format
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) {
+      const [day, month, year] = dateStr.split('/');
+      return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    }
+    
+    // Otherwise assume YYYY-MM-DD format or let Date constructor handle it
+    return new Date(dateStr);
+  };
   const [exporting, setExporting] = useState(false);
 
   const vendorTemplate = [
-    ['Name', 'Contact Person', 'Phone', 'Email', 'GST', 'Address'],
-    ['ABC Electronics Ltd', 'John Doe', '9876543210', 'john@abc.com', '22AAAAA0000A1Z5', '123 Business Park, Mumbai'],
-    ['XYZ Suppliers', 'Jane Smith', '9876543211', 'jane@xyz.com', '22BBBBB0000B1Z5', '456 Industrial Area, Delhi'],
+    ['Name', 'Contact Person', 'Phone', 'Email', 'GST', 'Address', 'Warehouse Name', 'Warehouse Address', 'Warehouse Type', 'Warehouse Contact', 'Warehouse Phone'],
+    ['ABC Electronics Ltd', 'John Doe', '9876543210', 'john@abc.com', '22AAAAA0000A1Z5', '123 Business Park, Mumbai', 'Main Warehouse', '789 Storage Complex, Mumbai', 'main', 'Warehouse Manager', '9876543212'],
+    ['XYZ Suppliers', 'Jane Smith', '9876543211', 'jane@xyz.com', '22BBBBB0000B1Z5', '456 Industrial Area, Delhi', 'Distribution Center', '321 Logistics Hub, Delhi', 'distribution', 'Operations Head', '9876543213'],
   ];
 
   const poTemplate = [
-    ['PO Number', 'Vendor Name', 'Order Date', 'Delivery Date', 'Status', 'Item Name', 'Barcode', 'SKU', 'Size', 'Order Qty', 'Item Price', 'Sent Qty', 'Pending Qty', 'Line Total'],
-    ['PO-2024-001', 'ABC Electronics Ltd', '2024-01-15', '2024-01-30', 'Pending', 'Dell Inspiron Laptop', 'DELL123456789ABC', 'DELL-INS-15', '15 inch', '100', '25000', '0', '100', '2500000'],
-    ['PO-2024-001', 'ABC Electronics Ltd', '2024-01-15', '2024-01-30', 'Pending', 'Wireless Mouse', 'MOUSE-WL-789XYZ', 'MOUSE-WL-01', 'Standard', '200', '500', '50', '150', '100000'],
-    ['PO-2024-002', 'XYZ Suppliers', '2024-01-16', '2024-02-01', 'Approved', 'Executive Chair', 'CHAIR456789DEF', 'CHAIR-EXE-BLK', 'Large', '50', '3000', '30', '20', '150000'],
-    ['PO-2024-002', 'XYZ Suppliers', '2024-01-16', '2024-02-01', 'Approved', 'Office Desk', 'DESK-OFF-123GHI', 'DESK-OFF-WD', '4x2 feet', '25', '8000', '15', '10', '200000'],
+    ['PO Number', 'Vendor Name', 'Order Date', 'Delivery Date', 'Barcode', 'SKU', 'Size', 'Order Qty', 'Item Price', 'Sent Qty', 'Pending Qty', 'Line Total'],
+    ['PO-2024-001', 'ABC Electronics Ltd', '15/01/2024', '30/01/2024', 'DELL123456789ABC', 'DELL-INS-15', '15 inch', '100', '25000', '0', '100', '2500000'],
+    ['PO-2024-001', 'ABC Electronics Ltd', '15/01/2024', '30/01/2024', 'MOUSE-WL-789XYZ', 'MOUSE-WL-01', 'Standard', '200', '500', '0', '200', '100000'],
+    ['PO-2024-002', 'XYZ Suppliers', '16/01/2024', '01/02/2024', 'CHAIR456789DEF', 'CHAIR-EXE-BLK', 'Large', '50', '3000', '0', '50', '150000'],
+    ['PO-2024-002', 'XYZ Suppliers', '16/01/2024', '01/02/2024', 'DESK-OFF-123GHI', 'DESK-OFF-WD', '4x2 feet', '25', '8000', '0', '25', '200000'],
+  ];
+
+  const shipmentTemplate = [
+    ['PO Number', 'Appointment ID', 'Invoice Number', 'Shipment Date', 'Expected Delivery Date', 'Carrier', 'Tracking Number', 'Notes'],
+    ['PO-2024-001', 'APT-2024-001', 'INV-2024-001', '21/11/2025', '25/11/2025', 'FedEx', '1234567890', 'Handle with care'],
+    ['PO-2024-002', 'APT-2024-002', 'INV-2024-002', '22/11/2025', '26/11/2025', 'DHL', '9876543210', 'Fragile items'],
+  ];
+
+  const appointmentTemplate = [
+    ['Appointment ID', 'PO Number', 'Vendor Name', 'Date', 'Time', 'Location', 'Purpose', 'Status', 'Transporter', 'Docket Number', 'Notes'],
+    ['APT-2024-001', 'PO-2024-001', 'ABC Electronics Ltd', '25/11/2025', '10:00', 'Warehouse A', 'delivery', 'scheduled', 'FedEx', 'DOC-001', 'Morning delivery'],
+    ['APT-2024-002', 'PO-2024-002', 'XYZ Suppliers', '26/11/2025', '14:00', 'Warehouse B', 'delivery', 'confirmed', 'DHL', 'DOC-002', 'Afternoon pickup'],
   ];
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -91,33 +120,32 @@ export default function DataImportExport({ type, isOpen, onClose, onImportComple
     if (!data[2]?.trim()) errors.push('Order Date is required');
     if (!data[3]?.trim()) errors.push('Delivery Date is required');
     
-    // Item Info Validation
-    if (!data[5]?.trim()) errors.push('Item Name is required');
-    if (!data[6]?.trim()) errors.push('Barcode is required');
-    if (!data[7]?.trim()) errors.push('SKU is required');
-    if (!data[9]?.trim()) errors.push('Order Qty is required');
-    if (!data[10]?.trim()) errors.push('Item Price is required');
+    // Item Info Validation (adjusted indices after removing Status column)
+    if (!data[4]?.trim()) errors.push('Barcode is required');
+    if (!data[5]?.trim()) errors.push('SKU is required');
+    if (!data[7]?.trim()) errors.push('Order Qty is required');
+    if (!data[8]?.trim()) errors.push('Item Price is required');
     
-    // Date format validation (YYYY-MM-DD)
-    if (data[2] && !/^\d{4}-\d{2}-\d{2}$/.test(data[2])) {
-      errors.push('Order Date must be in YYYY-MM-DD format');
+    // Date format validation (DD/MM/YYYY or YYYY-MM-DD)
+    if (data[2] && !/^\d{2}\/\d{2}\/\d{4}$/.test(data[2]) && !/^\d{4}-\d{2}-\d{2}$/.test(data[2])) {
+      errors.push('Order Date must be in DD/MM/YYYY or YYYY-MM-DD format');
     }
-    if (data[3] && !/^\d{4}-\d{2}-\d{2}$/.test(data[3])) {
-      errors.push('Delivery Date must be in YYYY-MM-DD format');
+    if (data[3] && !/^\d{2}\/\d{2}\/\d{4}$/.test(data[3]) && !/^\d{4}-\d{2}-\d{2}$/.test(data[3])) {
+      errors.push('Delivery Date must be in DD/MM/YYYY or YYYY-MM-DD format');
     }
     
-    // Quantity validations
-    const orderQty = Number(data[9]);
-    const sentQty = Number(data[11]) || 0;
-    const pendingQty = Number(data[12]) || 0;
+    // Quantity validations (adjusted indices)
+    const orderQty = Number(data[7]);
+    const sentQty = Number(data[9]) || 0;
+    const pendingQty = Number(data[10]) || 0;
     
-    if (data[9] && (isNaN(orderQty) || orderQty <= 0)) {
+    if (data[7] && (isNaN(orderQty) || orderQty <= 0)) {
       errors.push('Order Qty must be a positive number');
     }
-    if (data[11] && (isNaN(sentQty) || sentQty < 0)) {
+    if (data[9] && (isNaN(sentQty) || sentQty < 0)) {
       errors.push('Sent Qty must be a non-negative number');
     }
-    if (data[12] && (isNaN(pendingQty) || pendingQty < 0)) {
+    if (data[10] && (isNaN(pendingQty) || pendingQty < 0)) {
       errors.push('Pending Qty must be a non-negative number');
     }
     
@@ -131,25 +159,75 @@ export default function DataImportExport({ type, isOpen, onClose, onImportComple
       }
     }
     
-    // Price validation
-    if (data[10] && (isNaN(Number(data[10])) || Number(data[10]) <= 0)) {
+    // Price validation (adjusted index)
+    if (data[8] && (isNaN(Number(data[8])) || Number(data[8]) <= 0)) {
       errors.push('Item Price must be a positive number');
     }
     
-    // Line Total validation
-    if (data[13] && (isNaN(Number(data[13])) || Number(data[13]) < 0)) {
+    // Line Total validation (adjusted index)
+    if (data[11] && (isNaN(Number(data[11])) || Number(data[11]) < 0)) {
       errors.push('Line Total must be a non-negative number');
     }
     
-    // Barcode validation (universal - any format accepted)
-    if (data[6] && !data[6].trim()) {
+    // Barcode validation (adjusted index)
+    if (data[4] && !data[4].trim()) {
       errors.push('Barcode cannot be empty');
     }
+
+    return { isValid: errors.length === 0, errors };
+  };
+
+  const validateShipmentData = (data: string[]): { isValid: boolean; errors: string[] } => {
+    const errors: string[] = [];
     
-    // Validate status
-    const validStatuses = ['Pending', 'Approved', 'Rejected', 'Shipped', 'Received', 'Partial'];
-    if (data[4] && !validStatuses.includes(data[4])) {
-      errors.push('Status must be one of: Pending, Approved, Rejected, Shipped, Received, Partial');
+    // Required fields validation
+    if (!data[0]?.trim()) errors.push('PO Number is required');
+    if (!data[1]?.trim()) errors.push('Appointment ID is required');
+    if (!data[2]?.trim()) errors.push('Invoice Number is required');
+    if (!data[3]?.trim()) errors.push('Shipment Date is required');
+    
+    // Date format validation
+    if (data[3] && !/^\d{2}\/\d{2}\/\d{4}$/.test(data[3]) && !/^\d{4}-\d{2}-\d{2}$/.test(data[3])) {
+      errors.push('Shipment Date must be in DD/MM/YYYY or YYYY-MM-DD format');
+    }
+    if (data[4] && !/^\d{2}\/\d{2}\/\d{4}$/.test(data[4]) && !/^\d{4}-\d{2}-\d{2}$/.test(data[4])) {
+      errors.push('Expected Delivery Date must be in DD/MM/YYYY or YYYY-MM-DD format');
+    }
+
+    return { isValid: errors.length === 0, errors };
+  };
+
+  const validateAppointmentData = (data: string[]): { isValid: boolean; errors: string[] } => {
+    const errors: string[] = [];
+    
+    // Required fields validation
+    if (!data[0]?.trim()) errors.push('Appointment ID is required');
+    if (!data[1]?.trim()) errors.push('PO Number is required');
+    if (!data[2]?.trim()) errors.push('Vendor Name is required');
+    if (!data[3]?.trim()) errors.push('Date is required');
+    if (!data[4]?.trim()) errors.push('Time is required');
+    if (!data[5]?.trim()) errors.push('Location is required');
+    if (!data[6]?.trim()) errors.push('Purpose is required');
+    if (!data[7]?.trim()) errors.push('Status is required');
+    
+    // Date format validation
+    if (data[3] && !/^\d{2}\/\d{2}\/\d{4}$/.test(data[3]) && !/^\d{4}-\d{2}-\d{2}$/.test(data[3])) {
+      errors.push('Date must be in DD/MM/YYYY or YYYY-MM-DD format');
+    }
+    
+    // Time format validation
+    if (data[4] && !/^\d{2}:\d{2}$/.test(data[4])) {
+      errors.push('Time must be in HH:MM format');
+    }
+    
+    // Purpose validation
+    if (data[6] && !['delivery', 'inspection', 'meeting', 'pickup'].includes(data[6].toLowerCase())) {
+      errors.push('Purpose must be one of: delivery, inspection, meeting, pickup');
+    }
+    
+    // Status validation
+    if (data[7] && !['scheduled', 'confirmed', 'prepared', 'shipped', 'in-transit', 'delivered', 'cancelled'].includes(data[7].toLowerCase())) {
+      errors.push('Status must be one of: scheduled, confirmed, prepared, shipped, in-transit, delivered, cancelled');
     }
 
     return { isValid: errors.length === 0, errors };
@@ -193,6 +271,21 @@ export default function DataImportExport({ type, isOpen, onClose, onImportComple
           }
 
           try {
+            const warehouses = [];
+            
+            // Check if warehouse data is provided
+            if (row[6] && row[7]) { // Warehouse Name and Address
+              warehouses.push({
+                id: `WH-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                name: row[6],
+                address: row[7],
+                type: (row[8] || 'main') as 'main' | 'secondary' | 'distribution' | 'storage',
+                contactPerson: row[9] || undefined,
+                phone: row[10] || undefined,
+                isActive: true
+              });
+            }
+
             const vendorData: Omit<Vendor, 'id'> = {
               name: row[0],
               contactPerson: row[1],
@@ -200,6 +293,7 @@ export default function DataImportExport({ type, isOpen, onClose, onImportComple
               email: row[3] || undefined,
               gst: row[4] || undefined,
               address: row[5] || undefined,
+              warehouses: warehouses.length > 0 ? warehouses : undefined,
             };
 
             await addVendor(vendorData, user.uid, user.email || undefined);
@@ -227,21 +321,21 @@ export default function DataImportExport({ type, isOpen, onClose, onImportComple
             const poNumber = row[0]; // PO Number is first column
             const vendorName = row[1];
             
-            // Calculate line total if not provided
-            const orderQty = Number(row[9]);
-            const itemPrice = Number(row[10]);
-            const lineTotal = row[13] ? Number(row[13]) : (orderQty * itemPrice);
+            // Calculate line total if not provided (adjusted indices after removing Status)
+            const orderQty = Number(row[7]);
+            const itemPrice = Number(row[8]);
+            const lineTotal = row[11] ? Number(row[11]) : (orderQty * itemPrice);
             
             const lineItem = {
-              itemName: row[5],
-              barcode: row[6],
-              sku: row[7],
-              size: row[8] || '',
+              itemName: row[5] || row[4], // Use SKU as item name, fallback to barcode
+              barcode: row[4],
+              sku: row[5],
+              size: row[6] || '',
               quantity: orderQty,
               unitPrice: itemPrice,
               total: lineTotal,
-              sentQty: Number(row[11]) || 0,
-              pendingQty: Number(row[12]) || orderQty
+              sentQty: Number(row[9]) || 0,
+              pendingQty: Number(row[10]) || orderQty
             };
 
             // Group items by PO Number
@@ -261,11 +355,11 @@ export default function DataImportExport({ type, isOpen, onClose, onImportComple
                 poData: {
                   vendorId: vendorId,
                   vendorName: vendorName,
-                  orderDate: Timestamp.fromDate(new Date(row[2])),
-                  expectedDeliveryDate: Timestamp.fromDate(new Date(row[3])),
-                  status: (row[4] || 'Pending') as PurchaseOrder['status'],
+                  orderDate: Timestamp.fromDate(parseDate(row[2])),
+                  expectedDeliveryDate: Timestamp.fromDate(parseDate(row[3])),
+                  status: 'Pending' as PurchaseOrder['status'],
                   createdBy_uid: user.uid,
-                  createdBy_name: user.displayName || user.email || 'Imported User',
+                  createdBy_name: getUserDisplayName(user, userData),
                   lineItems: []
                 },
                 totalAmount: 0
@@ -283,6 +377,231 @@ export default function DataImportExport({ type, isOpen, onClose, onImportComple
               data: row
             });
           }
+        } else if (type === 'shipments') {
+          const validation = validateShipmentData(row);
+          
+          if (!validation.isValid) {
+            result.errors.push({
+              row: rowNumber,
+              error: validation.errors.join(', '),
+              data: row
+            });
+            continue;
+          }
+
+          const poNumber = row[0];
+          let shipmentData: any = null;
+          
+          try {
+            
+            // Fetch existing PO to validate and get items
+            const existingPOs = await getPOs(user.uid, userData?.role);
+            const existingPO = existingPOs.find(po => po.poNumber === poNumber);
+            
+            if (!existingPO) {
+              result.errors.push({
+                row: rowNumber,
+                error: `PO Number "${poNumber}" not found in system`,
+                data: row
+              });
+              continue;
+            }
+
+            // Create shipment data
+            shipmentData = {
+              poNumber: poNumber,
+              appointmentId: row[1],
+              invoiceNumber: row[2],
+              shipmentDate: Timestamp.fromDate(parseDate(row[3])),
+              status: 'Prepared' as const,
+              createdBy_uid: user.uid,
+              createdBy_name: getUserDisplayName(user, userData),
+              lineItems: existingPO.lineItems.map(item => ({
+                itemName: item.itemName,
+                barcode: item.barcode || '',
+                sku: item.sku || '',
+                size: item.size || '',
+                shippedQty: item.quantity, // Ship all items by default
+                unitPrice: item.unitPrice,
+                total: item.total
+              })),
+              totalAmount: existingPO.totalAmount
+            };
+
+            // Only add optional fields if they have values
+            if (row[4]) {
+              shipmentData.expectedDeliveryDate = Timestamp.fromDate(parseDate(row[4]));
+            }
+            if (row[5]) {
+              shipmentData.carrier = row[5];
+            }
+            if (row[6]) {
+              shipmentData.trackingNumber = row[6];
+            }
+            if (row[7]) {
+              shipmentData.notes = row[7];
+            }
+
+            console.log('Creating shipment with data:', shipmentData);
+
+            // Generate shipment ID and create directly
+            const shipmentId = `SHP-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            const shipmentRef = doc(db, 'shipments', shipmentId);
+            const shipmentWithId = {
+              ...shipmentData,
+              id: shipmentId,
+              createdAt: serverTimestamp() as Timestamp,
+            };
+            
+            console.log('Saving shipment to Firestore:', shipmentWithId);
+            await setDoc(shipmentRef, shipmentWithId);
+            console.log('Shipment saved successfully with ID:', shipmentId);
+
+            // Create appointment for imported shipment
+            const appointmentId = `APT-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            const appointmentRef = doc(db, 'appointments', appointmentId);
+            const appointmentData = {
+              id: appointmentId,
+              appointmentId: row[1] || appointmentId, // Use provided appointment ID or generate new
+              poNumber: poNumber,
+              poId: existingPO.id,
+              vendorName: existingPO.vendorName,
+              appointmentDate: shipmentData.shipmentDate,
+              appointmentTime: '10:00', // Default time
+              location: 'Warehouse', // Default location
+              contactPerson: shipmentData.carrier || 'TBD',
+              notes: `Imported shipment appointment for ${shipmentId}`,
+              status: 'scheduled',
+              purpose: 'delivery',
+              transporterId: '',
+              transporterName: shipmentData.carrier || '',
+              transporterEmail: '',
+              docketNumber: shipmentData.trackingNumber || '',
+              createdBy: getUserDisplayName(user, userData),
+              createdAt: serverTimestamp(),
+              shipmentId: shipmentId // Link to shipment
+            };
+            
+            await setDoc(appointmentRef, appointmentData);
+            console.log('Appointment created for imported shipment:', appointmentId);
+
+            // Log audit event for shipment import
+            const userInfo = getUserInfo(user, userData);
+            await auditService.logEvent(
+              userInfo.uid,
+              userInfo.name,
+              userInfo.role,
+              'create',
+              'shipment',
+              shipmentId,
+              `Shipment ${shipmentId}`,
+              `Imported shipment for PO ${poNumber} (Invoice: ${row[2]})`,
+              undefined,
+              {
+                poNumber: poNumber,
+                appointmentId: row[1],
+                invoiceNumber: row[2],
+                importedAt: new Date().toISOString()
+              }
+            );
+
+            // Add automatic comment to PO
+            try {
+              await commentService.addComment(
+                existingPO.id!,
+                getUserInfo(user, userData),
+                `📦 Shipment imported: ${shipmentId} (Invoice: ${row[2]})`
+              );
+            } catch (commentError) {
+              console.error('Failed to add shipment import comment:', commentError);
+            }
+            
+            result.success++;
+            
+          } catch (error: any) {
+            console.error('Shipment creation error details:', {
+              error: error,
+              message: error.message,
+              stack: error.stack,
+              poNumber: row[0],
+              row: row,
+              shipmentData: shipmentData || 'Not created'
+            });
+            result.errors.push({
+              row: rowNumber,
+              error: error.message || `Failed to create shipment: ${JSON.stringify(error)}`,
+              data: row
+            });
+          }
+        } else if (type === 'appointments') {
+          const validation = validateAppointmentData(row);
+          
+          if (!validation.isValid) {
+            result.errors.push({
+              row: rowNumber,
+              error: validation.errors.join(', '),
+              data: row
+            });
+            continue;
+          }
+
+          try {
+            // Create appointment data
+            const appointmentData = {
+              appointmentId: row[0],
+              poNumber: row[1],
+              vendorName: row[2],
+              appointmentDate: Timestamp.fromDate(parseDate(row[3])),
+              appointmentTime: row[4],
+              location: row[5],
+              purpose: row[6].toLowerCase(),
+              status: row[7].toLowerCase(),
+              transporterName: row[8] || '',
+              docketNumber: row[9] || '',
+              notes: row[10] || '',
+              createdBy: getUserDisplayName(user, userData),
+              createdAt: serverTimestamp()
+            };
+
+            // Generate appointment ID and create directly
+            const appointmentId = `APT-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            const appointmentRef = doc(db, 'appointments', appointmentId);
+            const appointmentWithId = {
+              ...appointmentData,
+              id: appointmentId
+            };
+            
+            await setDoc(appointmentRef, appointmentWithId);
+            
+            // Log audit event for appointment import
+            const userInfoApt = getUserInfo(user, userData);
+            await auditService.logEvent(
+              userInfoApt.uid,
+              userInfoApt.name,
+              userInfoApt.role,
+              'create',
+              'system',
+              appointmentId,
+              `Appointment ${appointmentData.appointmentId}`,
+              `Imported appointment for PO ${appointmentData.poNumber}`,
+              undefined,
+              {
+                poNumber: appointmentData.poNumber,
+                appointmentId: appointmentData.appointmentId,
+                importedAt: new Date().toISOString()
+              }
+            );
+            
+            result.success++;
+            
+          } catch (error: any) {
+            console.error('Appointment creation error:', error);
+            result.errors.push({
+              row: rowNumber,
+              error: error.message || 'Failed to create appointment',
+              data: row
+            });
+          }
         }
       }
 
@@ -290,14 +609,25 @@ export default function DataImportExport({ type, isOpen, onClose, onImportComple
       if (type === 'pos') {
         for (const [poNumber, group] of Object.entries(poGroups)) {
           try {
+            console.log('Creating PO with number from CSV:', poNumber);
+            
             const finalPOData = {
-              poNumber,
-              ...group.poData,
-              totalAmount: group.totalAmount
+              vendorId: group.poData.vendorId,
+              vendorName: group.poData.vendorName,
+              orderDate: group.poData.orderDate.toDate().toISOString().split('T')[0],
+              expectedDeliveryDate: group.poData.expectedDeliveryDate.toDate().toISOString().split('T')[0],
+              lineItems: group.poData.lineItems
             };
             
-            await createPO(finalPOData);
-            result.success++;
+            const createResult = await poService.createPO(
+              finalPOData,
+              getUserInfo(user, userData),
+              group.poData.vendorName,
+              poNumber // Pass the PO number from CSV as custom PO number
+            );
+            
+            console.log('PO created successfully:', createResult);
+            result.success = result.success + 1;
           } catch (error: any) {
             result.errors.push({
               row: 0,
@@ -327,7 +657,9 @@ export default function DataImportExport({ type, isOpen, onClose, onImportComple
   };
 
   const downloadTemplate = () => {
-    const template = type === 'vendors' ? vendorTemplate : poTemplate;
+    const template = type === 'vendors' ? vendorTemplate : 
+                    type === 'pos' ? poTemplate : 
+                    type === 'appointments' ? appointmentTemplate : shipmentTemplate;
     const csvContent = template.map(row => 
       row.map(cell => `"${cell}"`).join(',')
     ).join('\n');
@@ -356,21 +688,45 @@ export default function DataImportExport({ type, isOpen, onClose, onImportComple
         const vendors = await getVendors();
         
         const exportData = [
-          ['Name', 'Contact Person', 'Phone', 'Email', 'GST', 'Address'],
-          ...vendors.map(vendor => [
-            vendor.name || '',
-            vendor.contactPerson || '',
-            vendor.phone || '',
-            vendor.email || '',
-            vendor.gst || '',
-            vendor.address || ''
-          ])
+          ['Name', 'Contact Person', 'Phone', 'Email', 'GST', 'Address', 'Warehouse Name', 'Warehouse Address', 'Warehouse Type', 'Warehouse Contact', 'Warehouse Phone']
         ];
+        
+        // Export vendors with their warehouses (one row per warehouse)
+        vendors.forEach(vendor => {
+          if (vendor.warehouses && vendor.warehouses.length > 0) {
+            vendor.warehouses.forEach(warehouse => {
+              exportData.push([
+                vendor.name || '',
+                vendor.contactPerson || '',
+                vendor.phone || '',
+                vendor.email || '',
+                vendor.gst || '',
+                vendor.address || '',
+                warehouse.name || '',
+                warehouse.address || '',
+                warehouse.type || '',
+                warehouse.contactPerson || '',
+                warehouse.phone || ''
+              ]);
+            });
+          } else {
+            // Vendor without warehouses
+            exportData.push([
+              vendor.name || '',
+              vendor.contactPerson || '',
+              vendor.phone || '',
+              vendor.email || '',
+              vendor.gst || '',
+              vendor.address || '',
+              '', '', '', '', ''
+            ]);
+          }
+        });
         
         csvContent = exportData.map(row => 
           row.map(cell => `"${cell}"`).join(',')
         ).join('\n');
-      } else {
+      } else if (type === 'pos') {
         // Fetch real PO data from Firestore
         const pos = await getPOs(user.uid, userData?.role);
         
@@ -414,6 +770,74 @@ export default function DataImportExport({ type, isOpen, onClose, onImportComple
             ]);
           }
         });
+        
+        csvContent = exportData.map(row => 
+          row.map(cell => `"${cell}"`).join(',')
+        ).join('\n');
+      } else if (type === 'appointments') {
+        // Fetch real appointment data from Firestore
+        const appointmentsRef = collection(db, 'appointments');
+        const q = query(appointmentsRef, orderBy('appointmentDate', 'desc'));
+        const snapshot = await getDocs(q);
+        
+        const appointments = snapshot.docs.map(doc => {
+          const data = doc.data() as any;
+          return {
+            id: doc.id,
+            ...data,
+            appointmentDate: data.appointmentDate?.toDate() || new Date()
+          };
+        });
+        
+        const exportData = [
+          ['Appointment ID', 'PO Number', 'Vendor Name', 'Date', 'Time', 'Location', 'Purpose', 'Status', 'Transporter', 'Docket Number', 'Notes'],
+          ...appointments.map(appointment => [
+            appointment.appointmentId || '',
+            appointment.poNumber || '',
+            appointment.vendorName || '',
+            appointment.appointmentDate ? appointment.appointmentDate.toLocaleDateString('en-GB') : '',
+            appointment.appointmentTime || '',
+            appointment.location || '',
+            appointment.purpose || '',
+            appointment.status || '',
+            appointment.transporterName || '',
+            appointment.docketNumber || '',
+            appointment.notes || ''
+          ])
+        ];
+        
+        csvContent = exportData.map(row => 
+          row.map(cell => `"${cell}"`).join(',')
+        ).join('\n');
+      } else if (type === 'shipments') {
+        // Fetch real shipment data from Firestore
+        const shipmentsRef = collection(db, 'shipments');
+        const q = query(shipmentsRef, orderBy('shipmentDate', 'desc'));
+        const snapshot = await getDocs(q);
+        
+        const shipments = snapshot.docs.map(doc => {
+          const data = doc.data() as any;
+          return {
+            id: doc.id,
+            ...data,
+            shipmentDate: data.shipmentDate?.toDate() || new Date(),
+            expectedDeliveryDate: data.expectedDeliveryDate?.toDate() || null
+          };
+        });
+        
+        const exportData = [
+          ['PO Number', 'Appointment ID', 'Invoice Number', 'Shipment Date', 'Expected Delivery Date', 'Carrier', 'Tracking Number', 'Notes'],
+          ...shipments.map(shipment => [
+            shipment.poNumber || '',
+            shipment.appointmentId || '',
+            shipment.invoiceNumber || '',
+            shipment.shipmentDate ? shipment.shipmentDate.toLocaleDateString('en-GB') : '',
+            shipment.expectedDeliveryDate ? shipment.expectedDeliveryDate.toLocaleDateString('en-GB') : '',
+            shipment.carrier || '',
+            shipment.trackingNumber || '',
+            shipment.notes || ''
+          ])
+        ];
         
         csvContent = exportData.map(row => 
           row.map(cell => `"${cell}"`).join(',')
@@ -509,16 +933,27 @@ export default function DataImportExport({ type, isOpen, onClose, onImportComple
                     <li>• Save as CSV file and upload below</li>
                     {type === 'vendors' ? (
                       <li>• Required fields: Name, Contact Person, Phone</li>
-                    ) : (
+                    ) : type === 'pos' ? (
                       <>
                         <li>• Required fields: PO Number, Vendor Name, Order Date, Delivery Date</li>
-                        <li>• Item fields required: Item Name, Barcode, SKU, Order Qty, Item Price</li>
-                        <li>• Date format: YYYY-MM-DD (e.g., 2024-01-15)</li>
-                        <li>• Status options: Pending, Approved, Rejected, Shipped, Received, Partial</li>
+                        <li>• Item fields required: Barcode, SKU, Order Qty, Item Price</li>
+                        <li>• Date format: DD/MM/YYYY (e.g., 15/01/2024) or YYYY-MM-DD (e.g., 2024-01-15)</li>
+                        <li>• All new POs will be created with "Pending" status</li>
+                        <li>• Status can be changed later using Approve/Reject buttons in the portal</li>
                         <li>• Barcode: Any format accepted (alphanumeric, no length limit)</li>
                         <li>• Quantities: Sent Qty + Pending Qty must equal Order Qty</li>
                         <li>• Multiple items per PO: Use same PO Number for different items</li>
                         <li>• Same PO Number will group items into single Purchase Order</li>
+                      </>
+                    ) : (
+                      <>
+                        <li>• Required fields: PO Number, Appointment ID, Invoice Number, Shipment Date</li>
+                        <li>• PO Number must exist in the system (will validate against existing POs)</li>
+                        <li>• Date format: DD/MM/YYYY (e.g., 21/11/2025) or YYYY-MM-DD (e.g., 2025-11-21)</li>
+                        <li>• Only PO details will be accepted - items cannot be modified</li>
+                        <li>• Shipment will include all items from the original PO</li>
+                        <li>• Carrier and Tracking Number are optional</li>
+                        <li>• All shipments will be created with "Prepared" status</li>
                       </>
                     )}
                   </ul>

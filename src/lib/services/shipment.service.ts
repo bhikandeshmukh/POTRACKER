@@ -1,6 +1,7 @@
 import { Shipment, ShipmentLineItem } from '../types';
 import { BaseService } from './base.service';
 import { auditService } from './audit.service';
+import { getUserInfo, cleanMetadata } from '../utils/userUtils';
 import { Timestamp, serverTimestamp } from 'firebase/firestore';
 
 export class ShipmentService extends BaseService<Shipment> {
@@ -78,6 +79,9 @@ export class ShipmentService extends BaseService<Shipment> {
       const result = await this.update(id, updateData);
 
       if (result.success) {
+        // Update linked appointment status
+        await this.syncAppointmentStatus(id, status, updatedBy);
+
         // Log status change
         await auditService.logEvent(
           updatedBy.uid,
@@ -89,11 +93,11 @@ export class ShipmentService extends BaseService<Shipment> {
           `Shipment for PO ${currentShipment.poNumber}`,
           `Shipment status changed from ${oldStatus} to ${status}`,
           { status: { old: oldStatus, new: status } },
-          {
+          cleanMetadata({
             poNumber: currentShipment.poNumber,
             trackingNumber,
             actualDeliveryDate: actualDeliveryDate?.toISOString()
-          }
+          })
         );
       }
 
@@ -103,6 +107,88 @@ export class ShipmentService extends BaseService<Shipment> {
         success: false,
         error: this.handleError(error, 'update shipment status').message
       };
+    }
+  }
+
+  private async syncAppointmentStatus(
+    shipmentId: string,
+    shipmentStatus: Shipment['status'],
+    updatedBy: { uid: string; name: string; role: string }
+  ) {
+    try {
+      const { collection, query, where, getDocs, doc, updateDoc } = await import('firebase/firestore');
+      const { db } = await import('../firebase');
+      const { commentService } = await import('./comment.service');
+
+      // Find appointment linked to this shipment
+      const appointmentsRef = collection(db, 'appointments');
+      const q = query(appointmentsRef, where('shipmentId', '==', shipmentId));
+      const snapshot = await getDocs(q);
+
+      if (!snapshot.empty) {
+        const appointmentDoc = snapshot.docs[0];
+        const appointmentData = appointmentDoc.data();
+
+        // Map shipment status to appointment status
+        const appointmentStatusMap: Record<string, string> = {
+          'Prepared': 'prepared',
+          'Shipped': 'shipped',
+          'In Transit': 'in-transit',
+          'Delivered': 'delivered',
+          'Cancelled': 'cancelled'
+        };
+
+        const appointmentStatus = appointmentStatusMap[shipmentStatus];
+        if (appointmentStatus) {
+          // Update appointment status
+          const appointmentRef = doc(db, 'appointments', appointmentDoc.id);
+          await updateDoc(appointmentRef, {
+            status: appointmentStatus,
+            updatedAt: serverTimestamp(),
+            updatedBy: updatedBy.name
+          });
+
+          // Add comment to PO about synchronized status change
+          if (appointmentData.poId) {
+            try {
+              await commentService.addComment(
+                appointmentData.poId,
+                {
+                  uid: updatedBy.uid,
+                  name: updatedBy.name,
+                  role: updatedBy.role
+                },
+                `🔄 Shipment status updated: ${shipmentStatus} → Appointment synced: ${appointmentStatus.toUpperCase()} (${appointmentData.appointmentId})`
+              );
+            } catch (commentError) {
+              console.error('Failed to add sync comment:', commentError);
+            }
+          }
+
+          // Log sync audit event
+          await auditService.logEvent(
+            updatedBy.uid,
+            updatedBy.name,
+            updatedBy.role,
+            'update',
+            'system',
+            shipmentId,
+            `Shipment ${shipmentId}`,
+            `Synchronized appointment status from shipment: ${shipmentStatus} → ${appointmentStatus}`,
+            undefined,
+            {
+              shipmentId,
+              appointmentId: appointmentData.appointmentId,
+              shipmentStatus,
+              appointmentStatus,
+              syncDirection: 'shipment_to_appointment'
+            }
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Failed to sync appointment status:', error);
+      // Don't throw error as this is a secondary operation
     }
   }
 
@@ -158,6 +244,118 @@ export class ShipmentService extends BaseService<Shipment> {
   }
 
   // Dashboard analytics methods
+  async deleteShipmentWithAppointment(
+    id: string,
+    deletedBy: { uid: string; name: string; role: string }
+  ) {
+    try {
+      // Get current shipment
+      const currentResult = await this.findById(id);
+      if (!currentResult.success || !currentResult.data) {
+        return {
+          success: false,
+          error: 'Shipment not found'
+        };
+      }
+
+      const currentShipment = currentResult.data;
+
+      // Delete linked appointment first
+      await this.deleteLinkedAppointment(id, deletedBy);
+
+      // Delete the shipment
+      const result = await this.delete(id);
+
+      if (result.success) {
+        // Log deletion
+        await auditService.logEvent(
+          deletedBy.uid,
+          deletedBy.name,
+          deletedBy.role,
+          'delete',
+          'shipment',
+          id,
+          `Shipment for PO ${currentShipment.poNumber}`,
+          `Deleted shipment and linked appointment`,
+          undefined,
+          {
+            poNumber: currentShipment.poNumber,
+            deletionType: 'shipment_with_appointment'
+          }
+        );
+      }
+
+      return result;
+    } catch (error) {
+      return {
+        success: false,
+        error: this.handleError(error, 'delete shipment with appointment').message
+      };
+    }
+  }
+
+  private async deleteLinkedAppointment(
+    shipmentId: string,
+    deletedBy: { uid: string; name: string; role: string }
+  ) {
+    try {
+      const { collection, query, where, getDocs, doc, deleteDoc } = await import('firebase/firestore');
+      const { db } = await import('../firebase');
+      const { commentService } = await import('./comment.service');
+
+      // Find appointment linked to this shipment
+      const appointmentsRef = collection(db, 'appointments');
+      const q = query(appointmentsRef, where('shipmentId', '==', shipmentId));
+      const snapshot = await getDocs(q);
+
+      if (!snapshot.empty) {
+        const appointmentDoc = snapshot.docs[0];
+        const appointmentData = appointmentDoc.data();
+
+        // Delete the appointment
+        await deleteDoc(appointmentDoc.ref);
+
+        // Add comment to PO about deletion
+        if (appointmentData.poId) {
+          try {
+            await commentService.addComment(
+              appointmentData.poId,
+              {
+                uid: deletedBy.uid,
+                name: deletedBy.name,
+                role: deletedBy.role
+              },
+              `🗑️ Shipment deleted: ${shipmentId} → Appointment removed: ${appointmentData.appointmentId}`
+            );
+          } catch (commentError) {
+            console.error('Failed to add deletion comment:', commentError);
+          }
+        }
+
+        // Log deletion audit event
+        await auditService.logEvent(
+          deletedBy.uid,
+          deletedBy.name,
+          deletedBy.role,
+          'delete',
+          'system',
+          appointmentDoc.id,
+          `Appointment ${appointmentData.appointmentId}`,
+          `Deleted appointment due to shipment deletion: ${shipmentId}`,
+          undefined,
+          {
+            shipmentId,
+            appointmentId: appointmentData.appointmentId,
+            deletionType: 'appointment_from_shipment'
+          }
+        );
+      }
+    } catch (error) {
+      console.error('Failed to delete linked appointment:', error);
+      // Don't throw error as this is a secondary operation
+    }
+  }
+
   async getShipmentStats() {
     try {
       const result = await this.findMany();

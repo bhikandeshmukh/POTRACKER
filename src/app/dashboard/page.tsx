@@ -278,7 +278,7 @@ export default function Dashboard() {
   // Early return AFTER all hooks
   if (loading || loadingData) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <LoadingSpinner size="lg" text="Loading dashboard..." />
       </div>
     );

@@ -85,7 +85,7 @@ export default function AdminDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <Link href="/admin/users" className={`${getThemeClasses.card()} ${getThemeClasses.cardPadding()} hover:shadow-md transition`}>
               <div className="flex items-center">
-                <div className={`p-3 ${getThemeClasses.color('blue')} rounded-lg`}>
+                <div className="p-3 bg-gradient-to-br from-blue-400 to-blue-500 text-white rounded-lg">
                   <Users className={getThemeClasses.icon('large')} />
                 </div>
                 <div className="ml-4">
@@ -97,7 +97,7 @@ export default function AdminDashboard() {
 
             <Link href="/vendors" className={`${getThemeClasses.card()} ${getThemeClasses.cardPadding()} hover:shadow-md transition`}>
               <div className="flex items-center">
-                <div className={`p-3 ${getThemeClasses.color('green')} rounded-lg`}>
+                <div className="p-3 bg-gradient-to-br from-green-400 to-green-500 text-white rounded-lg">
                   <Building2 className={getThemeClasses.icon('large')} />
                 </div>
                 <div className="ml-4">
@@ -109,7 +109,7 @@ export default function AdminDashboard() {
 
             <Link href="/pos" className={`${getThemeClasses.card()} ${getThemeClasses.cardPadding()} hover:shadow-md transition`}>
               <div className="flex items-center">
-                <div className={`p-3 ${getThemeClasses.color('purple')} rounded-lg`}>
+                <div className="p-3 bg-gradient-to-br from-purple-400 to-purple-500 text-white rounded-lg">
                   <FileText className={getThemeClasses.icon('large')} />
                 </div>
                 <div className="ml-4">
@@ -121,7 +121,7 @@ export default function AdminDashboard() {
 
             <div className={`${getThemeClasses.card()} ${getThemeClasses.cardPadding()}`}>
               <div className="flex items-center">
-                <div className={`p-3 ${getThemeClasses.color('yellow')} rounded-lg`}>
+                <div className="p-3 bg-gradient-to-br from-yellow-400 to-yellow-500 text-white rounded-lg">
                   <TrendingUp className={getThemeClasses.icon('large')} />
                 </div>
                 <div className="ml-4">

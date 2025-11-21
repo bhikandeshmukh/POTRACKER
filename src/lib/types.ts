@@ -14,6 +14,18 @@ export interface User extends BaseEntity {
   uid?: string; // Firebase UID for reference
 }
 
+export interface Warehouse {
+  id: string;
+  name: string;
+  address: string;
+  contactPerson?: string;
+  phone?: string;
+  email?: string;
+  capacity?: number;
+  type?: 'main' | 'secondary' | 'distribution' | 'storage';
+  isActive: boolean;
+}
+
 export interface Vendor extends BaseEntity {
   name: string;
   contactPerson: string;
@@ -21,6 +33,7 @@ export interface Vendor extends BaseEntity {
   email?: string;
   gst?: string;
   address?: string;
+  warehouses?: Warehouse[];
 }
 
 export interface Transporter extends BaseEntity {
@@ -35,6 +48,7 @@ export interface Transporter extends BaseEntity {
   address?: string;
   gst?: string;
   panNumber?: string;
+  warehouses?: Warehouse[];
   active?: boolean;
 }
 
@@ -138,8 +152,8 @@ export interface Comment extends BaseEntity {
 }
 
 export interface AuditLog extends BaseEntity {
-  action: 'create' | 'update' | 'delete' | 'approve' | 'reject' | 'login' | 'logout' | 'comment' | 'ship' | 'receive';
-  entityType: 'user' | 'vendor' | 'po' | 'ro' | 'shipment' | 'transporter' | 'comment' | 'system';
+  action: 'create' | 'update' | 'delete' | 'approve' | 'reject' | 'login' | 'logout' | 'comment' | 'ship' | 'receive' | 'sync';
+  entityType: 'user' | 'vendor' | 'po' | 'ro' | 'shipment' | 'transporter' | 'comment' | 'system' | 'appointment' | 'appointment_shipment_status' | 'shipment_appointment_status';
   entityId: string;
   entityName: string;
   userId: string;

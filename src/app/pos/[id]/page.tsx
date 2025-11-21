@@ -71,7 +71,7 @@ export default function PoDetailPage() {
   
   // Table controls
   const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
   const [showAllRows, setShowAllRows] = useState(false);
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>({});
   const [rowHeight, setRowHeight] = useState(40); // Default row height in pixels
@@ -88,7 +88,6 @@ export default function PoDetailPage() {
       { key: 'orderDate', label: 'Order Date', minWidth: 100 },
       { key: 'deliveryDate', label: 'Delivery Date', minWidth: 100 },
       { key: 'status', label: 'Status', minWidth: 80 },
-      { key: 'itemName', label: 'Item Name', minWidth: 200 },
       { key: 'barcode', label: 'Barcode', minWidth: 120 },
       { key: 'sku', label: 'SKU', minWidth: 80 },
       { key: 'size', label: 'Size', minWidth: 80 },
@@ -195,7 +194,6 @@ export default function PoDetailPage() {
     { key: 'orderDate', label: 'Order Date', minWidth: 100 },
     { key: 'deliveryDate', label: 'Delivery Date', minWidth: 100 },
     { key: 'status', label: 'Status', minWidth: 80 },
-    { key: 'itemName', label: 'Item Name', minWidth: 200 },
     { key: 'barcode', label: 'Barcode', minWidth: 120 },
     { key: 'sku', label: 'SKU', minWidth: 80 },
     { key: 'size', label: 'Size', minWidth: 80 },

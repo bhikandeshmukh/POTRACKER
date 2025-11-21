@@ -4,17 +4,23 @@ import { useState } from 'react';
 import { PurchaseOrder } from '@/lib/firestore';
 import StatusBadge from './StatusBadge';
 import { format } from 'date-fns';
-import { Package, BarChart3, QrCode } from 'lucide-react';
+import { Package, BarChart3, QrCode, Check, X, Eye } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/components/ToastContainer';
+import { poService } from '@/lib/services';
 
 interface EnhancedPOTableProps {
   pos: PurchaseOrder[];
   onRefresh: () => void;
 }
 
-export default function EnhancedPOTable({ pos }: EnhancedPOTableProps) {
+export default function EnhancedPOTable({ pos, onRefresh }: EnhancedPOTableProps) {
   const [expandedPO, setExpandedPO] = useState<string | null>(null);
+  const [processingPO, setProcessingPO] = useState<string | null>(null);
   const router = useRouter();
+  const { user, userData } = useAuth();
+  const { showSuccess, showError } = useToast();
 
   const toggleExpanded = (poId: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -23,6 +29,45 @@ export default function EnhancedPOTable({ pos }: EnhancedPOTableProps) {
 
   const handleCardClick = (poId: string) => {
     router.push(`/pos/${poId}`);
+  };
+
+  const handleStatusChange = async (poId: string, status: 'Approved' | 'Rejected', e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!user || !userData) return;
+    
+    const confirmMessage = `Are you sure you want to ${status.toLowerCase()} this PO?`;
+    if (!confirm(confirmMessage)) return;
+
+    setProcessingPO(poId);
+    
+    try {
+      console.log('Updating PO status:', { poId, status, user: user.uid, userData: userData.name });
+      
+      const result = await poService.updateStatus(
+        poId,
+        status,
+        {
+          uid: user.uid, // Use Firebase Auth UID instead of userData.uid
+          name: userData.name,
+          role: userData.role
+        }
+      );
+
+      if (result.success) {
+        showSuccess(
+          `PO ${status}`,
+          `Purchase Order has been ${status.toLowerCase()} successfully`
+        );
+        onRefresh();
+      } else {
+        showError('Error', result.error || `Failed to ${status.toLowerCase()} PO`);
+      }
+    } catch (error) {
+      showError('Error', `Failed to ${status.toLowerCase()} PO`);
+    } finally {
+      setProcessingPO(null);
+    }
   };
 
   const calculatePOProgress = (lineItems: any[]) => {
@@ -126,6 +171,40 @@ export default function EnhancedPOTable({ pos }: EnhancedPOTableProps) {
                 <div className="text-right pl-6">
                   <div className="text-lg font-bold text-gray-900">₹{po.totalAmount.toLocaleString()}</div>
                   <div className="text-xs text-gray-500">Avg: ₹{Math.round(po.totalAmount / progress.totalQty).toLocaleString()}/unit</div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center space-x-2 pl-4">
+                  {po.status === 'Pending' && userData?.role !== 'Employee' && (
+                    <>
+                      <button
+                        onClick={(e) => handleStatusChange(po.id!, 'Approved', e)}
+                        disabled={processingPO === po.id}
+                        className="flex items-center space-x-1 px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition disabled:opacity-50"
+                      >
+                        <Check className="w-3 h-3" />
+                        <span>Approve</span>
+                      </button>
+                      <button
+                        onClick={(e) => handleStatusChange(po.id!, 'Rejected', e)}
+                        disabled={processingPO === po.id}
+                        className="flex items-center space-x-1 px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition disabled:opacity-50"
+                      >
+                        <X className="w-3 h-3" />
+                        <span>Reject</span>
+                      </button>
+                    </>
+                  )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push(`/pos/${po.id}`);
+                    }}
+                    className="flex items-center space-x-1 px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition"
+                  >
+                    <Eye className="w-3 h-3" />
+                    <span>View</span>
+                  </button>
                 </div>
               </div>
             </div>

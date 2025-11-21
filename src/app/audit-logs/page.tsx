@@ -5,8 +5,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Sidebar from '@/components/Sidebar';
-import { getAuditLogs, AuditLog } from '@/lib/auditLogs';
+import { auditService } from '@/lib/services';
+import { AuditLog } from '@/lib/types';
 import { format } from 'date-fns';
+import { getThemeClasses } from '@/styles/theme';
 import { 
   Activity, 
   Filter, 
@@ -58,10 +60,21 @@ export default function AuditLogsPage() {
   const loadAuditLogs = async () => {
     setLoadingLogs(true);
     try {
-      const logs = await getAuditLogs(undefined, undefined, undefined, 200);
-      setAuditLogs(logs);
+      const result = await auditService.findMany({
+        orderBy: 'timestamp',
+        orderDirection: 'desc',
+        limit: 200
+      });
+      
+      if (result.success && result.data) {
+        setAuditLogs(result.data.data);
+      } else {
+        console.error('Failed to load audit logs:', result.error);
+        setAuditLogs([]);
+      }
     } catch (error) {
       console.error('Failed to load audit logs:', error);
+      setAuditLogs([]);
     } finally {
       setLoadingLogs(false);
     }
@@ -203,27 +216,27 @@ export default function AuditLogsPage() {
       <Sidebar />
       
       <div className="pt-16">
-        <main className="w-full pl-64 pr-6 py-6">
+        <main className="w-full px-4 sm:px-6 lg:px-8 py-6">
           {/* Header */}
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Audit Logs</h1>
-            <p className="text-gray-600">Track all system activities and changes</p>
+          <div className={getThemeClasses.sectionMargin()}>
+            <h1 className={getThemeClasses.pageTitle()}>Audit Logs</h1>
+            <p className={getThemeClasses.description()}>Track all system activities and changes</p>
           </div>
 
           {/* Filters */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
+          <div className={`${getThemeClasses.card()} ${getThemeClasses.cardPadding()} ${getThemeClasses.sectionMargin()}`}>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+              <h2 className={getThemeClasses.sectionHeading()}>Filters</h2>
               <button
                 onClick={exportLogs}
-                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                className={`flex items-center space-x-2 ${getThemeClasses.buttonPadding()} ${getThemeClasses.button('primary')}`}
               >
-                <Download className="w-4 h-4" />
+                <Download className={getThemeClasses.icon('small')} />
                 <span>Export CSV</span>
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 ${getThemeClasses.gridGap()}`}>
               {/* Search */}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -298,7 +311,7 @@ export default function AuditLogsPage() {
           </div>
 
           {/* Logs Table */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+          <div className={getThemeClasses.card()}>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200">

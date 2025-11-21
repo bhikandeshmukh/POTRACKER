@@ -27,6 +27,7 @@ import { DatabaseError, NotFoundError } from './errors';
 export type {
   User,
   Vendor,
+  Warehouse,
   Transporter,
   ReturnOrderItem,
   ReturnOrder,
@@ -41,6 +42,7 @@ export type {
 import type {
   User,
   Vendor,
+  Warehouse,
   Transporter,
   ReturnOrderItem,
   ReturnOrder,

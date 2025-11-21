@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Filter, X, Check } from 'lucide-react';
+import ModernButton from './ModernButton';
 
 export interface FilterOption {
   value: string;
@@ -89,24 +90,21 @@ export default function AdvancedFilters({
 
   return (
     <div className={`relative ${className}`} ref={dropdownRef}>
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={`
-          flex items-center space-x-2 px-3 py-2 text-sm border rounded-lg transition-colors
-          ${activeCount > 0 
-            ? 'border-blue-500 bg-blue-50 text-blue-700' 
-            : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
-          }
-        `}
-      >
-        <Filter className="w-4 h-4" />
-        <span>Filters</span>
-        {activeCount > 0 && (
-          <span className="bg-blue-600 text-white text-xs px-1.5 py-0.5 rounded-full">
-            {activeCount}
-          </span>
-        )}
-      </button>
+      <div className="relative">
+        <ModernButton
+          variant="secondary"
+          icon={Filter}
+          onClick={() => setIsOpen(!isOpen)}
+          className={activeCount > 0 ? '!border-blue-500 !bg-blue-50 !text-blue-700' : ''}
+        >
+          Filters
+          {activeCount > 0 && (
+            <span className="bg-blue-600 text-white text-xs px-1.5 py-0.5 rounded-full ml-1">
+              {activeCount}
+            </span>
+          )}
+        </ModernButton>
+      </div>
 
       {isOpen && (
         <div className="absolute top-full left-0 mt-1 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50">

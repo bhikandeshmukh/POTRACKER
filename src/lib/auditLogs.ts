@@ -39,7 +39,7 @@ export interface ActivityItem {
         'vendor_added' | 'vendor_updated' | 'vendor_deleted' |
         'ro_created' | 'ro_approved' | 'ro_rejected' |
         'shipment_created' | 'shipment_shipped' | 'shipment_delivered' |
-        'comment_added' | 'user_login' | 'user_created';
+        'comment_added' | 'user_login' | 'user_logout' | 'user_created';
   user: {
     id: string;
     name: string;
@@ -75,6 +75,7 @@ export interface Comment {
 export const logAuditEvent = async (
   userId: string,
   userName: string,
+  userRole: string,
   action: AuditLog['action'],
   entityType: AuditLog['entityType'],
   entityId: string,
@@ -84,6 +85,14 @@ export const logAuditEvent = async (
   metadata?: Record<string, any>
 ) => {
   try {
+    // Validate required parameters
+    if (!userId || !userName || !userRole || !action || !entityType || !entityId || !entityName) {
+      logger.error('Invalid parameters for logAuditEvent', { 
+        userId, userName, userRole, action, entityType, entityId, entityName 
+      });
+      return;
+    }
+
     const auditLog: Omit<AuditLog, 'id'> = {
       action,
       entityType,
@@ -91,14 +100,28 @@ export const logAuditEvent = async (
       entityName,
       userId,
       userName,
-      userRole: 'Unknown', // Will be updated by the calling function
+      userRole,
       description: description || `${action} ${entityType} ${entityName}`,
-      changes,
-      metadata,
-      timestamp: serverTimestamp() as Timestamp,
-      ipAddress: typeof window !== 'undefined' ? window.location.hostname : undefined,
-      userAgent: typeof window !== 'undefined' ? navigator.userAgent : undefined
+      timestamp: serverTimestamp() as Timestamp
     };
+
+    // Only add optional fields if they have values (Firestore doesn't allow undefined)
+    if (changes) {
+      auditLog.changes = changes;
+    }
+    if (metadata) {
+      auditLog.metadata = metadata;
+    }
+    
+    // Add browser info only if available (server-side rendering safe)
+    if (typeof window !== 'undefined') {
+      if (window.location.hostname) {
+        auditLog.ipAddress = window.location.hostname;
+      }
+      if (navigator.userAgent) {
+        auditLog.userAgent = navigator.userAgent;
+      }
+    }
 
     await addDoc(collection(db, 'auditLogs'), auditLog);
     logger.debug('Audit log created', { action, entityType, entityId });
@@ -256,6 +279,7 @@ export const addComment = async (
     await logAuditEvent(
       userId,
       userName,
+      userRole,
       'create',
       'comment',
       docRef.id,
@@ -297,7 +321,8 @@ export const updateComment = async (
   commentId: string,
   content: string,
   userId: string,
-  userName: string
+  userName: string,
+  userRole: string
 ): Promise<void> => {
   try {
     const commentRef = doc(db, 'comments', commentId);
@@ -311,11 +336,14 @@ export const updateComment = async (
     await logAuditEvent(
       userId,
       userName,
+      userRole,
       'update',
       'comment',
       commentId,
       'Comment',
-      `Updated comment: "${content.substring(0, 50)}${content.length > 50 ? '...' : ''}"`
+      `Updated comment: "${content.substring(0, 50)}${content.length > 50 ? '...' : ''}"`,
+      undefined,
+      undefined
     );
   } catch (error) {
     logger.error('Failed to update comment', error);
@@ -326,7 +354,8 @@ export const updateComment = async (
 export const deleteComment = async (
   commentId: string,
   userId: string,
-  userName: string
+  userName: string,
+  userRole: string
 ): Promise<void> => {
   try {
     const commentRef = doc(db, 'comments', commentId);
@@ -336,11 +365,14 @@ export const deleteComment = async (
     await logAuditEvent(
       userId,
       userName,
+      userRole,
       'delete',
       'comment',
       commentId,
       'Comment',
-      'Deleted comment'
+      'Deleted comment',
+      undefined,
+      undefined
     );
   } catch (error) {
     logger.error('Failed to delete comment', error);
@@ -411,9 +443,16 @@ export const getRecentActivities = async (
 
 // Log user login
 export const logUserLogin = async (userId: string, userName: string, userRole: string) => {
+  // Validate required parameters
+  if (!userId || !userName || !userRole) {
+    logger.error('Invalid parameters for logUserLogin', { userId, userName, userRole });
+    return;
+  }
+
   await logAuditEvent(
     userId,
     userName,
+    userRole,
     'login',
     'system',
     userId,
@@ -421,6 +460,28 @@ export const logUserLogin = async (userId: string, userName: string, userRole: s
     `User ${userName} logged in`,
     undefined,
     { userRole, loginTime: new Date().toISOString() }
+  );
+};
+
+// Log user logout
+export const logUserLogout = async (userId: string, userName: string, userRole: string) => {
+  // Validate required parameters
+  if (!userId || !userName || !userRole) {
+    logger.error('Invalid parameters for logUserLogout', { userId, userName, userRole });
+    return;
+  }
+
+  await logAuditEvent(
+    userId,
+    userName,
+    userRole,
+    'logout',
+    'system',
+    userId,
+    userName,
+    `User ${userName} logged out`,
+    undefined,
+    { userRole, logoutTime: new Date().toISOString() }
   );
 };
 
@@ -441,6 +502,7 @@ export const logPOStatusChange = async (
   await logAuditEvent(
     userId,
     userName,
+    userRole,
     action,
     'po',
     poId,

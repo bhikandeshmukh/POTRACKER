@@ -10,7 +10,7 @@ import {
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { getUser, getUserByEmail, createUser, User } from '@/lib/firestore';
-import { logUserLogin } from '@/lib/auditLogs';
+import { logUserLogin, logUserLogout } from '@/lib/auditLogs';
 
 interface AuthContextType {
   user: FirebaseUser | null;
@@ -44,11 +44,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
           
           setUserData(data);
-          
-          // Log user login (only on successful authentication)
-          if (data) {
-            await logUserLogin(user.uid, data.name, data.role);
-          }
         } catch (error) {
           console.error('Error fetching user data:', error);
           setUserData(null);
@@ -63,7 +58,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+    
+    // Log user login immediately after successful sign in
+    if (user && user.email) {
+      try {
+        let data = await getUserByEmail(user.email);
+        if (!data) {
+          data = await getUser(user.uid);
+        }
+        
+        if (data) {
+          await logUserLogin(user.uid, data.name, data.role);
+        }
+      } catch (error) {
+        console.error('Error logging user login:', error);
+        // Don't throw error to avoid breaking the login flow
+      }
+    }
   };
 
   const signUp = async (email: string, password: string, name: string, role: 'Admin' | 'Manager' | 'Employee') => {
@@ -83,6 +96,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
+    // Log user logout before signing out
+    if (user && userData) {
+      try {
+        await logUserLogout(user.uid, userData.name, userData.role);
+      } catch (error) {
+        console.error('Error logging user logout:', error);
+        // Don't throw error to avoid breaking the logout flow
+      }
+    }
+    
     await firebaseSignOut(auth);
   };
 

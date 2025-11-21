@@ -15,6 +15,7 @@ import AdvancedSearch from '@/components/AdvancedSearch';
 import AdvancedFilters, { FilterConfig } from '@/components/AdvancedFilters';
 import ExportOptions from '@/components/ExportOptions';
 import Pagination, { usePagination } from '@/components/Pagination';
+import ModernButton from '@/components/ModernButton';
 import { getThemeClasses } from '@/styles/theme';
 
 export default function PosPage() {
@@ -144,15 +145,15 @@ export default function PosPage() {
               </button>
 
               {/* Search Input */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search"
+              <div className="w-64">
+                <ModernButton
+                  variant="search"
+                  icon={Search}
                   onClick={() => setShowAdvancedSearch(true)}
-                  readOnly
-                  className="pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer hover:border-gray-400 transition-colors w-48"
-                />
+                  className="cursor-pointer"
+                >
+                  Search
+                </ModernButton>
               </div>
 
               {/* Advanced Filters */}
@@ -170,22 +171,23 @@ export default function PosPage() {
 
               {/* Import/Export Button */}
               {(userData?.role === 'Admin' || userData?.role === 'Manager') && (
-                <button
+                <ModernButton
+                  variant="secondary"
+                  icon={Download}
                   onClick={() => setShowImportExport(true)}
-                  className={`flex items-center space-x-2 ${getThemeClasses.buttonPadding()} ${getThemeClasses.button('secondary')}`}
                 >
-                  <Download className={getThemeClasses.icon('small')} />
-                  <span>Import</span>
-                </button>
+                  Import
+                </ModernButton>
               )}
 
               {/* Add PO Button */}
-              <Link
-                href="/pos/new"
-                className={`flex items-center space-x-2 ${getThemeClasses.buttonPadding()} ${getThemeClasses.button('primary')}`}
-              >
-                <Plus className={getThemeClasses.icon('medium')} />
-                <span>New PO</span>
+              <Link href="/pos/new">
+                <ModernButton
+                  variant="primary"
+                  icon={Plus}
+                >
+                  New PO
+                </ModernButton>
               </Link>
             </div>
           </div>
