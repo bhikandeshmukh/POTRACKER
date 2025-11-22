@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Script from 'next/script';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -20,6 +21,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
+        {/* Google AdSense script. Set NEXT_PUBLIC_ADSENSE_ID in your .env.local (e.g. NEXT_PUBLIC_ADSENSE_ID=ca-pub-xxxxxxxxxxxxxx) */}
+        <Script
+          id="adsense"
+          strategy="afterInteractive"
+          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${process.env.NEXT_PUBLIC_ADSENSE_ID}`}
+          crossOrigin="anonymous"
+        />
         <QueryProvider>
           <AuthProvider>
             <ToastProvider>

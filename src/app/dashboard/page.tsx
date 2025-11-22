@@ -20,6 +20,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import AdvancedFilters, { FilterConfig } from '@/components/AdvancedFilters';
 import ExportOptions from '@/components/ExportOptions';
 import { useRealTimeUpdates } from '@/hooks/useRealTimeUpdates';
+import AdUnit from '@/components/AdUnit';
 // Lazy load heavy components for better initial load performance
 import dynamic from 'next/dynamic';
 
@@ -100,7 +101,7 @@ export default function Dashboard() {
 
       const statusMatch = statusFilter.length === 0 || statusFilter.includes(po.status);
       const vendorMatch = vendorFilter.length === 0 || vendorFilter.includes(po.vendorName);
-      
+
       let amountMatch = true;
       if (amountFilter.length > 0) {
         amountMatch = amountFilter.some(range => {
@@ -152,53 +153,53 @@ export default function Dashboard() {
       ]
     }
   ], [pos]);
-  
+
   // Memoize expensive quantity calculations
   const quantities = useMemo(() => {
     const totalItemQty = pos.reduce((sum, po) => {
       return sum + po.lineItems.reduce((itemSum, item) => itemSum + item.quantity, 0);
     }, 0);
-    
+
     const sentQty = pos.reduce((sum, po) => {
       return sum + po.lineItems.reduce((itemSum, item) => itemSum + (item.sentQty || 0), 0);
     }, 0);
-    
+
     const receivedQty = pos.reduce((sum, po) => {
       return sum + po.lineItems.reduce((itemSum, item) => itemSum + (item.receivedQty || 0), 0);
     }, 0);
-    
+
     const pendingQty = pos.reduce((sum, po) => {
       return sum + po.lineItems.reduce((itemSum, item) => itemSum + (item.pendingQty || item.quantity), 0);
     }, 0);
-    
+
     return { totalItemQty, sentQty, receivedQty, pendingQty, inTransitQty: sentQty - receivedQty };
   }, [pos]);
 
   const { totalItemQty, sentQty, receivedQty, pendingQty, inTransitQty } = quantities;
-  
+
   // Calculate quantities from filtered POs
   const filteredTotalQty = filteredPOs.reduce((sum, po) => {
     return sum + po.lineItems.reduce((itemSum, item) => itemSum + item.quantity, 0);
   }, 0);
-  
+
   const filteredSentQty = filteredPOs.reduce((sum, po) => {
     return sum + po.lineItems.reduce((itemSum, item) => itemSum + (item.sentQty || 0), 0);
   }, 0);
-  
+
   const filteredReceivedQty = filteredPOs.reduce((sum, po) => {
     return sum + po.lineItems.reduce((itemSum, item) => itemSum + (item.receivedQty || 0), 0);
   }, 0);
-  
+
   const filteredPendingQty = filteredPOs.reduce((sum, po) => {
     return sum + po.lineItems.reduce((itemSum, item) => itemSum + (item.pendingQty || item.quantity), 0);
   }, 0);
-  
+
   // Memoize status-based quantities
   const statusQuantities = useMemo(() => ({
-    pending: pos.filter(po => po.status === 'Pending').reduce((sum, po) => 
+    pending: pos.filter(po => po.status === 'Pending').reduce((sum, po) =>
       sum + po.lineItems.reduce((itemSum, item) => itemSum + (item.pendingQty || item.quantity), 0), 0),
     // Approved items = items in Approved POs that haven't been shipped (sentQty = 0)
-    approved: pos.filter(po => po.status === 'Approved').reduce((sum, po) => 
+    approved: pos.filter(po => po.status === 'Approved').reduce((sum, po) =>
       sum + po.lineItems.reduce((itemSum, item) => itemSum + ((item.sentQty || 0) === 0 ? item.quantity : 0), 0), 0),
     shipped: sentQty, // Use actual sent quantity instead of all items in Shipped/Partial POs
     received: receivedQty, // Use actual received quantity
@@ -209,46 +210,46 @@ export default function Dashboard() {
   // Memoize chart data calculations
   const statusData = useMemo(() => {
     // Calculate filtered quantities
-    const fPendingQty = filteredPOs.reduce((sum, po) => 
+    const fPendingQty = filteredPOs.reduce((sum, po) =>
       sum + po.lineItems.reduce((itemSum, item) => itemSum + (item.pendingQty || (item.quantity - (item.sentQty || 0))), 0), 0);
-    
-    const fApprovedQty = filteredPOs.filter(po => po.status === 'Approved').reduce((sum, po) => 
+
+    const fApprovedQty = filteredPOs.filter(po => po.status === 'Approved').reduce((sum, po) =>
       sum + po.lineItems.reduce((itemSum, item) => itemSum + ((item.sentQty || 0) === 0 ? item.quantity : 0), 0), 0);
-    
-    const fShippedQty = filteredPOs.reduce((sum, po) => 
+
+    const fShippedQty = filteredPOs.reduce((sum, po) =>
       sum + po.lineItems.reduce((itemSum, item) => itemSum + (item.sentQty || 0), 0), 0);
-    
-    const fReceivedQty = filteredPOs.reduce((sum, po) => 
+
+    const fReceivedQty = filteredPOs.reduce((sum, po) =>
       sum + po.lineItems.reduce((itemSum, item) => itemSum + (item.receivedQty || 0), 0), 0);
-    
-    const fRejectedQty = filteredPOs.filter(po => po.status === 'Rejected').reduce((sum, po) => 
+
+    const fRejectedQty = filteredPOs.filter(po => po.status === 'Rejected').reduce((sum, po) =>
       sum + po.lineItems.reduce((itemSum, item) => itemSum + item.quantity, 0), 0);
 
     return [
-      { 
-        name: 'Pending', 
-        value: fPendingQty, 
-        color: '#f59e0b' 
+      {
+        name: 'Pending',
+        value: fPendingQty,
+        color: '#f59e0b'
       },
-      { 
-        name: 'Approved', 
-        value: fApprovedQty, 
-        color: '#10b981' 
+      {
+        name: 'Approved',
+        value: fApprovedQty,
+        color: '#10b981'
       },
-      { 
-        name: 'Shipped', 
+      {
+        name: 'Shipped',
         value: fShippedQty,
-        color: '#3b82f6' 
+        color: '#3b82f6'
       },
-      { 
-        name: 'Received', 
-        value: fReceivedQty, 
-        color: '#8b5cf6' 
+      {
+        name: 'Received',
+        value: fReceivedQty,
+        color: '#8b5cf6'
       },
-      { 
-        name: 'Rejected', 
-        value: fRejectedQty, 
-        color: '#ef4444' 
+      {
+        name: 'Rejected',
+        value: fRejectedQty,
+        color: '#ef4444'
       },
     ].filter(item => item.value > 0);
   }, [filteredPOs]);
@@ -272,7 +273,7 @@ export default function Dashboard() {
       .slice(0, 5);
   }, [pos]);
 
-  const actionRequired = userData?.role === 'Manager' 
+  const actionRequired = userData?.role === 'Manager'
     ? pos.filter(po => po.status === 'Pending').slice(0, 5)
     : [];
 
@@ -316,9 +317,9 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      
+
       <Sidebar />
-      
+
       <div className="pt-16">
         <main className="w-full p-3 sm:p-4 md:p-5">
           {/* Dashboard Header with Controls */}
@@ -329,22 +330,21 @@ export default function Dashboard() {
                 Showing {filteredPOs.length} of {pos.length} POs
               </p>
             </div>
-            
+
             <div className="flex flex-wrap items-center gap-2">
               {/* Real-time Controls */}
               <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded-lg">
                 <button
                   onClick={toggleRealTime}
-                  className={`p-1 rounded transition-colors ${
-                    isRealTimeActive 
-                      ? 'text-green-600 hover:text-green-700' 
-                      : 'text-gray-400 hover:text-gray-600'
-                  }`}
+                  className={`p-1 rounded transition-colors ${isRealTimeActive
+                    ? 'text-green-600 hover:text-green-700'
+                    : 'text-gray-400 hover:text-gray-600'
+                    }`}
                   title={isRealTimeActive ? 'Real-time updates ON' : 'Real-time updates OFF'}
                 >
                   {isRealTimeActive ? <Wifi className={getThemeClasses.icon('small')} /> : <WifiOff className={getThemeClasses.icon('small')} />}
                 </button>
-                
+
                 <button
                   onClick={forceUpdate}
                   className="p-1 text-gray-600 hover:text-gray-800 transition-colors"
@@ -352,14 +352,14 @@ export default function Dashboard() {
                 >
                   <RefreshCw className={getThemeClasses.icon('small')} />
                 </button>
-                
+
                 <span className={`${getThemeClasses.smallText()} ml-1`}>
                   {format(lastUpdate, 'HH:mm')}
                 </span>
               </div>
 
-              <DateRangePicker 
-                value={dateRange} 
+              <DateRangePicker
+                value={dateRange}
                 onChange={setDateRange}
               />
               <AdvancedFilters
@@ -399,6 +399,14 @@ export default function Dashboard() {
               value={pendingQty.toLocaleString()}
               icon={Clock}
               color="yellow"
+            />
+          </div>
+
+          {/* AdSense Unit - Replace slot with your actual Ad Unit ID */}
+          <div className="mb-5 flex justify-center">
+            <AdUnit
+              slot="1234567890"
+              style={{ display: 'block', minWidth: '300px', maxWidth: '100%' }}
             />
           </div>
 
@@ -449,14 +457,14 @@ export default function Dashboard() {
                       className="cursor-pointer"
                     >
                       {statusData.map((entry, index) => (
-                        <Cell 
-                          key={`cell-${index}`} 
+                        <Cell
+                          key={`cell-${index}`}
                           fill={entry.color}
                           className="hover:opacity-80 transition-opacity"
                         />
                       ))}
                     </Pie>
-                    <Tooltip 
+                    <Tooltip
                       formatter={(value, name) => [`${Number(value).toLocaleString()} items`, name]}
                       labelFormatter={() => 'Click to filter'}
                     />
@@ -474,12 +482,12 @@ export default function Dashboard() {
                   <BarChart data={vendorData} onClick={handleVendorChartClick}>
                     <XAxis dataKey="name" />
                     <YAxis />
-                    <Tooltip 
+                    <Tooltip
                       formatter={(value) => [`${Number(value).toLocaleString()} items`, 'Total Quantity']}
                       labelFormatter={(label) => `${label} - Click to filter`}
                     />
-                    <Bar 
-                      dataKey="value" 
+                    <Bar
+                      dataKey="value"
                       fill="#0ea5e9"
                       className="cursor-pointer hover:opacity-80 transition-opacity"
                     />
@@ -493,8 +501,8 @@ export default function Dashboard() {
 
           {/* Interactive Charts */}
           <div className="mb-5">
-            <InteractiveCharts 
-              data={filteredPOs} 
+            <InteractiveCharts
+              data={filteredPOs}
               onChartClick={(data) => {
                 if (data.type === 'month') {
                   showInfo('Month Filter', `Viewing data for ${data.data.month}`);
@@ -570,7 +578,7 @@ export default function Dashboard() {
           {/* Compliance Reports (Admin/Manager only) */}
           {(userData?.role === 'Admin' || userData?.role === 'Manager') && (
             <div className="mb-5">
-              <ComplianceReports 
+              <ComplianceReports
                 onGenerateReport={(type, range) => {
                   showSuccess('Report Generated', `${type} report has been downloaded`);
                 }}
