@@ -11,6 +11,9 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: 'PO Tracking Dashboard',
   description: 'Purchase Order Management System',
+  other: {
+    'google-adsense-account': process.env.NEXT_PUBLIC_ADSENSE_ID || '',
+  },
 };
 
 export default function RootLayout({
