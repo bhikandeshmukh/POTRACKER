@@ -213,14 +213,14 @@ export const getRolePermissions = async (role: RoleType): Promise<RolePermission
     
     if (docSnap.exists()) {
       return docSnap.data() as RolePermissions;
-    } else {
-      // Return default permissions if not found
-      return {
-        role,
-        permissions: DEFAULT_PERMISSIONS[role],
-        description: `Default permissions for ${role}`
-      };
     }
+    
+    // Return default permissions if not found
+    return {
+      role,
+      permissions: DEFAULT_PERMISSIONS[role],
+      description: `Default permissions for ${role}`
+    };
   } catch (error) {
     return {
       role,

@@ -203,10 +203,8 @@ export class ApiGatewayImpl implements ApiGateway {
   // Private helper methods
   private findRoute(endpoint: string, method: string): Route | null {
     for (const route of this.routes) {
-      if (route.pattern.test(endpoint)) {
-        if (!route.methods || route.methods.includes(method)) {
-          return route;
-        }
+      if (route.pattern.test(endpoint) && (!route.methods || route.methods.includes(method))) {
+        return route;
       }
     }
     return null;
@@ -272,7 +270,7 @@ export class ApiGatewayImpl implements ApiGateway {
   }
 
   private updateMetrics(serviceName: string, endpoint: string, duration: number, success: boolean): void {
-    this.requestMetrics.totalRequests++;
+    this.requestMetrics.totalRequests += 1;
     this.requestMetrics.requestsByService[serviceName] = 
       (this.requestMetrics.requestsByService[serviceName] || 0) + 1;
     this.requestMetrics.requestsByEndpoint[endpoint] = 
@@ -341,7 +339,7 @@ export class ApiGatewayImpl implements ApiGateway {
           };
         }
 
-        clientData.count++;
+        clientData.count += 1;
         return next();
       }
     });

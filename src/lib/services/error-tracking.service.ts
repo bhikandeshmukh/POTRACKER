@@ -111,7 +111,7 @@ export class ErrorTrackingService {
 
     if (trackedError) {
       // Update existing error
-      trackedError.occurrences++;
+      trackedError.occurrences += 1;
       trackedError.lastOccurrence = now;
       trackedError.context = { ...trackedError.context, ...context }; // Merge context
     } else {

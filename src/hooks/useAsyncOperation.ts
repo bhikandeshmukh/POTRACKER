@@ -37,14 +37,14 @@ export function useAsyncOperation<T>(
           error: null
         });
         return result.data;
-      } else {
-        setState({
-          data: null,
-          loading: false,
-          error: result.error || 'Operation failed'
-        });
-        return null;
       }
+      
+      setState({
+        data: null,
+        loading: false,
+        error: result.error || 'Operation failed'
+      });
+      return null;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       setState({

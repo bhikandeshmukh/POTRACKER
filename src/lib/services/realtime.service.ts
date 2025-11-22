@@ -249,7 +249,7 @@ export class RealtimeService {
     const subscription = this.subscriptions.get(subscriptionId);
     
     if (subscription) {
-      subscription.errorCount++;
+      subscription.errorCount += 1;
       
       // Track error
       errorTrackingService.trackError(error, {

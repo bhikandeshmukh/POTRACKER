@@ -420,18 +420,16 @@ export const getRecentActivities = async (
     if (userRole === 'Employee' && userId) {
       // Employee sees only their activities
       auditLogs = await getAuditLogs(undefined, undefined, userId, limitCount);
+    } else if (filter && filter !== 'all') {
+      const entityTypeMap = {
+        'po': 'po',
+        'shipment': 'shipment',
+        'comment': 'comment'
+      };
+      auditLogs = await getAuditLogs(undefined, entityTypeMap[filter], undefined, limitCount);
     } else {
       // Admin/Manager sees all activities
-      if (filter && filter !== 'all') {
-        const entityTypeMap = {
-          'po': 'po',
-          'shipment': 'shipment',
-          'comment': 'comment'
-        };
-        auditLogs = await getAuditLogs(undefined, entityTypeMap[filter], undefined, limitCount);
-      } else {
-        auditLogs = await getAuditLogs(undefined, undefined, undefined, limitCount);
-      }
+      auditLogs = await getAuditLogs(undefined, undefined, undefined, limitCount);
     }
     
     return convertAuditLogsToActivities(auditLogs);

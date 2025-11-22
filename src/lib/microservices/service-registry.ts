@@ -149,13 +149,13 @@ export class InMemoryServiceRegistry implements ServiceRegistry {
       
       switch (status) {
         case 'healthy':
-          healthyCount++;
+          healthyCount += 1;
           break;
         case 'unhealthy':
-          unhealthyCount++;
+          unhealthyCount += 1;
           break;
         case 'degraded':
-          degradedCount++;
+          degradedCount += 1;
           break;
       }
 

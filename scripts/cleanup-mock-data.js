@@ -83,10 +83,8 @@ function checkDirectory(dir) {
     
     if (stat.isDirectory() && !file.startsWith('.') && file !== 'node_modules') {
       checkDirectory(fullPath);
-    } else if (file.endsWith('.tsx') || file.endsWith('.ts')) {
-      if (!componentsToCheck.includes(fullPath.replace(/\\/g, '/'))) {
-        cleanupMockData(fullPath);
-      }
+    } else if ((file.endsWith('.tsx') || file.endsWith('.ts')) && !componentsToCheck.includes(fullPath.replace(/\\/g, '/'))) {
+      cleanupMockData(fullPath);
     }
   });
 }

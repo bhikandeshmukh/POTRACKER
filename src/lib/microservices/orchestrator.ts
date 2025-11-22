@@ -181,13 +181,13 @@ export class MicroserviceOrchestrator {
     let totalCount = 0;
 
     for (const [name, service] of this.services) {
-      totalCount++;
+      totalCount += 1;
       try {
         const health = await service.getHealth();
         serviceHealths[name] = health;
         
         if (health.status === 'healthy') {
-          healthyCount++;
+          healthyCount += 1;
         }
       } catch (error) {
         serviceHealths[name] = {

@@ -198,13 +198,13 @@ export class InMemoryEventBus implements EventBus {
         await subscription.handler(event);
         
         // Update subscription stats
-        subscription.callCount++;
+        subscription.callCount += 1;
         subscription.lastCalled = new Date();
         
         return; // Success, exit retry loop
       } catch (error) {
-        attempt++;
-        subscription.errors++;
+        attempt += 1;
+        subscription.errors += 1;
         
         logger.error(
           `Event handler failed (attempt ${attempt}/${this.maxRetries}): ${event.type}`,
@@ -233,7 +233,7 @@ export class InMemoryEventBus implements EventBus {
         }
 
         // Wait before retry (exponential backoff)
-        await this.delay(Math.pow(2, attempt) * 100);
+        await this.delay(2 ** attempt * 100);
       }
     }
   }
