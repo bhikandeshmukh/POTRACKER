@@ -4,6 +4,14 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getThemeClasses } from '@/styles/theme';
 
+/**
+* Renders a user creation page with a form that handles signup logic and displays status messages.
+* @example
+* CreateUserPage()
+* <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">...</div>
+* @param {void} none - This component does not accept any props.
+* @returns {JSX.Element} The admin user creation form and related UI.
+**/
 export default function CreateUserPage() {
   const [formData, setFormData] = useState({
     email: '',
@@ -16,6 +24,14 @@ export default function CreateUserPage() {
 
   const { signUp } = useAuth();
 
+  /**
+  * Handles form submission for creating a new user and updates UI state.
+  * @example
+  * sync(event)
+  * undefined
+  * @param {{React.FormEvent}} {{e}} - The form submission event.
+  * @returns {{Promise<void>}} Resolves when form handling is complete.
+  **/
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);

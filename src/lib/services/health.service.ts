@@ -30,6 +30,14 @@ export class HealthService {
     this.registerDefaultChecks();
   }
 
+  /**
+  * Register default health checks for database, cache, performance, and memory subsystems.
+  * @example
+  * registerDefaultChecks()
+  * undefined
+  * @param {{void}} none - No arguments.
+  * @returns {{void}} Does not return a value.
+  **/
   private registerDefaultChecks() {
     // Database connectivity check
     this.registerCheck('database', async () => {
@@ -179,6 +187,14 @@ export class HealthService {
   }
 
   // Run a specific health check
+  /**
+  * Runs the named health check and returns the result or null if no check is registered.
+  * @example
+  * runCheck('database')
+  * { service: 'database', status: 'healthy', responseTime: 5 }
+  * @param {{string}} {{name}} - Name of the health check to execute.
+  * @returns {{Promise<HealthCheck|null>}} Promise resolving to the health check result or null.
+  **/
   async runCheck(name: string): Promise<HealthCheck | null> {
     const checkFn = this.healthChecks.get(name);
     if (!checkFn) {
@@ -198,6 +214,13 @@ export class HealthService {
   }
 
   // Run all health checks
+  /**
+  * Runs all registered health checks concurrently, aggregates their results, and summarizes the system health.
+  * @example
+  * runAllChecks()
+  * {overall: 'healthy', timestamp: '2025-11-22T00:00:00.000Z', checks: [...], summary: { healthy: 2, degraded: 0, unhealthy: 0 }}
+  * @returns {Promise<SystemHealth>} A promise that resolves with the aggregated system health result.
+  **/
   async runAllChecks(): Promise<SystemHealth> {
     const checks: HealthCheck[] = [];
     const checkPromises: Promise<HealthCheck>[] = [];
@@ -250,6 +273,14 @@ export class HealthService {
   }
 
   // Get health status for monitoring endpoints
+  /**
+   * Retrieves the current health status of the system
+   * @example
+   * getHealthStatus()
+   * { status: "healthy", timestamp: "2025-11-22T00:00:00.000Z", details: { … } }
+   * @param {{}} {} - No parameters required.
+   * @returns {{Promise<{status: string; timestamp: string; details: SystemHealth;}>}} A promise that resolves with the current health status.
+   **/
   async getHealthStatus(): Promise<{
     status: string;
     timestamp: string;
@@ -265,6 +296,14 @@ export class HealthService {
   }
 
   // Check if system is ready (all critical services healthy)
+  /**
+  * Checks if critical services are healthy in one go.
+  * @example
+  * isReady(['database'])
+  * true
+  * @param {{string[]}} {{criticalServices}} - Names of services that must be healthy.
+  * @returns {{Promise<boolean>}} Promise resolving to true if all critical services are healthy, false otherwise.
+  **/
   async isReady(criticalServices: string[] = ['database']): Promise<boolean> {
     const health = await this.runAllChecks();
     

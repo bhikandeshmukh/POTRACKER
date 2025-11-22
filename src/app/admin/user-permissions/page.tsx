@@ -10,6 +10,14 @@ import { User, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { getThemeClasses } from '@/styles/theme';
 
+/**
+* Renders the admin-only user permissions management page with redirects for unauthenticated or unauthorized access.
+* @example
+* UserPermissionsPage()
+* <div className="min-h-screen bg-gray-50">...</div>
+* @param {{void}} noParams - No parameters required.
+* @returns {{JSX.Element}} The page layout including navbar, sidebar, and user permissions manager.
+**/
 export default function UserPermissionsPage() {
   const { user, userData, loading } = useAuth();
   const router = useRouter();

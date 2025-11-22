@@ -18,6 +18,14 @@ export class InMemoryServiceRegistry implements ServiceRegistry {
     this.startHealthChecking();
   }
 
+  /**
+  * Registers a microservice with the in-memory registry.
+  * @example
+  * register(service)
+  * undefined
+  * @param {{ServiceConfig}} {{service}} - Configuration of the service to register.
+  * @returns {{Promise<void>}} Promise resolving when registration is complete.
+  **/
   async register(service: ServiceConfig): Promise<void> {
     logger.debug(`Registering service: ${service.name}`);
     
@@ -45,6 +53,14 @@ export class InMemoryServiceRegistry implements ServiceRegistry {
     }
   }
 
+  /**
+  * Finds the configuration for a registered service by name, if healthy.
+  * @example
+  * discover("auth-service")
+  * { host: "auth.local", port: 8080 }
+  * @param {{string}} serviceName - Name of the service to look up.
+  * @returns {{Promise<ServiceConfig | null>}} Returns a promise resolving to the service config or null.
+  **/
   async discover(serviceName: string): Promise<ServiceConfig | null> {
     const instance = this.services.get(serviceName);
     
@@ -71,6 +87,14 @@ export class InMemoryServiceRegistry implements ServiceRegistry {
       .map(instance => instance.config);
   }
 
+  /****
+  * Perform a health check for a registered service, attempting to call its own health method or returning a default healthy status.
+  * @example
+  * healthCheck('user-service')
+  * { status: 'healthy', timestamp: '2025-11-22T00:00:00.000Z', checks: [ ... ] }
+  * @param {{string}} {{serviceName}} - Service name to perform the health check on.
+  * @returns {{Promise<ServiceHealth>}} Promise resolving with the service health result.
+  ****/
   async healthCheck(serviceName: string): Promise<ServiceHealth> {
     const instance = this.services.get(serviceName);
     
@@ -126,6 +150,13 @@ export class InMemoryServiceRegistry implements ServiceRegistry {
   }
 
   // Get service statistics
+  /**/ **
+  * Compiles service registry health metrics and details for every known service instance.
+  * @example
+  * serviceRegistry.getStats()
+  * { totalServices: 5, healthyServices: 3, unhealthyServices: 1, degradedServices: 1, services: [{ name: "api", status: "healthy", registeredAt: new Date("2025-01-01"), lastHealthCheck: new Date("2025-11-22") }] }
+  * @returns {{ totalServices: number; healthyServices: number; unhealthyServices: number; degradedServices: number; services: Array<{ name: string; status: string; registeredAt: Date; lastHealthCheck: Date; }> }} Aggregated health summary of the registered services.
+  **/*/
   getStats(): {
     totalServices: number;
     healthyServices: number;
@@ -208,6 +239,14 @@ export class InMemoryServiceRegistry implements ServiceRegistry {
   }
 
   // Cleanup unhealthy services
+  /**
+  * Removes unhealthy services that haven’t reported in the last five minutes from the registry.
+  * @example
+  * serviceRegistry.cleanup()
+  * Promise<void>
+  * @param {{void}} none - No arguments are required.
+  * @returns {{Promise<void>}} Completes once stale services are unregistered.
+  **/
   async cleanup(): Promise<void> {
     const cutoffTime = new Date(Date.now() - 5 * 60 * 1000); // 5 minutes ago
     const servicesToRemove: string[] = [];

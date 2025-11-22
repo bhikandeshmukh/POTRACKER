@@ -19,6 +19,14 @@ export class InMemoryEventBus implements EventBus {
   private readonly maxHistorySize = 1000;
   private readonly maxRetries = 3;
 
+  /**
+  * Publishes an event to all matching subscribers on the event bus, managing history and notifications.
+  * @example
+  * publish(serviceEvent)
+  * Promise<void>
+  * @param {{ServiceEvent<T>}} {{event}} - Event data that should be dispatched to subscribers.
+  * @returns {{Promise<void>}} Promise that resolves once all subscribers have been notified.
+  **/
   async publish<T>(event: ServiceEvent<T>): Promise<void> {
     logger.debug(`Publishing event: ${event.type} from ${event.service}`);
     
@@ -48,6 +56,15 @@ export class InMemoryEventBus implements EventBus {
     logger.debug(`Event published to ${allSubscribers.length} subscribers: ${event.type}`);
   }
 
+  /**
+  * Subscribes a handler to the specified event type and registers the subscription.
+  * @example
+  * subscribe('user:created', (event) => handleUserCreated(event))
+  * () => void
+  * @param {{string}} {{eventType}} - The type of event to subscribe to.
+  * @param {{EventHandler<T>}} {{handler}} - The handler to invoke when the event is published.
+  * @returns {{() => void}} A function that can be called to unsubscribe the handler from the event.
+  **/
   subscribe<T>(eventType: string, handler: EventHandler<T>): () => void {
     logger.debug(`Subscribing to event: ${eventType}`);
     
@@ -71,6 +88,15 @@ export class InMemoryEventBus implements EventBus {
     };
   }
 
+  /**
+  * Unsubscribes the handler from the specified event type, cleaning up empty subscriptions.
+  * @example
+  * nsubscribe('message', handler)
+  * undefined
+  * @param {{string}} {{eventType}} - The type of the event to unsubscribe from.
+  * @param {{EventHandler}} {{handler}} - The handler to remove from the subscriber list.
+  * @returns {{void}} No return value.
+  **/
   unsubscribe(eventType: string, handler: EventHandler): void {
     const subscribers = this.subscriptions.get(eventType);
     if (!subscribers) {
@@ -95,6 +121,11 @@ export class InMemoryEventBus implements EventBus {
   }
 
   // Get event history
+  /****
+  * Retrieves event history, optionally filtered by type and limited in count, returning the most recent entries first.
+  * @example
+  * etEventHistory('update', 5)
+  * [{ type: 'update', /* ... */
   getEventHistory(eventType?: string, limit?: number): ServiceEvent[] {
     let events = this.eventHistory;
     
@@ -110,6 +141,11 @@ export class InMemoryEventBus implements EventBus {
   }
 
   // Get subscription statistics
+  /**
+  * Provides aggregated statistics for event bus subscriptions.
+  * @example
+  * etSubscriptionStats()
+  * { totalSubscriptions: 3, subscriptionsByEventType: { order: 2 }, subscriptions: [/* ... */
   getSubscriptionStats(): {
     totalSubscriptions: number;
     subscriptionsByEventType: Record<string, number>;
@@ -161,6 +197,11 @@ export class InMemoryEventBus implements EventBus {
   }
 
   // Get event statistics
+  /**
+  * Computes statistics for the accumulated events in the bus.
+  * @example
+  * etEventStats()
+  * { totalEvents: 42, eventsByType: { http: 20 }, recentEvents: [/*ServiceEvent*/
   getEventStats(): {
     totalEvents: number;
     eventsByType: Record<string, number>;
@@ -187,6 +228,15 @@ export class InMemoryEventBus implements EventBus {
   }
 
   // Private helper methods
+  /**
+  * Attempts to invoke a subscriber handler with retry logic, logging, and error tracking for the provided event.
+  * @example
+  * notifySubscriber(subscription, event)
+  * undefined
+  * @param {{EventSubscription}} subscription - Subscription whose handler should be notified and tracked.
+  * @param {{ServiceEvent<T>}} event - Service event that should be passed to the subscriber handler.
+  * @returns {{Promise<void>}} Resolves once the event handler succeeds or retries exhaust.
+  **/
   private async notifySubscriber<T>(
     subscription: EventSubscription, 
     event: ServiceEvent<T>
@@ -258,6 +308,13 @@ export class InMemoryEventBus implements EventBus {
   }
 
   // Health check
+  /**
+  * Determines the overall health of the event bus based on subscription and event statistics
+  * @example
+  * healthCheck()
+  * Promise<{status: 'healthy' | 'degraded' | 'unhealthy'; details: {totalSubscriptions: number; totalEvents: number; errorRate: number; eventRate: number;}}>
+  * @returns {{Promise<{status: 'healthy' | 'degraded' | 'unhealthy'; details: {totalSubscriptions: number; totalEvents: number; errorRate: number; eventRate: number;};}>}} Resolves with the computed health status and associated metrics.
+  **/
   async healthCheck(): Promise<{
     status: 'healthy' | 'degraded' | 'unhealthy';
     details: {

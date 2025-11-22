@@ -27,6 +27,13 @@ import {
   Plus
 } from 'lucide-react';
 
+/**
+* Renders the audit logs page with filters, downloads, and a detailed activity table.
+* @example
+* AuditLogsPage()
+* <JSX.Element>The audit logs management layout</JSX.Element>
+* @returns {JSX.Element} The audit log page component with filters and table UI.
+**/
 export default function AuditLogsPage() {
   const { user, userData, loading } = useAuth();
   const router = useRouter();
@@ -47,6 +54,13 @@ export default function AuditLogsPage() {
     }
   }, [user, loading, router]);
 
+  /**/ **
+  * Reloads audit logs by fetching the latest entries and updating the component state.
+  * @example
+  * sync()
+  * undefined
+  * @returns {Promise<void>} Resolves once the logs are refreshed.
+  **/*/
   const loadAuditLogs = async () => {
     setLoadingLogs(true);
     try {
@@ -134,6 +148,14 @@ export default function AuditLogsPage() {
     applyFilters();
   }, [auditLogs, searchTerm, filters, applyFilters]);
 
+  /**
+  * Returns the icon component corresponding to the provided audit log action.
+  * @example
+  * getAuditLogActionIcon('approve')
+  * <CheckCircle className="size-4" />
+  * @param {{string}} action - Action name to determine the correct icon component.
+  * @returns {{JSX.Element}} JSX element representing the action icon.
+  **/
   const getActionIcon = (action: string) => {
     switch (action) {
       case 'create': return <Plus className="size-4" />;
@@ -158,6 +180,14 @@ export default function AuditLogsPage() {
     }
   };
 
+  /**
+  * Returns Tailwind CSS class string for audit log action badges
+  * @example
+  * getActionBadgeClasses('create')
+  * 'bg-green-50 text-green-700 border-green-200'
+  * @param {{string}} {{action}} - The audit log action type.
+  * @returns {{string}} Tailwind CSS classes for the action badge.
+  **/
   const getActionColor = (action: string) => {
     switch (action) {
       case 'create': return 'bg-green-50 text-green-700 border-green-200';
@@ -171,6 +201,14 @@ export default function AuditLogsPage() {
     }
   };
 
+  /**
+  * Exports filtered audit logs to a CSV file and triggers its download.
+  * @example
+  * exportAuditLogsCsv(filteredLogs)
+  * undefined
+  * @param {{Array<Object>}} {{filteredLogs}} - Filtered audit log entries to include in the CSV.
+  * @returns {{void}} Does not return a value.
+  **/
   const exportLogs = () => {
     const csvContent = [
       ['Timestamp', 'User', 'Action', 'Entity Type', 'Entity Name', 'Description'].join(','),

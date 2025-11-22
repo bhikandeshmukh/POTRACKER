@@ -5,6 +5,13 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { LogIn } from 'lucide-react';
 
+/**/ **
+* Renders the PO Tracker login form and manages sign-in attempts with client-side validation feedback.
+* @example
+* LoginPage()
+* <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-blue-100">...</div>
+* @returns {{JSX.Element}} Returns the login view that triggers authentication and navigation to the dashboard.
+* /*/
 export default function LoginPage() {
   const router = useRouter();
   const { signIn } = useAuth();
@@ -13,6 +20,14 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  /**
+   * Handles the form submission, authenticates the user, and redirects to the dashboard.
+   * @example
+   * sync(e: React.FormEvent)
+   * undefined
+   * @param {{React.FormEvent}} e - Form submission event from the login form.
+   * @returns {{Promise<void>}} Resolves after processing the login flow and updating UI state.
+   **/
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');

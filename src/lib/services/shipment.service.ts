@@ -9,6 +9,15 @@ export class ShipmentService extends BaseService<Shipment> {
     super('shipments');
   }
 
+  /**
+  * Creates a shipment record and logs an audit event when creation succeeds.
+  * @example
+  * createShipment({poNumber: 'PO123', lineItems: [], totalAmount: 0, status: 'pending'}, {uid: 'u1', name: 'Alice', role: 'admin'})
+  * {success: true, data: {...}}
+  * @param {{Omit<Shipment, 'id' | 'createdAt' | 'updatedAt'>}} shipmentData - Shipment payload without auto-generated identifiers or timestamps.
+  * @param {{uid: string; name: string; role: string}} createdBy - Metadata for the user creating the shipment for auditing purposes.
+  * @returns {{Promise<{success: boolean; data?: Shipment; error?: string}>>}} Promise resolving with the creation result including any error message.
+  **/
   async createShipment(
     shipmentData: Omit<Shipment, 'id' | 'createdAt' | 'updatedAt'>,
     createdBy: { uid: string; name: string; role: string }
@@ -50,6 +59,18 @@ export class ShipmentService extends BaseService<Shipment> {
     }
   }
 
+  /*********************************************************************************
+  * Updates the shipment status, tracks related changes, and logs the audit event.
+  * @example
+  * updateShipmentStatus('shipmentId', 'IN_TRANSIT', { uid: '123', name: 'Alex', role: 'driver' }, 'TRACK123', new Date())
+  * { success: true, data: { ... } }
+  * @param {{string}} id - Shipment unique identifier to update.
+  * @param {{Shipment['status']}} status - New shipment status to set.
+  * @param {{{ uid: string; name: string; role: string }}} updatedBy - Metadata about the user performing the update.
+  * @param {{string}} [trackingNumber] - Optional tracking number to attach to the shipment.
+  * @param {{Date}} [actualDeliveryDate] - Optional actual delivery date for the shipment.
+  * @returns {{Promise<{success: boolean; error?: string; data?: Shipment}>}} Result of the update operation.
+  *********************************************************************************/
   async updateShipmentStatus(
     id: string,
     status: Shipment['status'],
@@ -110,6 +131,16 @@ export class ShipmentService extends BaseService<Shipment> {
     }
   }
 
+  /**
+  * Syncs the appointment status for a shipment and records related comments and audit events.
+  * @example
+  * syncAppointmentStatus("abc123", "Shipped", { uid: "u1", name: "Alice", role: "dispatcher" })
+  * undefined
+  * @param {{string}} shipmentId - Identifier of the shipment whose linked appointment should be synchronized.
+  * @param {{Shipment['status']}} shipmentStatus - Current status of the shipment driving the appointment update.
+  * @param {{{uid: string; name: string; role: string}}} updatedBy - Identity of the person or system performing the synchronization.
+  * @returns {{Promise<void>}} Resolves when the appointment synchronization (including comments/audit logging) completes.
+  **/
   private async syncAppointmentStatus(
     shipmentId: string,
     shipmentStatus: Shipment['status'],
@@ -219,6 +250,11 @@ export class ShipmentService extends BaseService<Shipment> {
     });
   }
 
+  /**
+  * Filters shipment results by matching the provided search term against key shipment identifiers.
+  * @example
+  * searchShipments("po12345")
+  * { success: true, data: { data: [/* filtered shipments */
   async searchShipments(searchTerm: string) {
     const result = await this.findMany();
     
@@ -244,6 +280,15 @@ export class ShipmentService extends BaseService<Shipment> {
   }
 
   // Dashboard analytics methods
+  /**
+  * Deletes a shipment and its appointment, auditing the deletion when successful.
+  * @example
+  * deleteShipmentWithAppointment("shipment-id", { uid: "user1", name: "Jane Doe", role: "admin" })
+  * { success: true }
+  * @param {{string}} id - Unique identifier of the shipment to remove.
+  * @param {{ uid: string; name: string; role: string }} deletedBy - Metadata for the user performing the deletion.
+  * @returns {{Promise<{ success: boolean; error?: string }}}} Result of the deletion operation.
+  **/
   async deleteShipmentWithAppointment(
     id: string,
     deletedBy: { uid: string; name: string; role: string }
@@ -294,6 +339,15 @@ export class ShipmentService extends BaseService<Shipment> {
     }
   }
 
+  /**
+  * Removes the appointment linked to a shipment, logs audit details, and optionally comments on the PO.
+  * @example
+  * deleteLinkedAppointment('shipment123', {uid: 'user123', name: 'Sam', role: 'admin'})
+  * undefined
+  * @param {{string}} shipmentId - Identifier for the shipment whose linked appointment is deleted.
+  * @param {{{uid: string; name: string; role: string}}} deletedBy - Details of the user performing the deletion for audit/commenting.
+  * @returns {{Promise<void>}} Promise that resolves once the deletion attempt and related logging complete.
+  **/
   private async deleteLinkedAppointment(
     shipmentId: string,
     deletedBy: { uid: string; name: string; role: string }
@@ -356,6 +410,13 @@ export class ShipmentService extends BaseService<Shipment> {
     }
   }
 
+  /**
+  * Fetches aggregate statistics for shipments.
+  * @example
+  * getShipmentStats()
+  * { success: true, data: { total: 5, prepared: 1, shipped: 2, inTransit: 1, delivered: 1, cancelled: 0, totalValue: 1234.56 } }
+  * @returns {{Promise<{success: boolean, data?: {total: number, prepared: number, shipped: number, inTransit: number, delivered: number, cancelled: number, totalValue: number}, error?: string}>}} Promise resolving with shipment statistics or an error.
+  **/
   async getShipmentStats() {
     try {
       const result = await this.findMany();

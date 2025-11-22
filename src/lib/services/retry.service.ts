@@ -45,6 +45,14 @@ class CircuitBreaker {
     };
   }
 
+  /**
+  * Executes the provided async function while honoring the circuit breaker state and transitions.
+  * @example
+  * execute(async () => fetchData())
+  * Promise resolving to the result of fetchData
+  * @param {{() => Promise<T>}} fn - Asynchronous callback executed when the circuit allows execution.
+  * @returns {{Promise<T>}} Resolves with the callback result when the circuit is closed or half-open.
+  **/
   async execute<T>(fn: () => Promise<T>): Promise<T> {
     if (this.state === CircuitState.OPEN) {
       if (Date.now() - this.lastFailureTime < this.options.resetTimeout) {
@@ -66,6 +74,13 @@ class CircuitBreaker {
     }
   }
 
+  /**
+  * Handles success counts and transitions the circuit breaker state appropriately.
+  * @example
+  * this.onSuccess()
+  * undefined
+  * @returns {void} Does not return a value.
+  **/
   private onSuccess(): void {
     if (this.state === CircuitState.HALF_OPEN) {
       this.successCount++;
@@ -79,6 +94,14 @@ class CircuitBreaker {
     }
   }
 
+  /**
+  * Handles circuit breaker failures by incrementing counters and transitioning state with logging
+  * @example
+  * onFailure()
+  * void
+  * @param {{void}} {{}} - No parameters.
+  * @returns {{void}} No return value; updates internal state only.
+  **/
   private onFailure(): void {
     this.failures++;
     this.lastFailureTime = Date.now();
@@ -127,6 +150,14 @@ export class RetryService {
   };
 
   // Default retry condition - retry on network errors, timeouts, and 5xx errors
+  /**
+  * Determine if the provided error should trigger a retry.
+  * @example
+  * defaultRetryCondition({ message: 'Network timeout occurred', status: 504 })
+  * true
+  * @param {{any}} {{error}} - Error object to evaluate for retryable conditions.
+  * @returns {{boolean}} True if the error meets retryable criteria.
+  **/
   private defaultRetryCondition(error: any): boolean {
     if (!error) return false;
 
@@ -152,6 +183,15 @@ export class RetryService {
   }
 
   // Calculate delay with exponential backoff and jitter
+  /******
+  * Calculates the retry delay using exponential backoff with optional jitter.
+  * @example
+  * calculateDelay(2, { baseDelay: 100, backoffMultiplier: 2, maxDelay: 1000, jitter: true })
+  * 200
+  * @param {{number}} {{attempt}} - Attempt number for which delay is calculated.
+  * @param {{Required<RetryOptions>}} {{options}} - Options controlling the delay calculation.
+  * @returns {{number}} Calculated delay in milliseconds.
+  ******/
   private calculateDelay(attempt: number, options: Required<RetryOptions>): number {
     const exponentialDelay = options.baseDelay * Math.pow(options.backoffMultiplier, attempt - 1);
     let delay = Math.min(exponentialDelay, options.maxDelay);
@@ -179,6 +219,17 @@ export class RetryService {
   }
 
   // Execute function with retry logic
+  /**
+  * Retries an async operation with circuit breaker support until success or attempts exhausted.
+  * @example
+  * executeWithRetry(() => apiCall(), {service: 'svc', operation: 'op'})
+  * Promise.resolve(result)
+  * @param {{() => Promise<T>}} fn - Function that performs the async operation to retry.
+  * @param {{RetryContext}} context - Contextual metadata describing the service and operation.
+  * @param {{RetryOptions}} options - Retry strategy overrides such as max attempts and backoff.
+  * @param {{CircuitBreakerOptions|undefined}} circuitBreakerOptions - Optional configuration for the circuit breaker.
+  * @returns {{Promise<T>}} Promise that resolves with the operation result or rejects with the last error.
+  **/
   async executeWithRetry<T>(
     fn: () => Promise<T>,
     context: RetryContext,
@@ -266,6 +317,17 @@ export class RetryService {
   }
 
   // Wrapper for service methods
+  /**
+   * Creates a retryable service method wrapper that preserves context and executes the original function with retry/circuit breaker handling.
+   * @example
+   * rapServiceMethod('UserService', 'getUser', (id) => fetchUser(id))
+   * @param {{string}} {{service}} - Name of the service invoking the method.
+   * @param {{string}} {{operation}} - Identifier of the service operation for tracing.
+   * @param {{(...args: any[]) => Promise<any>}} {{fn}} - Original asynchronous function to wrap with retries.
+   * @param {{RetryOptions}} {{retryOptions}} - Optional retry configuration.
+   * @param {{CircuitBreakerOptions}} {{circuitBreakerOptions}} - Optional circuit breaker configuration.
+   * @returns {{(...args: any[]) => Promise<any>}} Returns a wrapped function that executes the input with retry and circuit breaker logic.
+   **/
   wrapServiceMethod<T extends any[], R>(
     service: string,
     operation: string,
@@ -333,6 +395,14 @@ export class RetryService {
   }
 
   // Get retry statistics
+  /**
+  * Aggregates retry circuit breaker statistics for monitoring purposes.
+  * @example
+  * etRetryStats()
+  * { circuitBreakers: {...}, totalCircuitBreakers: 5, openCircuitBreakers: 1, halfOpenCircuitBreakers: 0 }
+  * @param {{void}} [unused] - No parameters.
+  * @returns {{circuitBreakers: Record<string, any>; totalCircuitBreakers: number; openCircuitBreakers: number; halfOpenCircuitBreakers: number}} Object containing circuit breaker stats.
+  **/
   getRetryStats(): {
     circuitBreakers: Record<string, any>;
     totalCircuitBreakers: number;

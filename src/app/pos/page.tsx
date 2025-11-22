@@ -19,6 +19,14 @@ import Pagination, { usePagination } from '@/components/Pagination';
 import ModernButton from '@/components/ModernButton';
 import { getThemeClasses } from '@/styles/theme';
 
+/**
+* Renders the purchase order dashboard with filters, KPIs, tables, pagination, and supporting modals while handling authentication gating and data refreshing.
+* @example
+* PosPage()
+* <div>...</div>
+* @param {void} none - This component does not accept props.
+* @returns {JSX.Element} Rendered purchase order page layout with navigation, filters, summary cards, and data tables.
+**/
 export default function PosPage() {
   const { user, userData, loading } = useAuth();
   const router = useRouter();

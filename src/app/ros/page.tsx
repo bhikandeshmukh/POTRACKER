@@ -10,6 +10,14 @@ import { FileText, Plus, Edit, Trash2, Eye, Package, AlertCircle, CheckCircle, X
 import { getThemeClasses } from '@/styles/theme';
 import { getReturnOrders, ReturnOrder } from '@/lib/firestore';
 
+/**
+* Renders the return orders dashboard with authentication checks, filtering, and summary stats.
+* @example
+* ReturnOrdersPage()
+* <ReturnOrdersPage />
+* @param {{void}} voidParam - This component does not accept props.
+* @returns {{JSX.Element}} The rendered return orders page layout.
+**/
 export default function ReturnOrdersPage() {
   const { user, userData, loading } = useAuth();
   const router = useRouter();

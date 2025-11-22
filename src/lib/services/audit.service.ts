@@ -8,6 +8,23 @@ export class AuditService extends BaseService<AuditLog> {
     super('auditLogs');
   }
 
+  /**/ **
+  * Logs an audit event with user, entity, and optional metadata details.
+  * @example
+  * logEvent("user123", "Jane Doe", "admin", "CREATE", "Document", "doc456", "Project Plan", "Created new document", { title: { old: null, new: "Project Plan" } }, { ip: "127.0.0.1" })
+  * Promise<void>
+  * @param {{string}} userId - Identifier of the user performing the action.
+  * @param {{string}} userName - Display name of the user performing the action.
+  * @param {{string}} userRole - Role of the user performing the action.
+  * @param {{AuditLog['action']}} action - Action being audited.
+  * @param {{AuditLog['entityType']}} entityType - Type of entity the action applies to.
+  * @param {{string}} entityId - Identifier of the target entity.
+  * @param {{string}} entityName - Name of the target entity.
+  * @param {{string}} description - Optional description for the audit entry.
+  * @param {{Record<string, { old: any; new: any }}}} changes - Optional map of field changes.
+  * @param {{Record<string, any>}} metadata - Optional metadata to attach to the audit entry.
+  * @returns {{Promise<void>}} Promise resolving when the audit log is stored.
+  **/*/
   async logEvent(
     userId: string,
     userName: string,
@@ -90,6 +107,14 @@ export class AuditService extends BaseService<AuditLog> {
     });
   }
 
+  /**
+   * Convert audit logs into standardized activity items for display.
+   * @example
+   * convertToActivityItems([{ id: '1', action: 'create_po', entityType: 'po', userId: 'u1', userName: 'Alice', userRole: 'admin', entityId: 'po1', entityName: 'PO 1', description: 'Created PO', timestamp: Timestamp.now(), metadata: {} }])
+   * [{ id: '1', type: 'po_created', user: { id: 'u1', name: 'Alice', role: 'admin' }, entity: { type: 'po', id: 'po1', name: 'PO 1' }, description: 'Created PO', timestamp: <Date>, metadata: {} }]
+   * @param {{AuditLog[]}} auditLogs - List of audit log entries to transform.
+   * @returns {{ActivityItem[]}} Converted list of activity items.
+   **/
   convertToActivityItems(auditLogs: AuditLog[]): ActivityItem[] {
     return auditLogs.map(log => {
       let activityType: ActivityItem['type'];
@@ -175,6 +200,16 @@ export class AuditService extends BaseService<AuditLog> {
     });
   }
 
+  /**
+  * Logs a user login event to the audit service.
+  * @example
+  * logUserLogin('123', 'Alice', 'admin')
+  * undefined
+  * @param {{string}} {{userId}} - Unique identifier of the user logging in.
+  * @param {{string}} {{userName}} - Display name of the user logging in.
+  * @param {{string}} {{userRole}} - Role assigned to the user logging in.
+  * @returns {{Promise<void>}} Resolves when the login event has been recorded.
+  **/
   async logUserLogin(userId: string, userName: string, userRole: string) {
     await this.logEvent(
       userId,
@@ -190,6 +225,21 @@ export class AuditService extends BaseService<AuditLog> {
     );
   }
 
+  /**
+  * Logs PO status change events for audit tracking.
+  * @example
+  * logPOStatusChange('po1','PO-123','Pending','Approved','user1','Alice','approver','Needed review')
+  * undefined
+  * @param {{string}} poId - ID of the purchase order.
+  * @param {{string}} poNumber - Number identifier of the purchase order.
+  * @param {{string}} oldStatus - Previous status of the purchase order.
+  * @param {{string}} newStatus - New status of the purchase order.
+  * @param {{string}} userId - ID of the user performing the update.
+  * @param {{string}} userName - Name of the user performing the update.
+  * @param {{string}} userRole - Role of the user performing the update.
+  * @param {{string}} [reason] - Optional reason for the status change.
+  * @returns {{Promise<void>}} Promise resolving once the audit log entry is created.
+  **/
   async logPOStatusChange(
     poId: string,
     poNumber: string,

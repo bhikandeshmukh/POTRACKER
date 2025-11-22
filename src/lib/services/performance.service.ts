@@ -24,6 +24,16 @@ export class PerformanceService {
   private maxMetrics = 1000; // Keep last 1000 metrics
 
   // Decorator for measuring performance
+  /**
+   * Wraps an async operation to measure execution duration and record success metrics for a service.
+   * @example
+   * measurePerformance('payment', 'processPayment', async (payload) => await processPayment(payload))
+   * defined wrapper will record metrics and return the operation result.
+   * @param {{string}} service - Name of the service emitting the metric.
+   * @param {{string}} operation - Identifier for the specific operation being measured.
+   * @param {{(...args: T) => Promise<R>}} fn - Async function whose performance should be measured.
+   * @returns {{(...args: T) => Promise<R>}} Wrapper that records metrics and proxies the original function result.
+   **/
   measurePerformance<T extends any[], R>(
     service: string,
     operation: string,
@@ -66,6 +76,14 @@ export class PerformanceService {
   }
 
   // Record a performance metric
+  /**
+  * Records a performance metric, retains recent metrics, and logs slow or failed operations.
+  * @example
+  * recordMetric({ service: 'auth', operation: 'login', duration: 1200, success: false, error: 'timeout' })
+  * undefined
+  * @param {{PerformanceMetric}} metric - Performance metric to record and evaluate.
+  * @returns {{void}} undefined return value.
+  **/
   recordMetric(metric: PerformanceMetric): void {
     this.metrics.push(metric);
     
@@ -86,6 +104,15 @@ export class PerformanceService {
   }
 
   // Get performance statistics
+  /**
+  * Aggregates performance metrics optionally filtered by service and time range.
+  * @example
+  * etStats('billing', { start: new Date('2025-01-01'), end: new Date('2025-01-31') })
+  * { totalOperations: 5, averageDuration: 200, successRate: 80, cacheHitRate: 60, slowestOperations: [], errorRate: 20 }
+  * @param {{string}} service - Optional service name to filters metrics by service.
+  * @param {{{ start: Date; end: Date }}} timeRange - Optional time range to filter recorded metrics.
+  * @returns {{PerformanceStats}} Return aggregated totals, rates, and the slowest operations for the filtered metrics.
+  **/
   getStats(service?: string, timeRange?: { start: Date; end: Date }): PerformanceStats {
     let filteredMetrics = this.metrics;
 
@@ -171,6 +198,13 @@ export class PerformanceService {
   }
 
   // Monitor cache effectiveness
+  /**
+  * Computes aggregated cache performance statistics from the tracked query metrics.
+  * @example
+  * etCacheStats()
+  * { totalQueries: 10, cacheHits: 7, cacheMisses: 3, hitRate: 70 }
+  * @returns {{ totalQueries: number; cacheHits: number; cacheMisses: number; hitRate: number; }} Returns the count of total queries, hits, misses, and the calculated hit rate percentage.
+  **/
   getCacheStats(): {
     totalQueries: number;
     cacheHits: number;

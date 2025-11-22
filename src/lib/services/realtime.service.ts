@@ -72,6 +72,15 @@ export class RealtimeService {
   }
 
   // Build query constraints
+  /**
+  * Builds Firestore query constraints for a collection based on the provided options.
+  * @example
+  * buildQuery('users', { where: [{ field: 'active', operator: '==', value: true }], limit: 10 })
+  * [QueryConstraint, ...]
+  * @param {{string}} {{collectionName}} - Name of the collection to query.
+  * @param {{SubscriptionOptions|undefined}} {{options}} - Optional filtering, ordering, and limiting options.
+  * @returns {{QueryConstraint[]}} Array of Firestore query constraints derived from the provided options.
+  **/
   private buildQuery(collectionName: string, options?: SubscriptionOptions): QueryConstraint[] {
     const constraints: QueryConstraint[] = [];
 
@@ -93,6 +102,16 @@ export class RealtimeService {
   }
 
   // Subscribe to a collection
+  /**
+  * Subscribes to a collection and manages real-time updates through the provided callback.
+  * @example
+  * ubscribeToCollection('users', realtimeCallback, { includeMetadataChanges: true })
+  * 'subscriptionId123'
+  * @param {{string}} collectionName - Name of the collection to subscribe to.
+  * @param {{SubscriptionCallback<T>}} callback - Callback invoked on loading, data, and errors.
+  * @param {{SubscriptionOptions}} [options] - Optional query and subscription configuration.
+  * @returns {{string}} Identifier for the created subscription.
+  **/
   subscribeToCollection<T extends BaseEntity>(
     collectionName: string,
     callback: SubscriptionCallback<T>,
@@ -167,6 +186,17 @@ export class RealtimeService {
   }
 
   // Subscribe to a single document
+  /**
+  * Subscribes to realtime updates for a single document and returns the subscription identifier.
+  * @example
+  * subscribeToDocument('users', 'userId123', callback)
+  * 'subscriptionId123'
+  * @param {{string}} collectionName - Collection name containing the document to observe.
+  * @param {{string}} documentId - Identifier of the document to subscribe to.
+  * @param {{DocumentSubscriptionCallback<T>}} callback - Callback invoked on loading, data, or error events.
+  * @param {{{ includeMetadataChanges?: boolean }}} [options] - Optional flags controlling metadata updates.
+  * @returns {{string}} Unique identifier for the created document subscription.
+  **/
   subscribeToDocument<T extends BaseEntity>(
     collectionName: string,
     documentId: string,
@@ -241,6 +271,16 @@ export class RealtimeService {
   }
 
   // Handle subscription errors
+  /**
+  * Handles subscription errors by tracking them, recording recent occurrences, and invoking an optional callback.
+  * @example
+  * handleSubscriptionError('sub123', new Error('network failure'))
+  * undefined
+  * @param {{string}} {{subscriptionId}} - Identifier of the subscription that encountered the error.
+  * @param {{Error}} {{error}} - Error object describing the failure.
+  * @param {{(error: Error) => void}} {{onError}} - Optional callback invoked after processing the error.
+  * @returns {{void}} Nothing.
+  **/
   private handleSubscriptionError(
     subscriptionId: string,
     error: Error,
@@ -293,6 +333,14 @@ export class RealtimeService {
   }
 
   // Unsubscribe from a subscription
+  /**
+  * Unsubscribes the given subscription and updates related state.
+  * @example
+  * unsubscribe('sub-123')
+  * true
+  * @param {{string}} {{subscriptionId}} - Identifier of the subscription to cancel.
+  * @returns {{boolean}} True if the subscription was found and unsubscribed, otherwise false.
+  **/
   unsubscribe(subscriptionId: string): boolean {
     const subscription = this.subscriptions.get(subscriptionId);
     
@@ -338,6 +386,13 @@ export class RealtimeService {
   }
 
   // Get realtime metrics
+  /**
+  * Computes current real-time metrics for all subscriptions managed by the service.
+  * @example
+  * etMetrics()
+  * { totalSubscriptions: 5, activeSubscriptions: 3, subscriptionsByCollection: { orders: 2, users: 3 }, averageUpdateFrequency: 1.2, errorRate: 0, totalUpdates: 120, recentErrors: [] }
+  * @returns {{RealtimeMetrics}} Aggregated realtime metrics for subscriptions.
+  **/
   getMetrics(): RealtimeMetrics {
     const subscriptions = Array.from(this.subscriptions.values());
     const activeSubscriptions = subscriptions.filter(sub => sub.active);
@@ -377,6 +432,13 @@ export class RealtimeService {
   }
 
   // Health check for realtime service
+  /**
+   * Performs a health check using recent metrics to categorize service status.
+   * @example
+   * healthCheck()
+   * { status: 'healthy', details: { activeSubscriptions: 10, errorRate: 2, recentErrors: 0 } }
+   * @returns {{Promise<{status: 'healthy' | 'degraded' | 'unhealthy'; details: { activeSubscriptions: number; errorRate: number; recentErrors: number; }; }>; Current health status and metrics.}}
+   **/
   async healthCheck(): Promise<{
     status: 'healthy' | 'degraded' | 'unhealthy';
     details: {

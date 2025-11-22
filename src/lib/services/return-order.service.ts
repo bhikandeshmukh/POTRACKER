@@ -18,6 +18,16 @@ export class ReturnOrderService extends BaseService<ReturnOrder> {
     return roNumber.replace(/[^a-zA-Z0-9]/g, '-');
   }
 
+  /**
+  * Creates a return order record, logs an audit event, and returns the persistence result.
+  * @example
+  * createReturnOrder({ poNumber: 'PO123', poId: '123', vendorId: 'V1', vendorName: 'Vendor', returnDate: new Date(), lineItems: [] }, { uid: 'u1', name: 'Alice', role: 'buyer' }, 'RO-0001')
+  * { success: true, id: 'RO-0001' }
+  * @param {{object}} roData - Return order payload including PO info, vendor info, return date, and line items.
+  * @param {{uid: string; name: string; role: string}} createdBy - Metadata for the user creating the return order for audit logging.
+  * @param {{string}} customRONumber - Optional custom return order identifier to override generated number.
+  * @returns {{Promise<{success: boolean; error?: string}>>}} Result of the return order creation with success flag and optional error message.
+  **/
   async createReturnOrder(
     roData: {
       poNumber: string;
@@ -86,6 +96,17 @@ export class ReturnOrderService extends BaseService<ReturnOrder> {
     }
   }
 
+  /**
+   * Updates the status of a return order and logs the change.
+   * @example
+   * updateReturnOrderStatus('ro123', 'Approved', { uid: 'u1', name: 'Alice', role: 'manager' }, 'Stock inspected')
+   * { success: true, data: { ... } }
+   * @param {{string}} {{id}} - Return order identifier.
+   * @param {{ReturnOrder['status']}} {{status}} - New status for the return order.
+   * @param {{{uid: string; name: string; role: string}}} {{updatedBy}} - User performing the update.
+   * @param {{string}} {{reason}} - Optional reason for the status change.
+   * @returns {{Promise<any>}} Result of the update operation.
+   **/
   async updateReturnOrderStatus(
     id: string,
     status: ReturnOrder['status'],
@@ -161,6 +182,16 @@ export class ReturnOrderService extends BaseService<ReturnOrder> {
     });
   }
 
+  /**
+  * Retrieves return orders for a specific user, optionally limited in count.
+  * @example
+  * getReturnOrdersForUser('user123', 'Employee', 10)
+  * [{ id: 'return1', returnDate: '2025-11-21', createdBy_uid: 'user123' }]
+  * @param {string} userId - Identifier of the user whose return orders are requested.
+  * @param {string} role - Role of the user requesting the return orders.
+  * @param {number} limitCount - Maximum number of return orders to retrieve.
+  * @returns {any[]} Array of return order records matching the provided criteria.
+  **/
   async getReturnOrdersForUser(userId: string, role: string, limitCount: number = 50) {
     if (role === 'Employee') {
       return this.findMany({
@@ -178,6 +209,11 @@ export class ReturnOrderService extends BaseService<ReturnOrder> {
     }
   }
 
+  /**
+  * Filters return orders for a user based on a search term and returns the matching collection.
+  * @example
+  * searchReturnOrders('widget', 'user123', 'Admin')
+  * { success: true, data: { data: [/* filtered orders */
   async searchReturnOrders(searchTerm: string, userId?: string, role?: string) {
     const result = await this.getReturnOrdersForUser(userId || '', role || 'Admin');
     
@@ -201,6 +237,15 @@ export class ReturnOrderService extends BaseService<ReturnOrder> {
     return result;
   }
 
+  /****
+  * Deletes an existing return order by id while logging the deletion event.
+  * @example
+  * deleteReturnOrder("ro123", { uid: "u1", name: "Alice", role: "admin" })
+  * { success: true }
+  * @param {{string}} {{id}} - Return order identifier to delete.
+  * @param {{{ uid: string; name: string; role: string }}} {{deletedBy}} - Metadata of the user performing the deletion.
+  * @returns {{Promise<{ success: boolean; error?: string }}}} Result of the deletion operation.
+  ****/
   async deleteReturnOrder(
     id: string,
     deletedBy: { uid: string; name: string; role: string }

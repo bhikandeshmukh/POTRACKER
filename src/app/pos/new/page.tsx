@@ -8,6 +8,13 @@ import Sidebar from '@/components/Sidebar';
 import PoForm from '@/components/PoForm';
 import { getThemeClasses } from '@/styles/theme';
 
+/**
+* Renders the new purchase order page, redirecting unauthenticated users to the login page while showing a loader during auth checks.
+* @example
+* NewPoPage()
+* <div className="min-h-screen bg-gray-50">...</div>
+* @returns {{JSX.Element}} The markup for the new purchase order page or a loading state.
+**/
 export default function NewPoPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
