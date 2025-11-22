@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/components/ToastContainer';
 import { poService } from '@/lib/services';
 import { PurchaseOrder } from '@/lib/types';
 import StatusBadge from './StatusBadge';
@@ -16,6 +17,7 @@ interface PoTableProps {
 
 export default function PoTable({ pos, onRefresh }: PoTableProps) {
   const { userData } = useAuth();
+  const { showSuccess, showError } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [editingStatus, setEditingStatus] = useState<string | null>(null);
@@ -55,11 +57,11 @@ export default function PoTable({ pos, onRefresh }: PoTableProps) {
         if (onRefresh) onRefresh();
       } else {
         console.error('Failed to update PO status:', result.error);
-        alert('Failed to update status: ' + result.error);
+        showError('Failed to Update', 'Failed to update status: ' + result.error);
       }
     } catch (error: any) {
       console.error('Error updating PO status:', error);
-      alert('Failed to update status: ' + error.message);
+      showError('Error', 'Failed to update status: ' + error.message);
     }
   };
 
@@ -77,11 +79,11 @@ export default function PoTable({ pos, onRefresh }: PoTableProps) {
           if (onRefresh) onRefresh();
         } else {
           console.error('Failed to delete PO:', result.error);
-          alert('Failed to delete PO: ' + result.error);
+          showError('Failed to Delete', 'Failed to delete PO: ' + result.error);
         }
       } catch (error: any) {
         console.error('Error deleting PO:', error);
-        alert('Failed to delete PO: ' + error.message);
+        showError('Error', 'Failed to delete PO: ' + error.message);
       }
     }
   };

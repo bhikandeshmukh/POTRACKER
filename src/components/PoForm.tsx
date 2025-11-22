@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/components/ToastContainer';
 import { poService, vendorService } from '@/lib/services';
 import { Vendor, LineItem } from '@/lib/types';
 import { Plus, Trash2 } from 'lucide-react';
@@ -10,6 +11,7 @@ import { Plus, Trash2 } from 'lucide-react';
 export default function PoForm() {
   const router = useRouter();
   const { user, userData } = useAuth();
+  const { showSuccess, showError } = useToast();
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(false);
   
@@ -78,7 +80,7 @@ export default function PoForm() {
         const lines = csv.split('\n').filter(line => line.trim()); // Remove empty lines
         
         if (lines.length < 2) {
-          alert('CSV file must have at least a header and one data row');
+          showError('Invalid CSV', 'CSV file must have at least a header and one data row');
           return;
         }
 
@@ -164,13 +166,13 @@ export default function PoForm() {
           }
           
           setShowImport(false);
-          alert(`Successfully imported ${importedItems.length} items from CSV`);
+          showSuccess('CSV Import', `Successfully imported ${importedItems.length} items from CSV`);
         } else {
-          alert('No valid items found in CSV file. Please check the format and data.');
+          showError('No Valid Items', 'No valid items found in CSV file. Please check the format and data.');
         }
       } catch (error) {
         console.error('CSV Import Error:', error);
-        alert('Error parsing CSV file. Please check the format.');
+        showError('CSV Parse Error', 'Error parsing CSV file. Please check the format.');
       }
     };
     reader.readAsText(file);
@@ -230,11 +232,11 @@ export default function PoForm() {
         router.push('/pos');
       } else {
         console.error('Failed to create PO:', result.error);
-        alert('Failed to create PO: ' + result.error);
+        showError('Failed to Create PO', result.error || 'An error occurred while creating the PO');
       }
     } catch (error) {
       console.error('Error creating PO:', error);
-      alert('Failed to create PO');
+      showError('Error', 'Failed to create PO');
     } finally {
       setLoading(false);
     }
