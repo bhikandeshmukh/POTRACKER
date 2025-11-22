@@ -254,8 +254,8 @@ export default function CommentsSystem({ poId, className = '' }: CommentsSystemP
         <div className="flex space-x-3">
           {/* Avatar */}
           <div className="flex-shrink-0">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-              <User className="w-4 h-4 text-white" />
+            <div className="size-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+              <User className="size-4 text-white" />
             </div>
           </div>
 
@@ -283,7 +283,7 @@ export default function CommentsSystem({ poId, className = '' }: CommentsSystemP
                 {canEdit && (
                   <div className="relative group">
                     <button className="p-1 text-gray-400 hover:text-gray-600 rounded">
-                      <MoreVertical className="w-4 h-4" />
+                      <MoreVertical className="size-4" />
                     </button>
                     <div className="absolute right-0 top-6 bg-white border border-gray-200 rounded-lg shadow-lg py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
                       <button
@@ -293,14 +293,14 @@ export default function CommentsSystem({ poId, className = '' }: CommentsSystemP
                         }}
                         className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
                       >
-                        <Edit className="w-4 h-4" />
+                        <Edit className="size-4" />
                         <span>Edit</span>
                       </button>
                       <button
                         onClick={() => handleDeleteComment(comment.id || '')}
                         className="flex items-center space-x-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="size-4" />
                         <span>Delete</span>
                       </button>
                     </div>
@@ -362,7 +362,7 @@ export default function CommentsSystem({ poId, className = '' }: CommentsSystemP
                   isLiked ? 'text-red-600' : 'text-gray-500 hover:text-red-600'
                 }`}
               >
-                <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
+                <Heart className={`size-4 ${isLiked ? 'fill-current' : ''}`} />
                 <span>{comment.likes.length}</span>
               </button>
 
@@ -371,7 +371,7 @@ export default function CommentsSystem({ poId, className = '' }: CommentsSystemP
                   onClick={() => setReplyingTo(comment.id || '')}
                   className="flex items-center space-x-1 text-gray-500 hover:text-blue-600"
                 >
-                  <Reply className="w-4 h-4" />
+                  <Reply className="size-4" />
                   <span>Reply</span>
                 </button>
               )}
@@ -387,8 +387,8 @@ export default function CommentsSystem({ poId, className = '' }: CommentsSystemP
             {replyingTo === comment.id && comment.id && (
               <div className="mt-3 ml-12">
                 <div className="flex space-x-3">
-                  <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                    <User className="w-3 h-3 text-white" />
+                  <div className="size-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                    <User className="size-3 text-white" />
                   </div>
                   <div className="flex-1 relative">
                     <textarea
@@ -412,8 +412,8 @@ export default function CommentsSystem({ poId, className = '' }: CommentsSystemP
                               index === selectedMentionIndex ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-50'
                             }`}
                           >
-                            <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                              <User className="w-3 h-3 text-white" />
+                            <div className="size-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                              <User className="size-3 text-white" />
                             </div>
                             <div>
                               <div className="font-medium text-sm text-gray-900">{mentionUser.name}</div>
@@ -457,7 +457,7 @@ export default function CommentsSystem({ poId, className = '' }: CommentsSystemP
     <div className={`bg-white rounded-lg border border-gray-200 p-6 ${className}`}>
       {/* Header */}
       <div className="flex items-center space-x-2 mb-6">
-        <MessageCircle className="w-5 h-5 text-blue-600" />
+        <MessageCircle className="size-5 text-blue-600" />
         <h3 className="text-lg font-semibold text-gray-900">
           Comments ({comments.length})
         </h3>
@@ -467,8 +467,8 @@ export default function CommentsSystem({ poId, className = '' }: CommentsSystemP
       {user && !replyingTo && (
         <div className="mb-6">
           <div className="flex space-x-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-              <User className="w-4 h-4 text-white" />
+            <div className="size-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+              <User className="size-4 text-white" />
             </div>
             <div className="flex-1 relative">
               <textarea
@@ -492,8 +492,8 @@ export default function CommentsSystem({ poId, className = '' }: CommentsSystemP
                         index === selectedMentionIndex ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-50'
                       }`}
                     >
-                      <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                        <User className="w-3 h-3 text-white" />
+                      <div className="size-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                        <User className="size-3 text-white" />
                       </div>
                       <div>
                         <div className="font-medium text-sm text-gray-900">{mentionUser.name}</div>
@@ -512,7 +512,7 @@ export default function CommentsSystem({ poId, className = '' }: CommentsSystemP
                   disabled={!newComment.trim() || addingComment}
                   className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Send className="w-4 h-4" />
+                  <Send className="size-4" />
                   <span>Post Comment</span>
                 </button>
               </div>
@@ -527,7 +527,7 @@ export default function CommentsSystem({ poId, className = '' }: CommentsSystemP
           topLevelComments.map(comment => renderComment(comment))
         ) : (
           <div className="text-center py-8 text-gray-500">
-            <MessageCircle className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+            <MessageCircle className="size-12 mx-auto mb-3 text-gray-300" />
             <p>No comments yet. Be the first to comment!</p>
           </div>
         )}

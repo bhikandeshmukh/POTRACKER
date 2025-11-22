@@ -98,7 +98,7 @@ export default function PoTable({ pos, onRefresh }: PoTableProps) {
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center justify-between gap-4">
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 size-5 text-gray-400" />
             <input
               type="text"
               placeholder="Search by PO number or vendor..."
@@ -186,13 +186,13 @@ export default function PoTable({ pos, onRefresh }: PoTableProps) {
                         onClick={() => handleStatusUpdate(po.id!)}
                         className="text-green-600 hover:text-green-800"
                       >
-                        <Check className="w-4 h-4" />
+                        <Check className="size-4" />
                       </button>
                       <button
                         onClick={cancelStatusEdit}
                         className="text-red-600 hover:text-red-800"
                       >
-                        <X className="w-4 h-4" />
+                        <X className="size-4" />
                       </button>
                     </div>
                   ) : (
@@ -203,7 +203,7 @@ export default function PoTable({ pos, onRefresh }: PoTableProps) {
                           onClick={() => handleStatusEdit(po.id!, po.status)}
                           className="text-blue-600 hover:text-blue-800"
                         >
-                          <Edit className="w-3 h-3" />
+                          <Edit className="size-3" />
                         </button>
                       )}
                     </div>
@@ -215,7 +215,7 @@ export default function PoTable({ pos, onRefresh }: PoTableProps) {
                       href={`/pos/${po.id}`}
                       className="inline-flex items-center space-x-1 text-blue-600 hover:text-blue-700"
                     >
-                      <Eye className="w-4 h-4" />
+                      <Eye className="size-4" />
                       <span>View</span>
                     </Link>
                     
@@ -224,7 +224,7 @@ export default function PoTable({ pos, onRefresh }: PoTableProps) {
                         onClick={() => handleDelete(po.id!, po.poNumber)}
                         className="inline-flex items-center space-x-1 text-red-600 hover:text-red-700"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="size-4" />
                         <span>Delete</span>
                       </button>
                     )}
