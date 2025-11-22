@@ -253,7 +253,7 @@ export default function ComplianceReports({ onGenerateReport }: ComplianceReport
       {/* Info Box */}
       <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
         <div className="flex items-start space-x-2">
-          <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+          <AlertCircle className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
           <div className="text-sm text-blue-800">
             <p className="font-medium mb-1">Compliance Information</p>
             <p>Reports include all user activities, data modifications, and access logs for the selected period. All reports are encrypted and stored securely for audit purposes.</p>

@@ -239,7 +239,7 @@ export default function AuditLogsPage() {
             <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 ${getThemeClasses.gridGap()}`}>
               {/* Search */}
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 size-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search logs..."
@@ -341,7 +341,7 @@ export default function AuditLogsPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="flex-shrink-0 size-8 bg-gray-200 rounded-full flex items-center justify-center">
+                          <div className="shrink-0 size-8 bg-gray-200 rounded-full flex items-center justify-center">
                             <User className="size-4 text-gray-600" />
                           </div>
                           <div className="ml-3">
