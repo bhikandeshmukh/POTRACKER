@@ -93,10 +93,10 @@ export default function PoForm() {
           console.log(`Row ${i}:`, values);
           
           if (values.length >= 12 && values[0]) { // Ensure we have all required fields
-            const orderQty = parseInt(values[7]) || 1;
+            const orderQty = parseInt(values[7], 10) || 1;
             const itemPrice = parseFloat(values[8]) || 0;
-            const sentQty = parseInt(values[9]) || 0;
-            const pendingQty = parseInt(values[10]) || 0;
+            const sentQty = parseInt(values[9], 10) || 0;
+            const pendingQty = parseInt(values[10], 10) || 0;
             const lineTotal = parseFloat(values[11]) || (orderQty * itemPrice);
             
             // Validate the data
@@ -446,7 +446,7 @@ PO-2024-002,XYZ Suppliers,16/01/2024,01/02/2024,DESK-OFF-123GHI,DESK-OFF-WD,4x2 
                   required
                   min="1"
                   value={item.quantity}
-                  onChange={(e) => updateLineItem(index, 'quantity', parseInt(e.target.value))}
+                  onChange={(e) => updateLineItem(index, 'quantity', parseInt(e.target.value, 10))}
                   className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
@@ -476,7 +476,7 @@ PO-2024-002,XYZ Suppliers,16/01/2024,01/02/2024,DESK-OFF-123GHI,DESK-OFF-WD,4x2 
                   type="number"
                   min="0"
                   value={item.sentQty || 0}
-                  onChange={(e) => updateLineItem(index, 'sentQty', parseInt(e.target.value))}
+                  onChange={(e) => updateLineItem(index, 'sentQty', parseInt(e.target.value, 10))}
                   className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
@@ -490,7 +490,7 @@ PO-2024-002,XYZ Suppliers,16/01/2024,01/02/2024,DESK-OFF-123GHI,DESK-OFF-WD,4x2 
                   type="number"
                   min="0"
                   value={item.pendingQty || 0}
-                  onChange={(e) => updateLineItem(index, 'pendingQty', parseInt(e.target.value))}
+                  onChange={(e) => updateLineItem(index, 'pendingQty', parseInt(e.target.value, 10))}
                   className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>

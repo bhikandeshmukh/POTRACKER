@@ -40,7 +40,7 @@ export default function DataImportExport({ type, isOpen, onClose, onImportComple
     // Check if it's DD/MM/YYYY format
     if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) {
       const [day, month, year] = dateStr.split('/');
-      return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      return new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
     }
     
     // Otherwise assume YYYY-MM-DD format or let Date constructor handle it
@@ -448,7 +448,7 @@ export default function DataImportExport({ type, isOpen, onClose, onImportComple
           }
           
           // Add line item to shipment
-          const shippedQty = parseInt(row[12]) || 0;
+          const shippedQty = parseInt(row[12], 10) || 0;
           const unitPrice = parseFloat(row[13]) || 0;
           const lineTotal = parseFloat(row[14]) || (shippedQty * unitPrice);
           
@@ -497,7 +497,7 @@ export default function DataImportExport({ type, isOpen, onClose, onImportComple
           }
           
           // Add line item to appointment
-          const appointmentQty = parseInt(row[16]) || 0;
+          const appointmentQty = parseInt(row[16], 10) || 0;
           const unitPrice = parseFloat(row[17]) || 0;
           const lineTotal = parseFloat(row[18]) || (appointmentQty * unitPrice);
           
