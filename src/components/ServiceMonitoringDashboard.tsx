@@ -87,55 +87,55 @@ export default function ServiceMonitoringDashboard() {
       value: healthStatus?.status || 'Unknown',
       status: healthStatus?.status === 'healthy' ? 'good' : 
               healthStatus?.status === 'degraded' ? 'warning' : 'error',
-      icon: <CheckCircle className="h-5 w-5" />
+      icon: <CheckCircle className="size-5" />
     },
     {
       title: 'Avg Response Time',
       value: formatDuration(performanceStats.averageDuration),
       status: performanceStats.averageDuration < 1000 ? 'good' : 
               performanceStats.averageDuration < 3000 ? 'warning' : 'error',
-      icon: <Clock className="h-5 w-5" />
+      icon: <Clock className="size-5" />
     },
     {
       title: 'Success Rate',
       value: formatPercentage(performanceStats.successRate),
       status: performanceStats.successRate > 95 ? 'good' : 
               performanceStats.successRate > 90 ? 'warning' : 'error',
-      icon: <TrendingUp className="h-5 w-5" />
+      icon: <TrendingUp className="size-5" />
     },
     {
       title: 'Error Rate',
       value: formatPercentage(errorMetrics.errorRate),
       status: errorMetrics.errorRate < 1 ? 'good' : 
               errorMetrics.errorRate < 5 ? 'warning' : 'error',
-      icon: <AlertTriangle className="h-5 w-5" />
+      icon: <AlertTriangle className="size-5" />
     },
     {
       title: 'Cache Hit Rate',
       value: formatPercentage(performanceStats.cacheHitRate),
       status: performanceStats.cacheHitRate > 80 ? 'good' : 
               performanceStats.cacheHitRate > 60 ? 'warning' : 'error',
-      icon: <Database className="h-5 w-5" />
+      icon: <Database className="size-5" />
     },
     {
       title: 'Active Subscriptions',
       value: realtimeMetrics.activeSubscriptions,
       status: realtimeMetrics.errorRate < 5 ? 'good' : 
               realtimeMetrics.errorRate < 10 ? 'warning' : 'error',
-      icon: <Wifi className="h-5 w-5" />
+      icon: <Wifi className="size-5" />
     },
     {
       title: 'Circuit Breakers Open',
       value: retryStats.openCircuitBreakers,
       status: retryStats.openCircuitBreakers === 0 ? 'good' : 
               retryStats.openCircuitBreakers < 3 ? 'warning' : 'error',
-      icon: <Zap className="h-5 w-5" />
+      icon: <Zap className="size-5" />
     },
     {
       title: 'Total Operations',
       value: performanceStats.totalOperations.toLocaleString(),
       status: 'good',
-      icon: <Activity className="h-5 w-5" />
+      icon: <Activity className="size-5" />
     }
   ];
 
@@ -153,7 +153,7 @@ export default function ServiceMonitoringDashboard() {
           onClick={refreshData}
           className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
-          <RefreshCw className="h-4 w-4 mr-2" />
+          <RefreshCw className="size-4 mr-2" />
           Refresh
         </button>
       </div>
@@ -281,7 +281,7 @@ export default function ServiceMonitoringDashboard() {
             {errorMetrics.recentErrors.slice(0, 5).map((error, index) => (
               <div key={index} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
                 <div className="flex items-center">
-                  <AlertTriangle className="h-4 w-4 text-red-500 mr-2" />
+                  <AlertTriangle className="size-4 text-red-500 mr-2" />
                   <div>
                     <p className="text-sm font-medium text-red-800">{error.message}</p>
                     <p className="text-xs text-red-600">

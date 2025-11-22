@@ -56,11 +56,11 @@ export default function BulkActionsToolbar({
             className="p-1 hover:bg-gray-100 rounded transition-colors"
           >
             {isAllSelected ? (
-              <CheckSquare className="w-5 h-5 text-blue-600" />
+              <CheckSquare className="size-5 text-blue-600" />
             ) : isIndeterminate ? (
-              <Minus className="w-5 h-5 text-blue-600" />
+              <Minus className="size-5 text-blue-600" />
             ) : (
-              <Square className="w-5 h-5 text-gray-400" />
+              <Square className="size-5 text-gray-400" />
             )}
           </button>
           
@@ -73,7 +73,7 @@ export default function BulkActionsToolbar({
             className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
             title="Clear selection"
           >
-            <X className="w-4 h-4" />
+            <X className="size-4" />
           </button>
         </div>
 
@@ -95,7 +95,7 @@ export default function BulkActionsToolbar({
                   ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}
                 `}
               >
-                <Icon className="w-4 h-4" />
+                <Icon className="size-4" />
                 <span>{action.label}</span>
               </button>
             );
@@ -105,7 +105,7 @@ export default function BulkActionsToolbar({
         {/* Processing Indicator */}
         {isProcessing && (
           <div className="flex items-center space-x-2 text-sm text-gray-600">
-            <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
+            <div className="size-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
             <span>Processing...</span>
           </div>
         )}

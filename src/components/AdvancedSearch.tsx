@@ -166,7 +166,7 @@ export default function AdvancedSearch({ isOpen, onClose, placeholder = "Search 
         <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl">
           {/* Header */}
           <div className="flex items-center p-4 border-b border-gray-200">
-            <Search className="w-5 h-5 text-gray-400 mr-3" />
+            <Search className="size-5 text-gray-400 mr-3" />
             <input
               ref={inputRef}
               type="text"
@@ -179,14 +179,14 @@ export default function AdvancedSearch({ isOpen, onClose, placeholder = "Search 
               onClick={onClose}
               className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
             >
-              <X className="w-5 h-5" />
+              <X className="size-5" />
             </button>
           </div>
 
           {/* Filters */}
           <div className="flex items-center space-x-4 p-4 bg-gray-50 border-b border-gray-200">
             <div className="flex items-center space-x-2">
-              <Filter className="w-4 h-4 text-gray-500" />
+              <Filter className="size-4 text-gray-500" />
               <span className="text-sm text-gray-600">Type:</span>
               <select
                 value={filters.type}
@@ -201,7 +201,7 @@ export default function AdvancedSearch({ isOpen, onClose, placeholder = "Search 
             </div>
             
             <div className="flex items-center space-x-2">
-              <Calendar className="w-4 h-4 text-gray-500" />
+              <Calendar className="size-4 text-gray-500" />
               <span className="text-sm text-gray-600">Date:</span>
               <select
                 value={filters.dateRange}
@@ -220,7 +220,7 @@ export default function AdvancedSearch({ isOpen, onClose, placeholder = "Search 
           <div className="max-h-96 overflow-y-auto">
             {loading ? (
               <div className="flex items-center justify-center p-8">
-                <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                <div className="size-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
                 <span className="ml-2 text-gray-600">Searching...</span>
               </div>
             ) : results.length > 0 ? (
@@ -239,7 +239,7 @@ export default function AdvancedSearch({ isOpen, onClose, placeholder = "Search 
                     >
                       <div className="flex items-start space-x-3">
                         <div className={`p-2 rounded-lg ${getTypeColor(result.type)}`}>
-                          <Icon className="w-4 h-4" />
+                          <Icon className="size-4" />
                         </div>
                         
                         <div className="flex-1 min-w-0">
@@ -264,7 +264,7 @@ export default function AdvancedSearch({ isOpen, onClose, placeholder = "Search 
                               )}
                               {result.metadata.amount && (
                                 <span className="text-xs text-gray-500 flex items-center">
-                                  <DollarSign className="w-3 h-3 mr-1" />
+                                  <DollarSign className="size-3 mr-1" />
                                   ₹{result.metadata.amount.toLocaleString()}
                                 </span>
                               )}
@@ -278,13 +278,13 @@ export default function AdvancedSearch({ isOpen, onClose, placeholder = "Search 
               </div>
             ) : query ? (
               <div className="text-center p-8 text-gray-500">
-                <Search className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                <Search className="size-8 mx-auto mb-2 text-gray-400" />
                 <p>No results found for "{query}"</p>
                 <p className="text-sm mt-1">Try different keywords or filters</p>
               </div>
             ) : (
               <div className="text-center p-8 text-gray-500">
-                <Search className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                <Search className="size-8 mx-auto mb-2 text-gray-400" />
                 <p>Start typing to search...</p>
                 <div className="text-xs mt-4 space-y-1">
                   <p>• Search across POs, vendors, and users</p>

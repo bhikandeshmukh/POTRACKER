@@ -64,7 +64,7 @@ export default function AdminDashboard() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full size-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading...</p>
         </div>
       </div>
@@ -160,7 +160,7 @@ export default function AdminDashboard() {
                 className="flex items-start space-x-4 p-5 border-2 border-blue-200 bg-blue-50 rounded-lg hover:bg-blue-100 hover:border-blue-300 transition group"
               >
                 <div className="p-3 bg-blue-600 rounded-lg group-hover:scale-110 transition-transform">
-                  <Shield className="w-6 h-6 text-white" />
+                  <Shield className="w-6size-6 text-white>
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-gray-900 mb-1">Role Permissions</h3>
@@ -180,7 +180,7 @@ export default function AdminDashboard() {
                 className="flex items-start space-x-4 p-5 border-2 border-purple-200 bg-purple-50 rounded-lg hover:bg-purple-100 hover:border-purple-300 transition group"
               >
                 <div className="p-3 bg-purple-600 rounded-lg group-hover:scale-110 transition-transform">
-                  <User className="w-6 h-6 text-white" />
+                  <User className="w-6size-6 text-white>
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-gray-900 mb-1">User Permissions</h3>
@@ -199,7 +199,7 @@ export default function AdminDashboard() {
             {/* Quick Info */}
             <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
               <div className="flex items-start space-x-3">
-                <Settings className="w-5 h-5 text-gray-600 flex-shrink-0 mt-0.5" />
+                <Settings className="w-5size-5 text-gray-600 flex-shrink-0 mt-0.5>
                 <div className="text-sm text-gray-700">
                   <p className="font-medium mb-1">Permission System Features:</p>
                   <ul className="space-y-1 text-gray-600">

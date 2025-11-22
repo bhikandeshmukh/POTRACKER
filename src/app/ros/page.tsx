@@ -53,11 +53,11 @@ export default function ReturnOrdersPage() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'Pending': return <AlertCircle className="w-4 h-4" />;
-      case 'Approved': return <CheckCircle className="w-4 h-4" />;
-      case 'Rejected': return <XCircle className="w-4 h-4" />;
-      case 'Completed': return <Package className="w-4 h-4" />;
-      default: return <FileText className="w-4 h-4" />;
+      case 'Pending': return <AlertCircle className="size-4" />;
+      case 'Approved': return <CheckCircle className="size-4" />;
+      case 'Rejected': return <XCircle className="size-4" />;
+      case 'Completed': return <Package className="size-4" />;
+      default: return <FileText className="size-4" />;
     }
   };
 
@@ -69,7 +69,7 @@ export default function ReturnOrdersPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full size-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading...</p>
         </div>
       </div>
@@ -93,7 +93,7 @@ export default function ReturnOrdersPage() {
               href="/ros/new"
               className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
             >
-              <Plus className="w-5 h-5" />
+              <Plus className="size-5" />
               <span>New Return Order</span>
             </Link>
           </div>
@@ -124,7 +124,7 @@ export default function ReturnOrdersPage() {
           <div className={getThemeClasses.card()}>
             {filteredROs.length === 0 ? (
               <div className="text-center py-12">
-                <Package className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+                <Package className="size-16 mx-auto text-gray-300 mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No Return Orders</h3>
                 <p className="text-gray-500 mb-4">
                   {filter === 'all' 
@@ -136,7 +136,7 @@ export default function ReturnOrdersPage() {
                   href="/ros/new"
                   className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
                 >
-                  <Plus className="w-5 h-5" />
+                  <Plus className="size-5" />
                   <span>New Return Order</span>
                 </Link>
               </div>
@@ -160,7 +160,7 @@ export default function ReturnOrdersPage() {
                       <tr key={ro.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center space-x-2">
-                            <FileText className="w-4 h-4 text-gray-400" />
+                            <FileText className="size-4 text-gray-400" />
                             <span className="font-medium text-gray-900">{ro.roNumber}</span>
                           </div>
                         </td>
@@ -192,7 +192,7 @@ export default function ReturnOrdersPage() {
                               className="text-blue-600 hover:text-blue-900"
                               title="View Details"
                             >
-                              <Eye className="w-4 h-4" />
+                              <Eye className="size-4" />
                             </Link>
                           </div>
                         </td>

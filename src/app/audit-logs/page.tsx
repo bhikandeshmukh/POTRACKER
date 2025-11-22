@@ -136,25 +136,25 @@ export default function AuditLogsPage() {
 
   const getActionIcon = (action: string) => {
     switch (action) {
-      case 'create': return <Plus className="w-4 h-4" />;
-      case 'update': return <Edit className="w-4 h-4" />;
-      case 'delete': return <Trash2 className="w-4 h-4" />;
-      case 'approve': return <CheckCircle className="w-4 h-4" />;
-      case 'reject': return <XCircle className="w-4 h-4" />;
-      case 'login': return <User className="w-4 h-4" />;
-      case 'comment': return <MessageCircle className="w-4 h-4" />;
-      default: return <Activity className="w-4 h-4" />;
+      case 'create': return <Plus className="size-4" />;
+      case 'update': return <Edit className="size-4" />;
+      case 'delete': return <Trash2 className="size-4" />;
+      case 'approve': return <CheckCircle className="size-4" />;
+      case 'reject': return <XCircle className="size-4" />;
+      case 'login': return <User className="size-4" />;
+      case 'comment': return <MessageCircle className="size-4" />;
+      default: return <Activity className="size-4" />;
     }
   };
 
   const getEntityIcon = (entityType: string) => {
     switch (entityType) {
-      case 'po': return <FileText className="w-4 h-4" />;
-      case 'vendor': return <Building2 className="w-4 h-4" />;
-      case 'shipment': return <Package className="w-4 h-4" />;
-      case 'user': return <User className="w-4 h-4" />;
-      case 'comment': return <MessageCircle className="w-4 h-4" />;
-      default: return <Activity className="w-4 h-4" />;
+      case 'po': return <FileText className="size-4" />;
+      case 'vendor': return <Building2 className="size-4" />;
+      case 'shipment': return <Package className="size-4" />;
+      case 'user': return <User className="size-4" />;
+      case 'comment': return <MessageCircle className="size-4" />;
+      default: return <Activity className="size-4" />;
     }
   };
 
@@ -203,7 +203,7 @@ export default function AuditLogsPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full size-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading audit logs...</p>
         </div>
       </div>
@@ -239,7 +239,7 @@ export default function AuditLogsPage() {
             <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 ${getThemeClasses.gridGap()}`}>
               {/* Search */}
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 size-4 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search logs..."
@@ -341,8 +341,8 @@ export default function AuditLogsPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="flex-shrink-0 h-8 w-8 bg-gray-200 rounded-full flex items-center justify-center">
-                            <User className="w-4 h-4 text-gray-600" />
+                          <div className="flex-shrink-0 size-8 bg-gray-200 rounded-full flex items-center justify-center">
+                            <User className="size-4 text-gray-600" />
                           </div>
                           <div className="ml-3">
                             <div className="text-sm font-medium text-gray-900">{log.userName}</div>
@@ -383,7 +383,7 @@ export default function AuditLogsPage() {
 
             {filteredLogs.length === 0 && (
               <div className="text-center py-12">
-                <Activity className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                <Activity className="size-12 text-gray-300 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No audit logs found</h3>
                 <p className="text-gray-500">Try adjusting your filters or search terms</p>
               </div>

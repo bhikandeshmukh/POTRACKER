@@ -67,12 +67,12 @@ export default function VersionHistory({ entityId, entityType, onRestore }: Vers
 
   const getActionIcon = (action: string) => {
     switch (action) {
-      case 'create': return <Plus className="w-4 h-4" />;
-      case 'update': return <Edit className="w-4 h-4" />;
-      case 'delete': return <Trash className="w-4 h-4" />;
-      case 'approve': return <CheckCircle className="w-4 h-4" />;
-      case 'reject': return <Trash className="w-4 h-4" />;
-      default: return <FileText className="w-4 h-4" />;
+      case 'create': return <Plus className="size-4" />;
+      case 'update': return <Edit className="size-4" />;
+      case 'delete': return <Trash className="size-4" />;
+      case 'approve': return <CheckCircle className="size-4" />;
+      case 'reject': return <Trash className="size-4" />;
+      default: return <FileText className="size-4" />;
     }
   };
 
@@ -100,7 +100,7 @@ export default function VersionHistory({ entityId, entityType, onRestore }: Vers
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        <div className="size-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
         <span className="ml-2 text-gray-600">Loading history...</span>
       </div>
     );
@@ -143,13 +143,13 @@ export default function VersionHistory({ entityId, entityType, onRestore }: Vers
                   </div>
                   
                   <div className="flex items-center space-x-2 text-xs text-gray-500">
-                    <Clock className="w-3 h-3" />
+                    <Clock className="size-3" />
                     <span>{format(version.timestamp, 'MMM dd, yyyy HH:mm')}</span>
                   </div>
                 </div>
 
                 <div className="flex items-center space-x-2 text-sm text-gray-600 mb-3">
-                  <User className="w-4 h-4" />
+                  <User className="size-4" />
                   <span>{version.userName}</span>
                   <span className="text-gray-400">•</span>
                   <span className="text-xs text-gray-500">{version.userRole}</span>
@@ -192,7 +192,7 @@ export default function VersionHistory({ entityId, entityType, onRestore }: Vers
 
       {versions.length === 0 && (
         <div className="text-center p-8 text-gray-500">
-          <Clock className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+          <Clock className="size-8 mx-auto mb-2 text-gray-300" />
           <p>No version history available</p>
         </div>
       )}

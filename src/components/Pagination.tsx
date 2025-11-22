@@ -107,7 +107,7 @@ export default function Pagination({
             }
           `}
         >
-          <ChevronLeft className="w-4 h-4 mr-1" />
+          <ChevronLeft className="size-4 mr-1" />
           Previous
         </button>
 
@@ -120,7 +120,7 @@ export default function Pagination({
                   key={`dots-${index}`}
                   className="px-3 py-2 text-sm text-gray-500"
                 >
-                  <MoreHorizontal className="w-4 h-4" />
+                  <MoreHorizontal className="size-4" />
                 </span>
               );
             }
@@ -159,7 +159,7 @@ export default function Pagination({
           `}
         >
           Next
-          <ChevronRight className="w-4 h-4 ml-1" />
+          <ChevronRight className="size-4 ml-1" />
         </button>
       </div>
     </div>
