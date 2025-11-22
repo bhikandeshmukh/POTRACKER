@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { Upload, X, File, Image, FileText, AlertCircle, Check } from 'lucide-react';
 import { useToast } from './ToastContainer';
 
@@ -57,7 +57,7 @@ export default function FileUpload({
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return `${parseFloat((bytes / (k ** i)).toFixed(2))} ${sizes[i]}`;
   };
 
   const validateFile = useCallback((file: File): string | null => {
@@ -101,9 +101,9 @@ export default function FileUpload({
       const interval = setInterval(() => {
         progress += Math.random() * 30;
         
-        setFiles(prev => prev.map(f => 
+        setFiles(prev => prev.map(f => (
           f.id === fileId ? { ...f, progress: Math.min(progress, 100) } : f
-        ));
+        )));
 
         if (progress >= 100) {
           clearInterval(interval);
@@ -111,7 +111,7 @@ export default function FileUpload({
           // Simulate random success/failure
           const success = Math.random() > 0.1; // 90% success rate
           
-          setFiles(prev => prev.map(f => 
+          setFiles(prev => prev.map(f => (
             f.id === fileId 
               ? { 
                   ...f, 
@@ -141,7 +141,7 @@ export default function FileUpload({
       return;
     }
 
-    for (let i = 0; i < fileList.length; i++) {
+    for (let i = 0; i < fileList.length; i += 1) {
       const file = fileList[i];
       const validationError = validateFile(file);
 
@@ -165,9 +165,9 @@ export default function FileUpload({
       if (file.type.startsWith('image/')) {
         const reader = new FileReader();
         reader.onload = (e) => {
-          setFiles(prev => prev.map(f => 
+          setFiles(prev => prev.map(f => (
             f.id === fileId ? { ...f, preview: e.target?.result as string } : f
-          ));
+          )));
         };
         reader.readAsDataURL(file);
       }

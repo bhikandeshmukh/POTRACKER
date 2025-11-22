@@ -50,9 +50,10 @@ export class PerformanceService {
         
         // Check if result indicates success/failure
         if (typeof result === 'object' && result !== null && 'success' in result) {
-          success = (result as any).success;
-          if (!success && 'error' in result) {
-            error = (result as any).error;
+          const { success: resultSuccess, error: resultError } = result as any;
+          success = resultSuccess;
+          if (!success && resultError) {
+            error = resultError;
           }
         }
         

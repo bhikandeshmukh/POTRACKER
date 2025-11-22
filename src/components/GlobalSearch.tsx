@@ -81,11 +81,12 @@ export default function GlobalSearch() {
             vendor.contactPerson.toLowerCase().includes(searchLower) ||
             (vendor.gst && vendor.gst.toLowerCase().includes(searchLower))
           ) {
+            const gstPart = vendor.gst ? ` - GST: ${vendor.gst}` : '';
             searchResults.push({
               id: vendor.id || '',
               type: 'vendor',
               title: vendor.name,
-              subtitle: `${vendor.contactPerson} - ${vendor.phone}${vendor.gst ? ` - GST: ${vendor.gst}` : ''}`,
+              subtitle: `${vendor.contactPerson} - ${vendor.phone}${gstPart}`,
               url: '/vendors'
             });
           }
@@ -177,7 +178,7 @@ export default function GlobalSearch() {
     <>
       {/* Overlay */}
       <div 
-        className="fixed inset-0 bg-black bg-opacity-50 z-50"
+        className="fixed inset-0 bg-black/50 z-50"
         onClick={() => setIsOpen(false)}
       />
       

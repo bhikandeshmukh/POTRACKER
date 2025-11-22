@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { PurchaseOrder } from '@/lib/firestore';
 import StatusBadge from './StatusBadge';
 import { format } from 'date-fns';
@@ -55,6 +55,7 @@ export default function EnhancedPOTable({ pos, onRefresh }: EnhancedPOTableProps
     if (!user || !userData) return;
     
     const confirmMessage = `Are you sure you want to ${status.toLowerCase()} this PO?`;
+    // eslint-disable-next-line no-alert
     if (!confirm(confirmMessage)) return;
 
     setProcessingPO(poId);

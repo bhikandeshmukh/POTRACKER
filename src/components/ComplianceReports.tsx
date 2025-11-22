@@ -154,14 +154,14 @@ export default function ComplianceReports({ onGenerateReport }: ComplianceReport
             >
               <div className="flex items-start space-x-3">
                 <div className={`p-2 rounded-lg ${getColorClasses(type.color)}`}>
-                  <Icon className="w-5 h-5" />
+                  <Icon className="size-5" />
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-gray-900 mb-1">{type.name}</h3>
                   <p className="text-sm text-gray-600">{type.description}</p>
                 </div>
                 {isSelected && (
-                  <CheckCircle className="w-5 h-5 text-blue-600" />
+                  <CheckCircle className="size-5 text-blue-600" />
                 )}
               </div>
             </button>
@@ -172,7 +172,7 @@ export default function ComplianceReports({ onGenerateReport }: ComplianceReport
       {/* Date Range Selection */}
       <div className="bg-gray-50 rounded-lg p-4 mb-6">
         <div className="flex items-center space-x-2 mb-3">
-          <Calendar className="w-4 h-4 text-gray-600" />
+          <Calendar className="size-4 text-gray-600" />
           <h3 className="font-semibold text-gray-900">Date Range</h3>
         </div>
         
@@ -262,12 +262,12 @@ export default function ComplianceReports({ onGenerateReport }: ComplianceReport
       >
         {generating ? (
           <>
-            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            <div className="size-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
             <span>Generating Report...</span>
           </>
         ) : (
           <>
-            <Download className="w-4 h-4" />
+            <Download className="size-4" />
             <span>Generate & Download Report</span>
           </>
         )}
@@ -276,7 +276,7 @@ export default function ComplianceReports({ onGenerateReport }: ComplianceReport
       {/* Info Box */}
       <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
         <div className="flex items-start space-x-2">
-          <AlertCircle className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+          <AlertCircle className="size-5 text-blue-600 shrink-0 mt-0.5" />
           <div className="text-sm text-blue-800">
             <p className="font-medium mb-1">Compliance Information</p>
             <p>Reports include all user activities, data modifications, and access logs for the selected period. All reports are encrypted and stored securely for audit purposes.</p>

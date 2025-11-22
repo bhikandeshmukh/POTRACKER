@@ -311,7 +311,7 @@ export class POMicroservice extends BaseMicroservice {
     
     // Build query options
     const queryOptions: any = {};
-    if (limit) queryOptions.limit = parseInt(limit);
+    if (limit) queryOptions.limit = parseInt(limit, 10);
     if (status || vendorId) {
       queryOptions.where = [];
       if (status) queryOptions.where.push({ field: 'status', operator: '==', value: status });
@@ -492,15 +492,14 @@ export class POMicroservice extends BaseMicroservice {
         success: true,
         data: apiResponse.data
       };
-    } else {
-      return {
-        success: false,
-        error: {
-          code: 'SERVICE_ERROR',
-          message: apiResponse.error || 'Unknown error',
-          statusCode: 500
-        }
-      };
     }
+    return {
+      success: false,
+      error: {
+        code: 'SERVICE_ERROR',
+        message: apiResponse.error || 'Unknown error',
+        statusCode: 500
+      }
+    };
   }
 }

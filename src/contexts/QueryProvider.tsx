@@ -12,9 +12,8 @@ import { ReactNode, useState } from 'react';
 * @returns {{JSX.Element}} React element tree wrapped with QueryClientProvider.
 **/
 export function QueryProvider({ children }: { children: ReactNode }) {
-  const [queryClient] = useState(
-    () =>
-      new QueryClient({
+  const [queryClient] = useState(() =>
+    new QueryClient({
         defaultOptions: {
           queries: {
             // Data stays fresh for 5 minutes

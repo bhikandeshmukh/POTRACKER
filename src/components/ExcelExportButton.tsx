@@ -61,7 +61,6 @@ export default function ExcelExportButton({
       });
     } catch (error) {
       console.error('Export failed:', error);
-      ;
     } finally {
       setIsExporting(false);
     }
@@ -94,7 +93,6 @@ export default function ExcelExportButton({
       }
     } catch (error) {
       console.error('Export failed:', error);
-      ;
     } finally {
       setIsExporting(false);
       setShowDropdown(false);

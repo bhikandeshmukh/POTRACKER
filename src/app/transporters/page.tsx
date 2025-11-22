@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
@@ -149,6 +149,7 @@ export default function TransportersPage() {
   * @returns {{Promise<void>}} Completes after attempting to delete the transporter, showing success or error feedback.
   **/
   const handleDelete = async (transporterId: string, transporterName: string) => {
+    // eslint-disable-next-line no-alert
     if (confirm(`Are you sure you want to delete "${transporterName}"?`)) {
       try {
         await deleteTransporter(transporterId, user?.uid || undefined, user?.email || undefined, transporterName);
@@ -261,6 +262,7 @@ export default function TransportersPage() {
   * @returns {{Promise<void>}} Resolves when the deletion process and related updates complete.
   **/
   const handleDeleteWarehouse = async (transporterId: string, warehouseId: string) => {
+    // eslint-disable-next-line no-alert
     if (confirm('Are you sure you want to delete this warehouse?')) {
       try {
         const transporter = transporters.find(t => t.id === transporterId);
@@ -727,7 +729,7 @@ export default function TransportersPage() {
         {/* Warehouse Form Modal */}
         {showWarehouseForm && (
           <div className="fixed inset-0 z-50 overflow-y-auto">
-            <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setShowWarehouseForm(null)} />
+            <div className="fixed inset-0 bg-black/50" onClick={() => setShowWarehouseForm(null)} />
             <div className="relative min-h-screen flex items-center justify-center p-4">
               <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl">
                 <div className="flex items-center justify-between p-6 border-b border-gray-200">
@@ -823,7 +825,7 @@ export default function TransportersPage() {
                         <input
                           type="number"
                           value={warehouseFormData.capacity || ''}
-                          onChange={(e) => setWarehouseFormData({ ...warehouseFormData, capacity: parseInt(e.target.value) || 0 })}
+                          onChange={(e) => setWarehouseFormData({ ...warehouseFormData, capacity: parseInt(e.target.value, 10) || 0 })}
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                           placeholder="1000"
                         />

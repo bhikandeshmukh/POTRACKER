@@ -1,5 +1,5 @@
-const admin = require('firebase-admin');
-const serviceAccount = require('../serviceAccountKey.json');
+import admin from 'firebase-admin';
+import serviceAccount from '../serviceAccountKey.json' assert { type: 'json' };
 
 // Initialize Firebase Admin
 if (!admin.apps.length) {
@@ -67,7 +67,8 @@ async function initializePermissions() {
   try {
     console.log('Initializing role permissions in Firestore...\n');
 
-    for (const [role, permissions] of Object.entries(DEFAULT_PERMISSIONS)) {
+    const entries = Object.entries(DEFAULT_PERMISSIONS);
+    await Promise.all(entries.map(async ([role, permissions]) => {
       console.log(`Setting up permissions for ${role}...`);
       
       await db.collection('rolePermissions').doc(role).set(permissions);
@@ -75,7 +76,7 @@ async function initializePermissions() {
       console.log(`✅ ${role} permissions initialized`);
       console.log(`   - ${permissions.permissions.length} permissions granted`);
       console.log(`   - ${permissions.description}\n`);
-    }
+    }));
 
     console.log('✅ All role permissions initialized successfully!');
     console.log('\nPermissions Summary:');

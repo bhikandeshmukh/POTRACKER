@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
@@ -94,7 +94,8 @@ export default function UsersManagementPage() {
       loadUsers();
     } catch (error: any) {
       console.error('Error adding user:', error);
-      alert('Failed to add user: ' + error.message);
+      // eslint-disable-next-line no-alert
+      alert(`Failed to add user: ${error.message}`);
     }
   };
 
@@ -110,18 +111,21 @@ export default function UsersManagementPage() {
       loadUsers();
     } catch (error: any) {
       console.error('Error updating user:', error);
-      alert('Failed to update user: ' + error.message);
+      // eslint-disable-next-line no-alert
+      alert(`Failed to update user: ${error.message}`);
     }
   };
 
   const handleDelete = async (userId: string, userName: string) => {
+    // eslint-disable-next-line no-alert
     if (confirm(`Are you sure you want to delete "${userName}"?`)) {
       try {
         await deleteUser(userId);
         loadUsers();
       } catch (error: any) {
         console.error('Error deleting user:', error);
-        alert('Failed to delete user: ' + error.message);
+        // eslint-disable-next-line no-alert
+        alert(`Failed to delete user: ${error.message}`);
       }
     }
   };

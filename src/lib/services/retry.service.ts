@@ -83,7 +83,7 @@ class CircuitBreaker {
   **/
   private onSuccess(): void {
     if (this.state === CircuitState.HALF_OPEN) {
-      undefined+=1;
+      this.successCount += 1;
       if (this.successCount >= 3) { // Require 3 successes to close
         this.state = CircuitState.CLOSED;
         this.failures = 0;
@@ -103,7 +103,7 @@ class CircuitBreaker {
   * @returns {{void}} No return value; updates internal state only.
   **/
   private onFailure(): void {
-    undefined+=1;
+    this.failures += 1;
     this.lastFailureTime = Date.now();
 
     if (this.state === CircuitState.HALF_OPEN) {
@@ -189,7 +189,7 @@ export class RetryService {
   * @returns {{number}} Calculated delay in milliseconds.
   ******/
   private calculateDelay(attempt: number, options: Required<RetryOptions>): number {
-    const exponentialDelay = options.baseDelay * Math.pow(options.backoffMultiplier, attempt - 1);
+    const exponentialDelay = options.baseDelay * (options.backoffMultiplier ** (attempt - 1));
     let delay = Math.min(exponentialDelay, options.maxDelay);
 
     if (options.jitter) {

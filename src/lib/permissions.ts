@@ -196,23 +196,19 @@ export const updateUserPermissions = async (
   useRolePermissions: boolean,
   updatedBy: string
 ): Promise<void> => {
-  try {
-    const userDocRef = doc(db, 'userPermissions', userId);
-    const userPerms: UserPermissions = {
-      userId,
-      userEmail,
-      userName,
-      role,
-      customPermissions,
-      useRolePermissions,
-      updatedAt: new Date(),
-      updatedBy
-    };
-    
-    await setDoc(userDocRef, userPerms);
-  } catch (error) {
-    throw error;
-  }
+  const userDocRef = doc(db, 'userPermissions', userId);
+  const userPerms: UserPermissions = {
+    userId,
+    userEmail,
+    userName,
+    role,
+    customPermissions,
+    useRolePermissions,
+    updatedAt: new Date(),
+    updatedBy
+  };
+  
+  await setDoc(userDocRef, userPerms);
 };
 
 // Delete user-specific permissions (revert to role permissions)
@@ -225,16 +221,12 @@ export const updateUserPermissions = async (
 * @returns {{Promise<void>}} Promise that resolves when the sync operation is complete.
 **/
 export const deleteUserPermissions = async (userId: string): Promise<void> => {
-  try {
-    const userDocRef = doc(db, 'userPermissions', userId);
-    await setDoc(userDocRef, {
-      userId,
-      useRolePermissions: true,
-      updatedAt: new Date()
-    }, { merge: true });
-  } catch (error) {
-    throw error;
-  }
+  const userDocRef = doc(db, 'userPermissions', userId);
+  await setDoc(userDocRef, {
+    userId,
+    useRolePermissions: true,
+    updatedAt: new Date()
+  }, { merge: true });
 };
 
 // Get role permissions from Firestore
@@ -367,26 +359,22 @@ export const hasAllPermissions = (
 * @returns {Promise<void>} Resolves when all default role permissions have been ensured in the database.
 ****/
 export const initializeDefaultPermissions = async (): Promise<void> => {
-  try {
-    const roles: RoleType[] = ['Admin', 'Manager', 'Employee'];
+  const roles: RoleType[] = ['Admin', 'Manager', 'Employee'];
+  
+  for (const role of roles) {
+    const docRef = doc(db, 'rolePermissions', role);
+    const docSnap = await getDoc(docRef);
     
-    for (const role of roles) {
-      const docRef = doc(db, 'rolePermissions', role);
-      const docSnap = await getDoc(docRef);
+    if (!docSnap.exists()) {
+      const rolePermissions: RolePermissions = {
+        role,
+        permissions: DEFAULT_PERMISSIONS[role],
+        description: `Default permissions for ${role}`,
+        updatedAt: new Date(),
+        updatedBy: 'System'
+      };
       
-      if (!docSnap.exists()) {
-        const rolePermissions: RolePermissions = {
-          role,
-          permissions: DEFAULT_PERMISSIONS[role],
-          description: `Default permissions for ${role}`,
-          updatedAt: new Date(),
-          updatedBy: 'System'
-        };
-        
-        await setDoc(docRef, rolePermissions);
-      }
+      await setDoc(docRef, rolePermissions);
     }
-  } catch (error) {
-    throw error;
   }
 };

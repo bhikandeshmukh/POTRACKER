@@ -3,6 +3,13 @@ import { logger } from '../logger';
 import { errorTrackingService } from '../services/error-tracking.service';
 import { performanceService } from '../services/performance.service';
 
+interface RequestInitOptions {
+  method?: string;
+  headers?: Record<string, string>;
+  body?: string;
+  signal?: AbortSignal;
+}
+
 export interface ClientConfig {
   baseUrl?: string;
   timeout?: number;
@@ -89,7 +96,7 @@ export class MicroserviceClient {
         }
 
         // Wait before retry
-        await this.delay(Math.pow(2, attempt - 1) * 1000);
+        await this.delay((2 ** (attempt - 1)) * 1000);
       }
     }
 
@@ -175,7 +182,7 @@ export class MicroserviceClient {
     
     // This is a simplified implementation - in production, you'd use fetch or axios
     const url = `${this.config.baseUrl}${request.endpoint}`;
-    const options: RequestInit = {
+    const options: RequestInitOptions = {
       method: request.method,
       headers: {
         'Content-Type': 'application/json',
@@ -232,6 +239,7 @@ export class MicroserviceClient {
         }
       };
     } catch (error) {
+      // Re-throw network errors and other exceptions
       throw error;
     }
   }

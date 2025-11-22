@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/components/ToastContainer';
@@ -168,9 +168,7 @@ export default function PoForm() {
             const parseDate = (dateStr: string) => {
               const parts = dateStr.split('/');
               if (parts.length === 3) {
-                const day = parts[0];
-                const month = parts[1];
-                const year = parts[2];
+                const [day, month, year] = parts;
                 return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
               }
               return '';

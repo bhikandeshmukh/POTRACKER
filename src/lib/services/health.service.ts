@@ -67,7 +67,7 @@ export class HealthService {
       const startTime = Date.now();
       try {
         // Test cache operations
-        const testKey = 'health-check-' + Date.now();
+        const testKey = `health-check-${Date.now()}`;
         const testValue = { test: true };
         
         cacheService.set(testKey, testValue);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, useParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
@@ -156,6 +156,7 @@ export default function PoDetailPage() {
     if (!po || !user || !userData) return;
     
     const oldStatus = po.status;
+    // eslint-disable-next-line no-alert
     const reason = status === 'Rejected' ? prompt('Please provide a reason for rejection:') : undefined;
     
     if (status === 'Rejected' && !reason) {
@@ -172,7 +173,6 @@ export default function PoDetailPage() {
       // Audit logging is now handled automatically by the service
     } catch (error) {
       console.error('Error updating status:', error);
-      ;
     } finally {
       setUpdating(false);
     }

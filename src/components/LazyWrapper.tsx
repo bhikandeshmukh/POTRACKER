@@ -1,11 +1,17 @@
 'use client';
 
-import { Suspense, lazy, ComponentType, useState, useEffect, useRef } from 'react';
+import React, { Suspense, lazy, ComponentType, useState, useEffect, useRef } from 'react';
 import LoadingSpinner from './LoadingSpinner';
 
 interface LazyWrapperProps {
   fallback?: React.ReactNode;
   className?: string;
+}
+
+interface IntersectionObserverInitOptions {
+  root?: Element | null;
+  rootMargin?: string;
+  threshold?: number | number[];
 }
 
 // Higher-order component for lazy loading
@@ -90,7 +96,7 @@ export const LazyCommentsSystem = withLazyLoading(
 **/
 export function useIntersectionObserver(
   ref: React.RefObject<Element>,
-  options: IntersectionObserverInit = {}
+  options: IntersectionObserverInitOptions = {}
 ) {
   const [isIntersecting, setIsIntersecting] = useState(false);
 

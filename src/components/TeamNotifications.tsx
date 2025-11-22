@@ -61,13 +61,13 @@ export default function TeamNotifications({ className = '' }: TeamNotificationsP
   };
 
   const markAsRead = async (notificationId: string) => {
-    setNotifications(prev => 
-      prev.map(notif => 
+    setNotifications(prev => (
+      prev.map(notif => (
         notif.id === notificationId 
           ? { ...notif, isRead: true }
           : notif
-      )
-    );
+      ))
+    ));
   };
 
   const markAllAsRead = async () => {

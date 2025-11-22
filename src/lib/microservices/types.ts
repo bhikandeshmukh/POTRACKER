@@ -96,7 +96,7 @@ export interface ServiceRegistry {
 export interface EventBus {
   publish<T>(event: ServiceEvent<T>): Promise<void>;
   subscribe<T>(eventType: string, handler: (event: ServiceEvent<T>) => Promise<void>): () => void;
-  unsubscribe(eventType: string, handler: Function): void;
+  unsubscribe(eventType: string, handler: (event: ServiceEvent<any>) => Promise<void>): void;
 }
 
 // API Gateway

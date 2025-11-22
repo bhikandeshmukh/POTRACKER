@@ -73,11 +73,11 @@ export default function PoTable({ pos, onRefresh }: PoTableProps) {
         if (onRefresh) onRefresh();
       } else {
         console.error('Failed to update PO status:', result.error);
-        showError('Failed to Update', 'Failed to update status: ' + result.error);
+        showError('Failed to Update', `Failed to update status: ${result.error}`);
       }
     } catch (error: any) {
       console.error('Error updating PO status:', error);
-      showError('Error', 'Failed to update status: ' + error.message);
+      showError('Error', `Failed to update status: ${error.message}`);
     }
   };
 
@@ -96,6 +96,7 @@ export default function PoTable({ pos, onRefresh }: PoTableProps) {
       return;
     }
     
+    // eslint-disable-next-line no-alert
     if (confirm(`Are you sure you want to delete PO "${poNumber}"?`)) {
       try {
         const result = await poService.delete(poId);
@@ -104,11 +105,11 @@ export default function PoTable({ pos, onRefresh }: PoTableProps) {
           if (onRefresh) onRefresh();
         } else {
           console.error('Failed to delete PO:', result.error);
-          showError('Failed to Delete', 'Failed to delete PO: ' + result.error);
+          showError('Failed to Delete', `Failed to delete PO: ${result.error}`);
         }
       } catch (error: any) {
         console.error('Error deleting PO:', error);
-        showError('Error', 'Failed to delete PO: ' + error.message);
+        showError('Error', `Failed to delete PO: ${error.message}`);
       }
     }
   };

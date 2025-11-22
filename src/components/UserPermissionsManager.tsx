@@ -189,6 +189,7 @@ export default function UserPermissionsManager() {
     const selectedUserData = getSelectedUserData();
     if (!selectedUserData) return;
     
+    // eslint-disable-next-line no-alert
     if (confirm(`Reset ${selectedUserData.name}'s permissions to their role defaults?`)) {
       try {
         await deleteUserPermissions(selectedUser);

@@ -80,13 +80,13 @@ export default function PosPage() {
   const filteredPOs = useMemo(() => {
     return pos.filter(po => {
       // Status filter
-      if (selectedFilters.status?.length > 0) {
-        if (!selectedFilters.status.includes(po.status)) return false;
+      if (selectedFilters.status?.length > 0 && !selectedFilters.status.includes(po.status)) {
+        return false;
       }
       
       // Vendor filter
-      if (selectedFilters.vendor?.length > 0) {
-        if (!selectedFilters.vendor.includes(po.vendorName)) return false;
+      if (selectedFilters.vendor?.length > 0 && !selectedFilters.vendor.includes(po.vendorName)) {
+        return false;
       }
       
       return true;

@@ -120,7 +120,7 @@ export default function ReturnOrdersPage() {
               >
                 {status === 'all' ? 'All' : status}
                 {status !== 'all' && (
-                  <span className="ml-2 px-2 py-0.5 bg-white bg-opacity-20 rounded-full text-xs">
+                  <span className="ml-2 px-2 py-0.5 bg-white/20 rounded-full text-xs">
                     {returnOrders.filter(ro => ro.status === status).length}
                   </span>
                 )}

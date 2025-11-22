@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useToast } from '@/components/ToastContainer';
 
 export interface BulkAction {
@@ -30,18 +30,18 @@ export function useBulkActions<T extends { id?: string }>(
   const { showSuccess, showError } = useToast();
 
   const toggleSelection = useCallback((id: string) => {
-    setSelectedIds(prev => 
+    setSelectedIds(prev => (
       prev.includes(id) 
         ? prev.filter(selectedId => selectedId !== id)
         : [...prev, id]
-    );
+    ));
   }, []);
 
   const toggleSelectAll = useCallback(() => {
     const allIds = items.map(item => item.id!).filter(Boolean);
-    setSelectedIds(prev => 
+    setSelectedIds(prev => (
       prev.length === allIds.length ? [] : allIds
-    );
+    ));
   }, [items]);
 
   const clearSelection = useCallback(() => {
@@ -54,6 +54,7 @@ export function useBulkActions<T extends { id?: string }>(
 
     // Show confirmation if required
     if (action.confirmMessage) {
+      // eslint-disable-next-line no-alert
       const confirmed = window.confirm(
         action.confirmMessage.replace('{count}', selectedIds.length.toString())
       );

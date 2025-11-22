@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { 
   User as FirebaseUser,
   onAuthStateChanged,
@@ -107,18 +107,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   * @returns {{Promise<void>}} Performs the creation of the user and their Firestore document.
   **/
   const signUp = async (email: string, password: string, name: string, role: 'Admin' | 'Manager' | 'Employee') => {
-    try {
-      const { user } = await createUserWithEmailAndPassword(auth, email, password);
-      
-      // Create user document in Firestore
-      await createUser(user.uid, {
-        email,
-        name,
-        role
-      });
-    } catch (error: any) {
-      throw error;
-    }
+    const { user } = await createUserWithEmailAndPassword(auth, email, password);
+    
+    // Create user document in Firestore
+    await createUser(user.uid, {
+      email,
+      name,
+      role
+    });
   };
 
   /**

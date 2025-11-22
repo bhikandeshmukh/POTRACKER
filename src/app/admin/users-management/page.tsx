@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
@@ -114,6 +114,7 @@ export default function UsersManagementPage() {
   * @returns {{Promise<void>}} Promise resolving when the deletion flow completes.
   **/
   const handleDeleteUser = async (userToDelete: any) => {
+    // eslint-disable-next-line no-alert
     if (!confirm(`Are you sure you want to delete ${userToDelete.name}?`)) {
       return;
     }
@@ -349,7 +350,7 @@ export default function UsersManagementPage() {
       {/* Edit User Modal */}
       {showEditModal && editingUser && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="fixed inset-0 bg-black bg-opacity-50" onClick={handleCloseEditModal} />
+          <div className="fixed inset-0 bg-black/50" onClick={handleCloseEditModal} />
           
           <div className="relative min-h-screen flex items-center justify-center p-4">
             <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md">
