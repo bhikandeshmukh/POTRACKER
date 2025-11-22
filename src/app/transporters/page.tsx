@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
@@ -67,13 +67,7 @@ export default function TransportersPage() {
     }
   }, [user, loading, router]);
 
-  useEffect(() => {
-    if (user) {
-      loadTransporters();
-    }
-  }, [user]);
-
-  const loadTransporters = async () => {
+  const loadTransporters = useCallback(async () => {
     try {
       const data = await getTransporters();
       setTransporters(data);
@@ -83,7 +77,13 @@ export default function TransportersPage() {
     } finally {
       setLoadingData(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      loadTransporters();
+    }
+  }, [user, loadTransporters]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

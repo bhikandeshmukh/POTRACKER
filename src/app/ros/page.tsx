@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -23,13 +23,7 @@ export default function ReturnOrdersPage() {
     }
   }, [user, loading, router]);
 
-  useEffect(() => {
-    if (user) {
-      loadReturnOrders();
-    }
-  }, [user]);
-
-  const loadReturnOrders = async () => {
+  const loadReturnOrders = useCallback(async () => {
     setLoadingData(true);
     try {
       const ros = await getReturnOrders(user?.uid, userData?.role);
@@ -39,7 +33,13 @@ export default function ReturnOrdersPage() {
     } finally {
       setLoadingData(false);
     }
-  };
+  }, [user, userData]);
+
+  useEffect(() => {
+    if (user) {
+      loadReturnOrders();
+    }
+  }, [user, loadReturnOrders]);
 
   const getStatusColor = (status: string) => {
     switch (status) {

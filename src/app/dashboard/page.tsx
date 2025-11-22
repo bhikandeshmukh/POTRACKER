@@ -196,48 +196,58 @@ export default function Dashboard() {
   // Memoize status-based quantities
   const statusQuantities = useMemo(() => ({
     pending: pos.filter(po => po.status === 'Pending').reduce((sum, po) => 
-      sum + po.lineItems.reduce((itemSum, item) => itemSum + item.quantity, 0), 0),
+      sum + po.lineItems.reduce((itemSum, item) => itemSum + (item.pendingQty || item.quantity), 0), 0),
+    // Approved items = items in Approved POs that haven't been shipped (sentQty = 0)
     approved: pos.filter(po => po.status === 'Approved').reduce((sum, po) => 
-      sum + po.lineItems.reduce((itemSum, item) => itemSum + item.quantity, 0), 0),
-    shipped: pos.filter(po => po.status === 'Shipped' || po.status === 'Partial').reduce((sum, po) => 
-      sum + po.lineItems.reduce((itemSum, item) => itemSum + item.quantity, 0), 0),
-    received: pos.filter(po => po.status === 'Received').reduce((sum, po) => 
-      sum + po.lineItems.reduce((itemSum, item) => itemSum + item.quantity, 0), 0),
-  }), [pos]);
+      sum + po.lineItems.reduce((itemSum, item) => itemSum + ((item.sentQty || 0) === 0 ? item.quantity : 0), 0), 0),
+    shipped: sentQty, // Use actual sent quantity instead of all items in Shipped/Partial POs
+    received: receivedQty, // Use actual received quantity
+  }), [pos, sentQty, receivedQty]);
 
   const { pending: pendingStatusQty, approved: approvedStatusQty, shipped: shippedStatusQty, received: receivedStatusQty } = statusQuantities;
 
   // Memoize chart data calculations
   const statusData = useMemo(() => {
+    // Calculate filtered quantities
+    const fPendingQty = filteredPOs.reduce((sum, po) => 
+      sum + po.lineItems.reduce((itemSum, item) => itemSum + (item.pendingQty || (item.quantity - (item.sentQty || 0))), 0), 0);
+    
+    const fApprovedQty = filteredPOs.filter(po => po.status === 'Approved').reduce((sum, po) => 
+      sum + po.lineItems.reduce((itemSum, item) => itemSum + ((item.sentQty || 0) === 0 ? item.quantity : 0), 0), 0);
+    
+    const fShippedQty = filteredPOs.reduce((sum, po) => 
+      sum + po.lineItems.reduce((itemSum, item) => itemSum + (item.sentQty || 0), 0), 0);
+    
+    const fReceivedQty = filteredPOs.reduce((sum, po) => 
+      sum + po.lineItems.reduce((itemSum, item) => itemSum + (item.receivedQty || 0), 0), 0);
+    
+    const fRejectedQty = filteredPOs.filter(po => po.status === 'Rejected').reduce((sum, po) => 
+      sum + po.lineItems.reduce((itemSum, item) => itemSum + item.quantity, 0), 0);
+
     return [
       { 
         name: 'Pending', 
-        value: filteredPOs.filter(p => p.status === 'Pending').reduce((sum, po) => 
-          sum + po.lineItems.reduce((itemSum, item) => itemSum + item.quantity, 0), 0), 
+        value: fPendingQty, 
         color: '#f59e0b' 
       },
       { 
         name: 'Approved', 
-        value: filteredPOs.filter(p => p.status === 'Approved').reduce((sum, po) => 
-          sum + po.lineItems.reduce((itemSum, item) => itemSum + item.quantity, 0), 0), 
+        value: fApprovedQty, 
         color: '#10b981' 
       },
       { 
         name: 'Shipped', 
-        value: filteredPOs.filter(p => p.status === 'Shipped' || p.status === 'Partial').reduce((sum, po) => 
-          sum + po.lineItems.reduce((itemSum, item) => itemSum + item.quantity, 0), 0), 
+        value: fShippedQty,
         color: '#3b82f6' 
       },
       { 
         name: 'Received', 
-        value: filteredPOs.filter(p => p.status === 'Received').reduce((sum, po) => 
-          sum + po.lineItems.reduce((itemSum, item) => itemSum + item.quantity, 0), 0), 
+        value: fReceivedQty, 
         color: '#8b5cf6' 
       },
       { 
         name: 'Rejected', 
-        value: filteredPOs.filter(p => p.status === 'Rejected').reduce((sum, po) => 
-          sum + po.lineItems.reduce((itemSum, item) => itemSum + item.quantity, 0), 0), 
+        value: fRejectedQty, 
         color: '#ef4444' 
       },
     ].filter(item => item.value > 0);
@@ -365,7 +375,7 @@ export default function Dashboard() {
           </div>
 
           {/* Main KPI Cards - Item Quantities */}
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-4">
             <KpiCard
               title="Total Ordered Qty"
               value={totalItemQty.toLocaleString()}
@@ -393,7 +403,7 @@ export default function Dashboard() {
           </div>
 
           {/* Status-wise Quantity Breakdown */}
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-5">
             <KpiCard
               title="Pending Status Qty"
               value={pendingStatusQty.toLocaleString()}

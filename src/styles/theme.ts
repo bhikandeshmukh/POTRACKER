@@ -19,10 +19,10 @@ export const theme = {
     smallText: 'text-xs text-gray-500',
     
     // KPI values
-    kpiValue: 'text-base sm:text-lg md:text-xl font-bold text-gray-900',
+    kpiValue: 'text-sm sm:text-base md:text-lg font-bold text-gray-900',
     
     // KPI titles
-    kpiTitle: 'text-xs font-medium text-gray-600',
+    kpiTitle: 'text-xs font-medium text-gray-500',
   },
   
   // Icons
@@ -31,7 +31,7 @@ export const theme = {
     small: 'w-3.5 h-3.5 sm:w-4 sm:h-4',
     
     // Medium icons (KPI cards, section headers)
-    medium: 'w-4 h-4 sm:w-5 sm:h-5',
+    medium: 'w-4 h-4 sm:w-4 sm:h-4',
     
     // Large icons (main actions)
     large: 'w-5 h-5 sm:w-6 sm:h-6',
@@ -43,7 +43,7 @@ export const theme = {
   // Spacing
   spacing: {
     // Card padding - optimized for tablet
-    cardPadding: 'p-3 sm:p-4 md:p-5 lg:p-6',
+    cardPadding: 'p-3 sm:p-4 md:p-5 lg:p-5',
     
     // Section padding - optimized for tablet
     sectionPadding: 'p-4 sm:p-5 md:p-6 lg:p-8',

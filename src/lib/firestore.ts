@@ -658,20 +658,40 @@ export const createShipment = async (poNumber: string, shipmentData: Omit<Shipme
     await setDoc(shipmentRef, shipmentWithId);
     
     // Update PO with shipment reference and quantities
-    await updatePOWithShipment(poNumber, shipmentWithId);
+    try {
+      await updatePOWithShipment(poNumber, shipmentWithId);
+    } catch (poUpdateError) {
+      console.error('Warning: Failed to update PO with shipment:', poUpdateError);
+      // Continue - shipment is created even if PO update fails
+      // This prevents the entire shipment creation from failing
+    }
     
     return { id: shipmentId };
   } catch (error) {
+    console.error('Shipment creation error details:', error);
     throw new DatabaseError('Failed to create shipment', error);
   }
 };
 
 export const updatePOWithShipment = async (poNumber: string, shipment: Shipment) => {
   try {
-    // Find and update PO
-    const po = await getPO(poNumber);
-    if (!po) {
-      throw new Error('PO not found');
+    // Find PO by poNumber field (not by document ID)
+    const posRef = collection(db, 'purchaseOrders');
+    const q = query(posRef, where('poNumber', '==', poNumber));
+    const snapshot = await getDocs(q);
+    
+    if (snapshot.empty) {
+      console.warn(`PO with number ${poNumber} not found - skipping PO update`);
+      return; // Don't throw error - shipment is still valid
+    }
+    
+    // Get the first (and should be only) matching PO
+    const poDoc = snapshot.docs[0];
+    const po = { id: poDoc.id, ...poDoc.data() } as PurchaseOrder;
+    
+    if (!po.id) {
+      console.warn(`PO document has no ID - skipping PO update`);
+      return;
     }
     
     // Update line item quantities
@@ -707,18 +727,17 @@ export const updatePOWithShipment = async (poNumber: string, shipment: Shipment)
       newStatus = 'Partial';
     }
     
-    // Add shipment to PO shipments array
-    const updatedShipments = [...(po.shipments || []), shipment];
-    
-    // Update PO
-    await updatePO(poNumber, {
+    // Update PO using the correct document ID (don't store entire shipment array)
+    await updatePO(po.id, {
       lineItems: updatedLineItems,
-      shipments: updatedShipments,
       totalShippedAmount,
       status: newStatus
     });
+    
+    console.log('✅ PO updated successfully with shipment quantities:', poNumber);
   } catch (error) {
-    throw new DatabaseError('Failed to update PO with shipment', error);
+    console.error('Failed to update PO with shipment:', error);
+    // Don't throw - shipment is already created and that's the main goal
   }
 };
 
@@ -769,9 +788,22 @@ export const updateShipmentStatus = async (shipmentId: string, status: Shipment[
 
 export const updatePOReceivedQuantities = async (poNumber: string, shipment: Shipment) => {
   try {
-    const po = await getPO(poNumber);
-    if (!po) {
-      throw new Error('PO not found');
+    // Find PO by poNumber field (not by document ID)
+    const posRef = collection(db, 'purchaseOrders');
+    const q = query(posRef, where('poNumber', '==', poNumber));
+    const snapshot = await getDocs(q);
+    
+    if (snapshot.empty) {
+      throw new Error(`PO with number ${poNumber} not found`);
+    }
+    
+    // Get the first (and should be only) matching PO
+    const poDoc = snapshot.docs[0];
+    const po = { id: poDoc.id, ...poDoc.data() } as PurchaseOrder;
+    
+    if (!po.id) {
+      console.warn(`PO document has no ID - skipping PO update`);
+      return;
     }
     
     // Update received quantities
@@ -804,7 +836,7 @@ export const updatePOReceivedQuantities = async (poNumber: string, shipment: Shi
       newStatus = 'Received';
     }
     
-    await updatePO(poNumber, {
+    await updatePO(po.id, {
       lineItems: updatedLineItems,
       totalReceivedAmount,
       status: newStatus

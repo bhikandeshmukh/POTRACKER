@@ -52,7 +52,7 @@ export default function FileUpload({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const validateFile = (file: File): string | null => {
+  const validateFile = useCallback((file: File): string | null => {
     // Size validation
     if (file.size > maxSize * 1024 * 1024) {
       return `File size must be less than ${maxSize}MB`;
@@ -77,7 +77,7 @@ export default function FileUpload({
     }
 
     return null;
-  };
+  }, [accept, maxSize]);
 
   const simulateUpload = async (fileId: string): Promise<void> => {
     return new Promise((resolve, reject) => {
@@ -174,7 +174,7 @@ export default function FileUpload({
     // Notify parent component
     const updatedFiles = [...files, ...newFiles];
     onFilesChange(updatedFiles);
-  }, [files, maxFiles, showError, showSuccess, onFilesChange]);
+  }, [files, maxFiles, showError, showSuccess, onFilesChange, validateFile]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -260,6 +260,7 @@ export default function FileUpload({
             return (
               <div key={file.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
                 {file.preview ? (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img 
                     src={file.preview} 
                     alt={file.name}

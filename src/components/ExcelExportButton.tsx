@@ -39,7 +39,7 @@ export default function ExcelExportButton({
     
     setIsExporting(true);
     try {
-      exportSinglePOToExcel(po, {
+      await exportSinglePOToExcel(po, {
         includeMetadata: true,
         filename: `PO-${po.poNumber}-Detailed-${new Date().toISOString().split('T')[0]}.xlsx`
       });
@@ -58,12 +58,12 @@ export default function ExcelExportButton({
     setIsExporting(true);
     try {
       if (filteredPOs.length > 0 && Object.keys(filters).length > 0) {
-        exportFilteredPOsToExcel(filteredPOs, filters, {
+        await exportFilteredPOsToExcel(filteredPOs, filters, {
           includeLineItems,
           filename: `POs-Filtered-${new Date().toISOString().split('T')[0]}.xlsx`
         });
       } else {
-        exportBulkPOsToExcel(dataToExport, {
+        await exportBulkPOsToExcel(dataToExport, {
           includeLineItems,
           filename: `POs-Bulk-Export-${new Date().toISOString().split('T')[0]}.xlsx`
         });

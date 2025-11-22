@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Search, X, Filter, FileText, Building2, User, Calendar, DollarSign } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -91,7 +91,7 @@ export default function AdvancedSearch({ isOpen, onClose, placeholder = "Search 
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [query, filters]);
+  }, [query, filters, performSearch]);
 
   // Focus input when opened
   useEffect(() => {

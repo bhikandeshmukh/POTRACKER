@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
@@ -47,16 +47,6 @@ export default function AuditLogsPage() {
     }
   }, [user, loading, router]);
 
-  useEffect(() => {
-    if (user && userData) {
-      loadAuditLogs();
-    }
-  }, [user, userData]);
-
-  useEffect(() => {
-    applyFilters();
-  }, [auditLogs, searchTerm, filters]);
-
   const loadAuditLogs = async () => {
     setLoadingLogs(true);
     try {
@@ -80,7 +70,7 @@ export default function AuditLogsPage() {
     }
   };
 
-  const applyFilters = () => {
+  const applyFilters = useCallback(() => {
     let filtered = [...auditLogs];
 
     // Search filter
@@ -132,7 +122,17 @@ export default function AuditLogsPage() {
     }
 
     setFilteredLogs(filtered);
-  };
+  }, [auditLogs, searchTerm, filters]);
+
+  useEffect(() => {
+    if (user && userData) {
+      loadAuditLogs();
+    }
+  }, [user, userData]);
+
+  useEffect(() => {
+    applyFilters();
+  }, [auditLogs, searchTerm, filters, applyFilters]);
 
   const getActionIcon = (action: string) => {
     switch (action) {

@@ -10,11 +10,12 @@ import { poService } from '@/lib/services';
 import { PurchaseOrder } from '@/lib/types';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import { CheckCircle, XCircle, Truck, Package, Mail, ChevronLeft, ChevronRight, Settings, Eye, EyeOff, RotateCcw } from 'lucide-react';
+import { CheckCircle, XCircle, Truck, Package, Mail, ChevronLeft, ChevronRight, Settings, Eye, EyeOff, RotateCcw, Clock } from 'lucide-react';
 import CommentsSystem from '@/components/CommentsSystem';
 import EmailIntegration from '@/components/EmailIntegration';
 import ShipmentManagement from '@/components/ShipmentManagement';
 import ExcelExportButton from '@/components/ExcelExportButton';
+import KpiCard from '@/components/KpiCard';
 import { getThemeClasses } from '@/styles/theme';
 
 export default function PoDetailPage() {
@@ -328,6 +329,36 @@ export default function PoDetailPage() {
               )}
             </div>
           </div>
+
+          {/* PO Summary Cards */}
+          {po && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-5">
+              <KpiCard
+                title="Total Quantity"
+                value={po.lineItems?.reduce((sum, item) => sum + (item.quantity || 0), 0).toLocaleString()}
+                icon={Package}
+                color="blue"
+              />
+              <KpiCard
+                title="Sent Quantity"
+                value={po.lineItems?.reduce((sum, item) => sum + (item.sentQty || 0), 0).toLocaleString()}
+                icon={Truck}
+                color="green"
+              />
+              <KpiCard
+                title="Pending Quantity"
+                value={po.lineItems?.reduce((sum, item) => sum + ((item.quantity || 0) - (item.sentQty || 0)), 0).toLocaleString()}
+                icon={Clock}
+                color="orange"
+              />
+              <KpiCard
+                title="Delivered Quantity"
+                value={po.lineItems?.reduce((sum, item) => sum + (item.receivedQty || 0), 0).toLocaleString()}
+                icon={CheckCircle}
+                color="purple"
+              />
+            </div>
+          )}
 
           {/* Table Controls */}
           <div className={`${getThemeClasses.card()} ${getThemeClasses.cardPadding()} ${getThemeClasses.sectionMargin()}`}>

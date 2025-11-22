@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import { PurchaseOrder } from './types';
 import { format } from 'date-fns';
 
@@ -23,93 +23,73 @@ const formatCurrency = (amount: number): string => {
 };
 
 // Export single PO with detailed line items
-export const exportSinglePOToExcel = (po: PurchaseOrder, options: ExcelExportOptions = {}) => {
+export const exportSinglePOToExcel = async (po: PurchaseOrder, options: ExcelExportOptions = {}) => {
   const {
     filename = `PO-${po.poNumber}-${new Date().toISOString().split('T')[0]}.xlsx`,
     includeMetadata = true
   } = options;
 
-  const workbook = XLSX.utils.book_new();
+  const workbook = new ExcelJS.Workbook();
 
   // PO Summary Sheet
-  const summaryData = [
-    ['Purchase Order Details', ''],
-    ['PO Number', po.poNumber],
-    ['Vendor Name', po.vendorName],
-    ['Vendor ID', po.vendorId],
-    ['Order Date', formatDate(po.orderDate)],
-    ['Expected Delivery Date', formatDate(po.expectedDeliveryDate)],
-    ['Status', po.status],
-    ['Total Amount', formatCurrency(po.totalAmount)],
-    ['Created By', po.createdBy_name],
-    ['Total Items', (po.lineItems?.length || 0).toString()],
-    [''],
-    ['Line Items Summary', ''],
-    ['S.No', 'Item Name', 'Barcode', 'SKU', 'Size', 'Warehouse', 'Quantity', 'Unit Price', 'Line Total', 'Sent Qty', 'Pending Qty', 'Status']
+  const summarySheet = workbook.addWorksheet('PO Summary');
+  
+  summarySheet.columns = [
+    { header: 'Field', key: 'field', width: 25 },
+    { header: 'Value', key: 'value', width: 35 }
   ];
 
-  // Add line items to summary
+  summarySheet.addRows([
+    { field: 'Purchase Order Details', value: '' },
+    { field: 'PO Number', value: po.poNumber },
+    { field: 'Vendor Name', value: po.vendorName },
+    { field: 'Vendor ID', value: po.vendorId },
+    { field: 'Order Date', value: formatDate(po.orderDate) },
+    { field: 'Expected Delivery Date', value: formatDate(po.expectedDeliveryDate) },
+    { field: 'Status', value: po.status },
+    { field: 'Total Amount', value: formatCurrency(po.totalAmount) },
+    { field: 'Created By', value: po.createdBy_name },
+    { field: 'Total Items', value: (po.lineItems?.length || 0).toString() }
+  ]);
+
+  // Line Items Summary
+  summarySheet.addRow({});
+  summarySheet.addRow({ field: 'Line Items Summary', value: '' });
+  
+  const summaryTableSheet = workbook.addWorksheet('Line Items');
+  summaryTableSheet.columns = [
+    { header: 'S.No', key: 'sno', width: 5 },
+    { header: 'Item Name', key: 'itemName', width: 25 },
+    { header: 'Barcode', key: 'barcode', width: 15 },
+    { header: 'SKU', key: 'sku', width: 12 },
+    { header: 'Size', key: 'size', width: 10 },
+    { header: 'Warehouse', key: 'warehouse', width: 15 },
+    { header: 'Quantity', key: 'quantity', width: 10 },
+    { header: 'Unit Price', key: 'unitPrice', width: 12 },
+    { header: 'Line Total', key: 'lineTotal', width: 12 },
+    { header: 'Sent Qty', key: 'sentQty', width: 10 },
+    { header: 'Pending Qty', key: 'pendingQty', width: 12 },
+    { header: 'Status', key: 'status', width: 10 }
+  ];
+
   po.lineItems?.forEach((item, index) => {
     const itemStatus = (item.sentQty || 0) >= item.quantity ? 'Completed' : 
                       (item.sentQty || 0) > 0 ? 'Partial' : 'Pending';
     
-    summaryData.push([
-      (index + 1).toString(),
-      item.itemName,
-      item.barcode || '',
-      item.sku || '',
-      item.size || '',
-      item.warehouse || 'Main Warehouse',
-      item.quantity.toString(),
-      formatCurrency(item.unitPrice),
-      formatCurrency(item.total),
-      (item.sentQty || 0).toString(),
-      (item.pendingQty || item.quantity).toString(),
-      itemStatus
-    ]);
-  });
-
-  const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
-  
-  // Set column widths
-  summarySheet['!cols'] = [
-    { width: 5 },   // S.No
-    { width: 25 },  // Item Name
-    { width: 15 },  // Barcode
-    { width: 12 },  // SKU
-    { width: 10 },  // Size
-    { width: 15 },  // Warehouse
-    { width: 10 },  // Quantity
-    { width: 12 },  // Unit Price
-    { width: 12 },  // Line Total
-    { width: 10 },  // Sent Qty
-    { width: 12 },  // Pending Qty
-    { width: 10 }   // Status
-  ];
-
-  XLSX.utils.book_append_sheet(workbook, summarySheet, 'PO Summary');
-
-  // Detailed Line Items Sheet
-  const lineItemsData = [
-    ['Item Details', '', '', '', '', '', '', '', '', '', '', ''],
-    ['S.No', 'Item Name', 'Barcode', 'SKU', 'Size', 'Warehouse', 'Order Qty', 'Unit Price', 'Line Total', 'Sent Qty', 'Pending Qty', 'Received Qty']
-  ];
-
-  po.lineItems?.forEach((item, index) => {
-    lineItemsData.push([
-      (index + 1).toString(),
-      item.itemName,
-      item.barcode || '',
-      item.sku || '',
-      item.size || '',
-      item.warehouse || 'Main Warehouse',
-      item.quantity.toString(),
-      item.unitPrice.toString(),
-      item.total.toString(),
-      (item.sentQty || 0).toString(),
-      (item.pendingQty || item.quantity).toString(),
-      (item.receivedQty || 0).toString()
-    ]);
+    summaryTableSheet.addRow({
+      sno: index + 1,
+      itemName: item.itemName,
+      barcode: item.barcode || '',
+      sku: item.sku || '',
+      size: item.size || '',
+      warehouse: item.warehouse || 'Main Warehouse',
+      quantity: item.quantity,
+      unitPrice: formatCurrency(item.unitPrice),
+      lineTotal: formatCurrency(item.total),
+      sentQty: item.sentQty || 0,
+      pendingQty: item.pendingQty || item.quantity,
+      status: itemStatus
+    });
   });
 
   // Add totals row
@@ -117,86 +97,86 @@ export const exportSinglePOToExcel = (po: PurchaseOrder, options: ExcelExportOpt
   const totalSent = po.lineItems?.reduce((sum, item) => sum + (item.sentQty || 0), 0) || 0;
   const totalPending = po.lineItems?.reduce((sum, item) => sum + (item.pendingQty || item.quantity), 0) || 0;
 
-  lineItemsData.push([
-    '',
-    'TOTAL',
-    '',
-    '',
-    '',
-    '',
-    totalQty.toString(),
-    '',
-    po.totalAmount.toString(),
-    totalSent.toString(),
-    totalPending.toString(),
-    ''
-  ]);
-
-  const lineItemsSheet = XLSX.utils.aoa_to_sheet(lineItemsData);
-  lineItemsSheet['!cols'] = [
-    { width: 5 },   // S.No
-    { width: 25 },  // Item Name
-    { width: 15 },  // Barcode
-    { width: 12 },  // SKU
-    { width: 10 },  // Size
-    { width: 15 },  // Warehouse
-    { width: 10 },  // Order Qty
-    { width: 12 },  // Unit Price
-    { width: 12 },  // Line Total
-    { width: 10 },  // Sent Qty
-    { width: 12 },  // Pending Qty
-    { width: 12 }   // Received Qty
-  ];
-
-  XLSX.utils.book_append_sheet(workbook, lineItemsSheet, 'Line Items');
+  const totalsRow = summaryTableSheet.addRow({
+    sno: '',
+    itemName: 'TOTAL',
+    barcode: '',
+    sku: '',
+    size: '',
+    warehouse: '',
+    quantity: totalQty,
+    unitPrice: '',
+    lineTotal: formatCurrency(po.totalAmount),
+    sentQty: totalSent,
+    pendingQty: totalPending,
+    status: ''
+  });
+  totalsRow.font = { bold: true };
 
   // Metadata sheet (if requested)
   if (includeMetadata) {
-    const metadataData = [
-      ['Purchase Order Metadata', ''],
-      ['Export Date', format(new Date(), 'dd/MM/yyyy HH:mm:ss')],
-      ['Export By', 'System'],
-      [''],
-      ['PO Statistics', ''],
-      ['Total Line Items', po.lineItems?.length || 0],
-      ['Total Quantity', totalQty],
-      ['Total Sent', totalSent],
-      ['Total Pending', totalPending],
-      ['Completion %', totalQty > 0 ? Math.round((totalSent / totalQty) * 100) : 0],
-      [''],
-      ['Vendor Information', ''],
-      ['Vendor ID', po.vendorId],
-      ['Vendor Name', po.vendorName],
-      [''],
-      ['Dates', ''],
-      ['Order Date', formatDate(po.orderDate)],
-      ['Expected Delivery', formatDate(po.expectedDeliveryDate)],
-      ['Created At', formatDate(po.createdAt)],
-      ['Updated At', formatDate(po.updatedAt)]
+    const metadataSheet = workbook.addWorksheet('Metadata');
+    metadataSheet.columns = [
+      { header: 'Metric', key: 'metric', width: 25 },
+      { header: 'Value', key: 'value', width: 35 }
     ];
 
-    const metadataSheet = XLSX.utils.aoa_to_sheet(metadataData);
-    metadataSheet['!cols'] = [{ width: 20 }, { width: 30 }];
-    XLSX.utils.book_append_sheet(workbook, metadataSheet, 'Metadata');
+    metadataSheet.addRows([
+      { metric: 'Purchase Order Metadata', value: '' },
+      { metric: 'Export Date', value: format(new Date(), 'dd/MM/yyyy HH:mm:ss') },
+      { metric: 'Export By', value: 'System' },
+      { metric: '', value: '' },
+      { metric: 'PO Statistics', value: '' },
+      { metric: 'Total Line Items', value: po.lineItems?.length || 0 },
+      { metric: 'Total Quantity', value: totalQty },
+      { metric: 'Total Sent', value: totalSent },
+      { metric: 'Total Pending', value: totalPending },
+      { metric: 'Completion %', value: totalQty > 0 ? Math.round((totalSent / totalQty) * 100) : 0 },
+      { metric: '', value: '' },
+      { metric: 'Vendor Information', value: '' },
+      { metric: 'Vendor ID', value: po.vendorId },
+      { metric: 'Vendor Name', value: po.vendorName },
+      { metric: '', value: '' },
+      { metric: 'Dates', value: '' },
+      { metric: 'Order Date', value: formatDate(po.orderDate) },
+      { metric: 'Expected Delivery', value: formatDate(po.expectedDeliveryDate) },
+      { metric: 'Created At', value: formatDate(po.createdAt) },
+      { metric: 'Updated At', value: formatDate(po.updatedAt) }
+    ]);
   }
 
-  // Download the file
-  XLSX.writeFile(workbook, filename);
+  // Write file
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
+  window.URL.revokeObjectURL(url);
 };
 
 // Export multiple POs (bulk export)
-export const exportBulkPOsToExcel = (pos: PurchaseOrder[], options: ExcelExportOptions = {}) => {
+export const exportBulkPOsToExcel = async (pos: PurchaseOrder[], options: ExcelExportOptions = {}) => {
   const {
     filename = `POs-Bulk-Export-${new Date().toISOString().split('T')[0]}.xlsx`,
     includeLineItems = true
   } = options;
 
-  const workbook = XLSX.utils.book_new();
+  const workbook = new ExcelJS.Workbook();
 
   // PO Summary Sheet
-  const summaryData = [
-    ['Purchase Orders Summary', '', '', '', '', '', '', '', ''],
-    ['PO Number', 'Vendor Name', 'Order Date', 'Delivery Date', 'Status', 'Total Items', 'Total Amount', 'Created By', 'Completion %']
+  const summarySheet = workbook.addWorksheet('PO Summary');
+  summarySheet.columns = [
+    { header: 'PO Number', key: 'poNumber', width: 15 },
+    { header: 'Vendor Name', key: 'vendorName', width: 20 },
+    { header: 'Order Date', key: 'orderDate', width: 12 },
+    { header: 'Delivery Date', key: 'deliveryDate', width: 12 },
+    { header: 'Status', key: 'status', width: 10 },
+    { header: 'Total Items', key: 'totalItems', width: 10 },
+    { header: 'Total Amount', key: 'totalAmount', width: 15 },
+    { header: 'Created By', key: 'createdBy', width: 15 },
+    { header: 'Completion %', key: 'completionPercent', width: 12 }
   ];
 
   pos.forEach(po => {
@@ -204,39 +184,36 @@ export const exportBulkPOsToExcel = (pos: PurchaseOrder[], options: ExcelExportO
     const totalSent = po.lineItems?.reduce((sum, item) => sum + (item.sentQty || 0), 0) || 0;
     const completionPercent = totalQty > 0 ? Math.round((totalSent / totalQty) * 100) : 0;
 
-    summaryData.push([
-      po.poNumber,
-      po.vendorName,
-      formatDate(po.orderDate),
-      formatDate(po.expectedDeliveryDate),
-      po.status,
-      (po.lineItems?.length || 0).toString(),
-      formatCurrency(po.totalAmount),
-      po.createdBy_name,
-      `${completionPercent}%`
-    ]);
+    summarySheet.addRow({
+      poNumber: po.poNumber,
+      vendorName: po.vendorName,
+      orderDate: formatDate(po.orderDate),
+      deliveryDate: formatDate(po.expectedDeliveryDate),
+      status: po.status,
+      totalItems: (po.lineItems?.length || 0),
+      totalAmount: formatCurrency(po.totalAmount),
+      createdBy: po.createdBy_name,
+      completionPercent: `${completionPercent}%`
+    });
   });
-
-  const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
-  summarySheet['!cols'] = [
-    { width: 15 }, // PO Number
-    { width: 20 }, // Vendor Name
-    { width: 12 }, // Order Date
-    { width: 12 }, // Delivery Date
-    { width: 10 }, // Status
-    { width: 10 }, // Total Items
-    { width: 15 }, // Total Amount
-    { width: 15 }, // Created By
-    { width: 12 }  // Completion %
-  ];
-
-  XLSX.utils.book_append_sheet(workbook, summarySheet, 'PO Summary');
 
   // Detailed Line Items Sheet (if requested)
   if (includeLineItems) {
-    const lineItemsData = [
-      ['All Line Items', '', '', '', '', '', '', '', '', '', '', '', ''],
-      ['PO Number', 'Vendor Name', 'Item Name', 'Barcode', 'SKU', 'Size', 'Warehouse', 'Order Qty', 'Unit Price', 'Line Total', 'Sent Qty', 'Pending Qty', 'Status']
+    const lineItemsSheet = workbook.addWorksheet('All Line Items');
+    lineItemsSheet.columns = [
+      { header: 'PO Number', key: 'poNumber', width: 15 },
+      { header: 'Vendor Name', key: 'vendorName', width: 20 },
+      { header: 'Item Name', key: 'itemName', width: 25 },
+      { header: 'Barcode', key: 'barcode', width: 15 },
+      { header: 'SKU', key: 'sku', width: 12 },
+      { header: 'Size', key: 'size', width: 10 },
+      { header: 'Warehouse', key: 'warehouse', width: 15 },
+      { header: 'Order Qty', key: 'orderQty', width: 10 },
+      { header: 'Unit Price', key: 'unitPrice', width: 12 },
+      { header: 'Line Total', key: 'lineTotal', width: 12 },
+      { header: 'Sent Qty', key: 'sentQty', width: 10 },
+      { header: 'Pending Qty', key: 'pendingQty', width: 12 },
+      { header: 'Status', key: 'status', width: 10 }
     ];
 
     pos.forEach(po => {
@@ -244,42 +221,23 @@ export const exportBulkPOsToExcel = (pos: PurchaseOrder[], options: ExcelExportO
         const itemStatus = (item.sentQty || 0) >= item.quantity ? 'Completed' : 
                           (item.sentQty || 0) > 0 ? 'Partial' : 'Pending';
 
-        lineItemsData.push([
-          po.poNumber,
-          po.vendorName,
-          item.itemName,
-          item.barcode || '',
-          item.sku || '',
-          item.size || '',
-          item.warehouse || 'Main Warehouse',
-          item.quantity.toString(),
-          item.unitPrice.toString(),
-          item.total.toString(),
-          (item.sentQty || 0).toString(),
-          (item.pendingQty || item.quantity).toString(),
-          itemStatus
-        ]);
+        lineItemsSheet.addRow({
+          poNumber: po.poNumber,
+          vendorName: po.vendorName,
+          itemName: item.itemName,
+          barcode: item.barcode || '',
+          sku: item.sku || '',
+          size: item.size || '',
+          warehouse: item.warehouse || 'Main Warehouse',
+          orderQty: item.quantity,
+          unitPrice: formatCurrency(item.unitPrice),
+          lineTotal: formatCurrency(item.total),
+          sentQty: item.sentQty || 0,
+          pendingQty: item.pendingQty || item.quantity,
+          status: itemStatus
+        });
       });
     });
-
-    const lineItemsSheet = XLSX.utils.aoa_to_sheet(lineItemsData);
-    lineItemsSheet['!cols'] = [
-      { width: 15 }, // PO Number
-      { width: 20 }, // Vendor Name
-      { width: 25 }, // Item Name
-      { width: 15 }, // Barcode
-      { width: 12 }, // SKU
-      { width: 10 }, // Size
-      { width: 15 }, // Warehouse
-      { width: 10 }, // Order Qty
-      { width: 12 }, // Unit Price
-      { width: 12 }, // Line Total
-      { width: 10 }, // Sent Qty
-      { width: 12 }, // Pending Qty
-      { width: 10 }  // Status
-    ];
-
-    XLSX.utils.book_append_sheet(workbook, lineItemsSheet, 'All Line Items');
   }
 
   // Statistics Sheet
@@ -291,18 +249,28 @@ export const exportBulkPOsToExcel = (pos: PurchaseOrder[], options: ExcelExportO
     return acc;
   }, {} as Record<string, number>);
 
-  const statsData = [
-    ['Export Statistics', ''],
-    ['Export Date', format(new Date(), 'dd/MM/yyyy HH:mm:ss')],
-    ['Total POs', totalPOs.toString()],
-    ['Total Amount', formatCurrency(totalAmount)],
-    ['Total Line Items', totalItems.toString()],
-    [''],
-    ['Status Breakdown', ''],
-    ...Object.entries(statusCounts).map(([status, count]) => [status, count.toString()]),
-    [''],
-    ['Vendor Breakdown', ''],
+  const statsSheet = workbook.addWorksheet('Statistics');
+  statsSheet.columns = [
+    { header: 'Metric', key: 'metric', width: 20 },
+    { header: 'Value', key: 'value', width: 15 }
   ];
+
+  statsSheet.addRows([
+    { metric: 'Export Statistics', value: '' },
+    { metric: 'Export Date', value: format(new Date(), 'dd/MM/yyyy HH:mm:ss') },
+    { metric: 'Total POs', value: totalPOs },
+    { metric: 'Total Amount', value: formatCurrency(totalAmount) },
+    { metric: 'Total Line Items', value: totalItems },
+    { metric: '', value: '' },
+    { metric: 'Status Breakdown', value: '' }
+  ]);
+
+  Object.entries(statusCounts).forEach(([status, count]) => {
+    statsSheet.addRow({ metric: status, value: count });
+  });
+
+  statsSheet.addRow({ metric: '', value: '' });
+  statsSheet.addRow({ metric: 'Vendor Breakdown', value: '' });
 
   // Add vendor breakdown
   const vendorCounts = pos.reduce((acc, po) => {
@@ -311,19 +279,22 @@ export const exportBulkPOsToExcel = (pos: PurchaseOrder[], options: ExcelExportO
   }, {} as Record<string, number>);
 
   Object.entries(vendorCounts).forEach(([vendor, count]) => {
-    statsData.push([vendor, count.toString()]);
+    statsSheet.addRow({ metric: vendor, value: count });
   });
 
-  const statsSheet = XLSX.utils.aoa_to_sheet(statsData);
-  statsSheet['!cols'] = [{ width: 20 }, { width: 15 }];
-  XLSX.utils.book_append_sheet(workbook, statsSheet, 'Statistics');
-
-  // Download the file
-  XLSX.writeFile(workbook, filename);
+  // Write file
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
+  window.URL.revokeObjectURL(url);
 };
 
 // Export filtered POs with custom options
-export const exportFilteredPOsToExcel = (
+export const exportFilteredPOsToExcel = async (
   pos: PurchaseOrder[], 
   filters: Record<string, any>,
   options: ExcelExportOptions = {}
@@ -336,5 +307,5 @@ export const exportFilteredPOsToExcel = (
   const filename = options.filename || 
     `POs-Filtered-${filterDescription.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.xlsx`;
 
-  exportBulkPOsToExcel(pos, { ...options, filename });
+  await exportBulkPOsToExcel(pos, { ...options, filename });
 };

@@ -1,17 +1,28 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Sidebar from '@/components/Sidebar';
-import { Calendar, Clock, MapPin, User, FileText, Plus, Edit, Trash2, CheckCircle, XCircle, Mail, Upload } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, FileText, Plus, Edit, Trash2, CheckCircle, XCircle, Mail, Upload, Package } from 'lucide-react';
 import { getThemeClasses } from '@/styles/theme';
 import { Timestamp, collection, query, orderBy, getDocs, doc, setDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { getPOs, getTransporters } from '@/lib/firestore';
 import DataImportExport from '@/components/DataImportExport';
 import { getUserInfo } from '@/lib/utils/userUtils';
+
+interface AppointmentLineItem {
+  itemName: string;
+  barcode?: string;
+  sku?: string;
+  size?: string;
+  warehouse?: string;
+  appointmentQty: number;
+  unitPrice: number;
+  total: number;
+}
 
 interface Appointment {
   id?: string;
@@ -27,12 +38,15 @@ interface Appointment {
   appointmentTime: string;
   location: string;
   docketNumber?: string;
+  invoiceNumber?: string;
   purpose: 'delivery' | 'inspection' | 'meeting' | 'pickup';
   status: 'scheduled' | 'confirmed' | 'prepared' | 'shipped' | 'in-transit' | 'delivered' | 'cancelled';
   notes?: string;
   createdBy?: string;
   createdAt?: Date;
   emailSent?: boolean;
+  lineItems?: AppointmentLineItem[];
+  totalAmount?: number;
 }
 
 export default function AppointmentsPage() {
@@ -57,10 +71,73 @@ export default function AppointmentsPage() {
     transporterName: '',
     transporterEmail: '',
     docketNumber: '',
+    invoiceNumber: '',
     purpose: 'delivery',
     status: 'scheduled',
-    notes: ''
+    notes: '',
+    lineItems: [],
+    totalAmount: 0
   });
+  
+  const [selectedPO, setSelectedPO] = useState<any>(null);
+
+  const loadAppointments = useCallback(async () => {
+    setLoadingData(true);
+    try {
+      // Fetch appointments from Firestore
+      const appointmentsRef = collection(db, 'appointments');
+      const q = query(appointmentsRef, orderBy('appointmentDate', 'desc'));
+      const snapshot = await getDocs(q);
+      
+      const appointmentsList = snapshot.docs.map(doc => {
+        const data = doc.data();
+        console.log('Loading appointment:', doc.id, data); // Debug log
+        return {
+          id: doc.id,
+          ...data,
+          appointmentDate: data.appointmentDate?.toDate() || new Date()
+        } as Appointment;
+      });
+      
+      console.log('Total appointments loaded:', appointmentsList.length); // Debug log
+      
+      // Check for specific appointment
+      const targetAppointment = appointmentsList.find(apt => apt.appointmentId === 'APT-2024-001');
+      if (targetAppointment) {
+        console.log('Found APT-2024-001:', targetAppointment);
+      } else {
+        console.log('APT-2024-001 not found in appointments list');
+        console.log('Available appointment IDs:', appointmentsList.map(apt => apt.appointmentId));
+      }
+      
+      setAppointments(appointmentsList);
+    } catch (error) {
+      console.error('Error loading appointments:', error);
+      setAppointments([]);
+    } finally {
+      setLoadingData(false);
+    }
+  }, []);
+
+  const loadPOs = useCallback(async () => {
+    try {
+      const posList = await getPOs(user?.uid, userData?.role);
+      setPOs(posList);
+    } catch (error) {
+      console.error('Error loading POs:', error);
+      setPOs([]);
+    }
+  }, [user, userData]);
+
+  const loadTransporters = useCallback(async () => {
+    try {
+      const transportersList = await getTransporters();
+      setTransporters(transportersList);
+    } catch (error) {
+      console.error('Error loading transporters:', error);
+      setTransporters([]);
+    }
+  }, []);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -74,54 +151,18 @@ export default function AppointmentsPage() {
       loadPOs();
       loadTransporters();
     }
-  }, [user]);
-
-  const loadAppointments = async () => {
-    setLoadingData(true);
-    try {
-      // Fetch appointments from Firestore
-      const appointmentsRef = collection(db, 'appointments');
-      const q = query(appointmentsRef, orderBy('appointmentDate', 'desc'));
-      const snapshot = await getDocs(q);
-      
-      const appointmentsList = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        appointmentDate: doc.data().appointmentDate?.toDate() || new Date()
-      } as Appointment));
-      
-      setAppointments(appointmentsList);
-    } catch (error) {
-      console.error('Error loading appointments:', error);
-      setAppointments([]);
-    } finally {
-      setLoadingData(false);
-    }
-  };
-
-  const loadPOs = async () => {
-    try {
-      const posList = await getPOs(user?.uid, userData?.role);
-      setPOs(posList);
-    } catch (error) {
-      console.error('Error loading POs:', error);
-      setPOs([]);
-    }
-  };
-
-  const loadTransporters = async () => {
-    try {
-      const transportersList = await getTransporters();
-      setTransporters(transportersList);
-    } catch (error) {
-      console.error('Error loading transporters:', error);
-      setTransporters([]);
-    }
-  };
+  }, [user, loadAppointments, loadPOs, loadTransporters]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      // Validate line items if PO is selected
+      const itemsToSchedule = formData.lineItems?.filter(item => item.appointmentQty > 0) || [];
+      if (formData.poNumber && itemsToSchedule.length === 0) {
+        alert('Please select at least one item with quantity for the appointment');
+        return;
+      }
+
       const appointmentData = {
         appointmentId: formData.appointmentId,
         poNumber: formData.poNumber,
@@ -135,9 +176,12 @@ export default function AppointmentsPage() {
         appointmentTime: formData.appointmentTime,
         location: formData.location,
         docketNumber: formData.docketNumber,
+        invoiceNumber: formData.invoiceNumber,
         purpose: formData.purpose,
         status: formData.status,
         notes: formData.notes,
+        lineItems: itemsToSchedule,
+        totalAmount: formData.totalAmount || 0,
         createdBy: user?.displayName || user?.email || 'Unknown',
         updatedAt: serverTimestamp()
       };
@@ -318,6 +362,25 @@ export default function AppointmentsPage() {
     }
   };
 
+  const updateLineItemQty = (index: number, qty: number) => {
+    if (!formData.lineItems) return;
+    
+    const updatedItems = [...formData.lineItems];
+    const poItem = selectedPO?.lineItems[index];
+    const maxQty = poItem?.pendingQty || poItem?.quantity || 0;
+    
+    updatedItems[index].appointmentQty = Math.min(qty, maxQty);
+    updatedItems[index].total = updatedItems[index].appointmentQty * updatedItems[index].unitPrice;
+    
+    const totalAmount = updatedItems.reduce((sum, item) => sum + item.total, 0);
+    
+    setFormData({
+      ...formData,
+      lineItems: updatedItems,
+      totalAmount
+    });
+  };
+
   const resetForm = () => {
     setFormData({
       appointmentId: '',
@@ -330,21 +393,43 @@ export default function AppointmentsPage() {
       transporterName: '',
       transporterEmail: '',
       docketNumber: '',
+      invoiceNumber: '',
       purpose: 'delivery',
       status: 'scheduled',
-      notes: ''
+      notes: '',
+      lineItems: [],
+      totalAmount: 0
     });
+    setSelectedPO(null);
     setPOInputMode('dropdown');
   };
 
   const handlePOSelect = (poNumber: string) => {
-    const selectedPO = pos.find(po => po.poNumber === poNumber);
-    if (selectedPO) {
+    const selectedPOData = pos.find(po => po.poNumber === poNumber);
+    if (selectedPOData) {
+      setSelectedPO(selectedPOData);
+      
+      // Initialize line items with pending quantities
+      const appointmentLineItems: AppointmentLineItem[] = selectedPOData.lineItems
+        ?.filter((item: any) => (item.pendingQty || item.quantity) > 0)
+        .map((item: any) => ({
+          itemName: item.itemName,
+          barcode: item.barcode,
+          sku: item.sku,
+          size: item.size,
+          warehouse: item.warehouse || 'Main Warehouse',
+          appointmentQty: 0, // User will set this
+          unitPrice: item.unitPrice,
+          total: 0
+        })) || [];
+      
       setFormData({
         ...formData,
-        poNumber: selectedPO.poNumber,
-        vendorName: selectedPO.vendorName,
-        poId: selectedPO.id
+        poNumber: selectedPOData.poNumber,
+        vendorName: selectedPOData.vendorName,
+        poId: selectedPOData.id,
+        lineItems: appointmentLineItems,
+        totalAmount: 0
       });
     }
   };
@@ -608,6 +693,17 @@ export default function AppointmentsPage() {
                       placeholder="DOC-2024-001"
                     />
                   </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Invoice Number</label>
+                    <input
+                      type="text"
+                      value={formData.invoiceNumber}
+                      onChange={(e) => setFormData({ ...formData, invoiceNumber: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="INV-2024-001"
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -620,6 +716,67 @@ export default function AppointmentsPage() {
                     placeholder="Additional notes..."
                   />
                 </div>
+
+                {/* Line Items Section */}
+                {selectedPO && formData.lineItems && formData.lineItems.length > 0 && (
+                  <div className="col-span-2">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">Items for Appointment</h3>
+                    <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                      <table className="min-w-full">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Item</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">SKU</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Warehouse</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Available</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Appointment Qty</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Unit Price</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {formData.lineItems.map((item, index) => {
+                            const poItem = selectedPO.lineItems[index];
+                            const availableQty = poItem?.pendingQty || poItem?.quantity || 0;
+                            
+                            return (
+                              <tr key={index}>
+                                <td className="px-4 py-3 text-sm text-gray-900">{item.itemName}</td>
+                                <td className="px-4 py-3 text-sm text-gray-900 font-mono">{item.sku || '-'}</td>
+                                <td className="px-4 py-3 text-sm text-gray-900">{item.warehouse}</td>
+                                <td className="px-4 py-3 text-sm text-gray-900">{availableQty}</td>
+                                <td className="px-4 py-3">
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    max={availableQty}
+                                    value={item.appointmentQty}
+                                    onChange={(e) => updateLineItemQty(index, parseInt(e.target.value) || 0)}
+                                    className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
+                                  />
+                                </td>
+                                <td className="px-4 py-3 text-sm text-gray-900">₹{item.unitPrice.toLocaleString()}</td>
+                                <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                                  ₹{item.total.toLocaleString()}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                        <tfoot className="bg-gray-50">
+                          <tr>
+                            <td colSpan={6} className="px-4 py-3 text-sm font-medium text-gray-900 text-right">
+                              Total Amount:
+                            </td>
+                            <td className="px-4 py-3 text-sm font-bold text-gray-900">
+                              ₹{(formData.totalAmount || 0).toLocaleString()}
+                            </td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex space-x-3">
                   <button
@@ -668,8 +825,9 @@ export default function AppointmentsPage() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">PO Number</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vendor</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date & Time</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Items</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Transporter</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Docket</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                     </tr>
@@ -694,6 +852,23 @@ export default function AppointmentsPage() {
                             <Clock className="w-4 h-4 text-gray-400 ml-2" />
                             <span>{appointment.appointmentTime}</span>
                           </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-gray-700">
+                          {appointment.lineItems ? (
+                            <div className="flex items-center space-x-1">
+                              <Package className="w-4 h-4 text-gray-400" />
+                              <span>{appointment.lineItems.length} items</span>
+                            </div>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-gray-700">
+                          {appointment.totalAmount ? (
+                            <span className="font-medium">₹{appointment.totalAmount.toLocaleString()}</span>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {appointment.transporterName ? (

@@ -35,7 +35,7 @@ export const usePermissions = () => {
     };
 
     loadPermissions();
-  }, [user?.uid, userData?.role]);
+  }, [user, userData?.role]);
 
   const hasPermission = (permission: Permission): boolean => {
     return checkPermission(permissions, permission);

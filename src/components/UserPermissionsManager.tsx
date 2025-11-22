@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Shield, Save, RotateCcw, User, Lock, Unlock, AlertCircle, CheckCircle, Search } from 'lucide-react';
 import { 
   Permission, 
@@ -28,11 +28,7 @@ export default function UserPermissionsManager() {
   const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       const [allUsers, allUserPerms] = await Promise.all([
@@ -55,7 +51,11 @@ export default function UserPermissionsManager() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showError]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const getSelectedUserData = () => {
     if (!selectedUser) return null;

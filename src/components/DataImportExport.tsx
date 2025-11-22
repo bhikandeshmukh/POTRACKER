@@ -7,7 +7,7 @@ import { addVendor, Vendor, PurchaseOrder, getPOs, getVendors, vendorNameToDocId
 import { poService, auditService, commentService } from '@/lib/services';
 import { getUserInfo, getUserDisplayName } from '@/lib/utils/userUtils';
 import { useAuth } from '@/contexts/AuthContext';
-import { Timestamp, doc, setDoc, serverTimestamp, collection, query, orderBy, getDocs } from 'firebase/firestore';
+import { Timestamp, doc, setDoc, serverTimestamp, collection, query, orderBy, getDocs, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 interface ImportResult {
@@ -63,15 +63,15 @@ export default function DataImportExport({ type, isOpen, onClose, onImportComple
   ];
 
   const shipmentTemplate = [
-    ['PO Number', 'Appointment ID', 'Invoice Number', 'Shipment Date', 'Expected Delivery Date', 'Carrier', 'Tracking Number', 'Notes'],
-    ['PO-2024-001', 'APT-2024-001', 'INV-2024-001', '21/11/2025', '25/11/2025', 'FedEx', '1234567890', 'Handle with care'],
-    ['PO-2024-002', 'APT-2024-002', 'INV-2024-002', '22/11/2025', '26/11/2025', 'DHL', '9876543210', 'Fragile items'],
+    ['PO Number', 'Appointment ID', 'Invoice Number', 'Shipment Date', 'Expected Delivery Date', 'Carrier', 'Tracking Number', 'Item Name', 'Barcode', 'SKU', 'Size', 'Warehouse', 'Shipped Qty', 'Unit Price', 'Line Total', 'Notes'],
+    ['PO-2024-001', 'APT-2024-001', 'INV-2024-001', '21/11/2025', '25/11/2025', 'FedEx', '1234567890', 'Dell Laptop', 'DELL123456789ABC', 'DELL-INS-15', '15 inch', 'Main Warehouse', '50', '25000', '1250000', 'Handle with care'],
+    ['PO-2024-001', 'APT-2024-001', 'INV-2024-001', '21/11/2025', '25/11/2025', 'FedEx', '1234567890', 'HP Mouse', 'HP987654321XYZ', 'HP-MSE-01', 'Standard', 'Main Warehouse', '100', '500', '50000', 'Fragile items'],
   ];
 
   const appointmentTemplate = [
-    ['Appointment ID', 'PO Number', 'Vendor Name', 'Date', 'Time', 'Location', 'Purpose', 'Status', 'Transporter', 'Docket Number', 'Notes'],
-    ['APT-2024-001', 'PO-2024-001', 'ABC Electronics Ltd', '25/11/2025', '10:00', 'Warehouse A', 'delivery', 'scheduled', 'FedEx', 'DOC-001', 'Morning delivery'],
-    ['APT-2024-002', 'PO-2024-002', 'XYZ Suppliers', '26/11/2025', '14:00', 'Warehouse B', 'delivery', 'confirmed', 'DHL', 'DOC-002', 'Afternoon pickup'],
+    ['Appointment ID', 'PO Number', 'Vendor Name', 'Date', 'Time', 'Location', 'Purpose', 'Status', 'Transporter', 'Docket Number', 'Invoice Number', 'Item Name', 'Barcode', 'SKU', 'Size', 'Warehouse', 'Appointment Qty', 'Unit Price', 'Line Total', 'Notes'],
+    ['APT-2024-001', 'PO-2024-001', 'ABC Electronics Ltd', '25/11/2025', '10:00', 'Warehouse A', 'delivery', 'scheduled', 'FedEx', 'DOC-001', 'INV-2024-001', 'Dell Laptop', 'DELL123456789ABC', 'DELL-INS-15', '15 inch', 'Main Warehouse', '50', '25000', '1250000', 'Morning delivery'],
+    ['APT-2024-001', 'PO-2024-001', 'ABC Electronics Ltd', '25/11/2025', '10:00', 'Warehouse A', 'delivery', 'scheduled', 'FedEx', 'DOC-001', 'INV-2024-001', 'HP Mouse', 'HP987654321XYZ', 'HP-MSE-01', 'Standard', 'Main Warehouse', '100', '500', '50000', 'Same appointment multiple items'],
   ];
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -185,6 +185,7 @@ export default function DataImportExport({ type, isOpen, onClose, onImportComple
     if (!data[1]?.trim()) errors.push('Appointment ID is required');
     if (!data[2]?.trim()) errors.push('Invoice Number is required');
     if (!data[3]?.trim()) errors.push('Shipment Date is required');
+    if (!data[7]?.trim()) errors.push('Item Name is required');
     
     // Date format validation
     if (data[3] && !/^\d{2}\/\d{2}\/\d{4}$/.test(data[3]) && !/^\d{4}-\d{2}-\d{2}$/.test(data[3])) {
@@ -192,6 +193,21 @@ export default function DataImportExport({ type, isOpen, onClose, onImportComple
     }
     if (data[4] && !/^\d{2}\/\d{2}\/\d{4}$/.test(data[4]) && !/^\d{4}-\d{2}-\d{2}$/.test(data[4])) {
       errors.push('Expected Delivery Date must be in DD/MM/YYYY or YYYY-MM-DD format');
+    }
+    
+    // Quantity and price validation
+    const shippedQty = Number(data[12]);
+    const unitPrice = Number(data[13]);
+    const lineTotal = Number(data[14]);
+    
+    if (data[12] && (isNaN(shippedQty) || shippedQty <= 0)) {
+      errors.push('Shipped Qty must be a positive number');
+    }
+    if (data[13] && (isNaN(unitPrice) || unitPrice < 0)) {
+      errors.push('Unit Price must be a non-negative number');
+    }
+    if (data[14] && (isNaN(lineTotal) || lineTotal < 0)) {
+      errors.push('Line Total must be a non-negative number');
     }
 
     return { isValid: errors.length === 0, errors };
@@ -209,6 +225,7 @@ export default function DataImportExport({ type, isOpen, onClose, onImportComple
     if (!data[5]?.trim()) errors.push('Location is required');
     if (!data[6]?.trim()) errors.push('Purpose is required');
     if (!data[7]?.trim()) errors.push('Status is required');
+    if (!data[11]?.trim()) errors.push('Item Name is required');
     
     // Date format validation
     if (data[3] && !/^\d{2}\/\d{2}\/\d{4}$/.test(data[3]) && !/^\d{4}-\d{2}-\d{2}$/.test(data[3])) {
@@ -229,6 +246,21 @@ export default function DataImportExport({ type, isOpen, onClose, onImportComple
     if (data[7] && !['scheduled', 'confirmed', 'prepared', 'shipped', 'in-transit', 'delivered', 'cancelled'].includes(data[7].toLowerCase())) {
       errors.push('Status must be one of: scheduled, confirmed, prepared, shipped, in-transit, delivered, cancelled');
     }
+    
+    // Quantity and price validation
+    const appointmentQty = Number(data[16]);
+    const unitPrice = Number(data[17]);
+    const lineTotal = Number(data[18]);
+    
+    if (data[16] && (isNaN(appointmentQty) || appointmentQty <= 0)) {
+      errors.push('Appointment Qty must be a positive number');
+    }
+    if (data[17] && (isNaN(unitPrice) || unitPrice < 0)) {
+      errors.push('Unit Price must be a non-negative number');
+    }
+    if (data[18] && (isNaN(lineTotal) || lineTotal < 0)) {
+      errors.push('Line Total must be a non-negative number');
+    }
 
     return { isValid: errors.length === 0, errors };
   };
@@ -244,6 +276,12 @@ export default function DataImportExport({ type, isOpen, onClose, onImportComple
       poData: Omit<PurchaseOrder, 'id' | 'poNumber' | 'totalAmount'>;
       totalAmount: number;
     }> = {};
+    
+    // Group shipment items by PO Number and Appointment ID
+    const shipmentGroups: Record<string, any> = {};
+    
+    // Group appointment items by Appointment ID
+    const appointmentGroups: Record<string, any> = {};
 
     try {
       const text = await importFile.text();
@@ -391,149 +429,40 @@ export default function DataImportExport({ type, isOpen, onClose, onImportComple
           }
 
           const poNumber = row[0];
-          let shipmentData: any = null;
+          const appointmentId = row[1];
           
-          try {
-            
-            // Fetch existing PO to validate and get items
-            const existingPOs = await getPOs(user.uid, userData?.role);
-            const existingPO = existingPOs.find(po => po.poNumber === poNumber);
-            
-            if (!existingPO) {
-              result.errors.push({
-                row: rowNumber,
-                error: `PO Number "${poNumber}" not found in system`,
-                data: row
-              });
-              continue;
-            }
-
-            // Create shipment data
-            shipmentData = {
+          // Group shipment line items by PO Number and Appointment ID
+          const shipmentKey = `${poNumber}-${appointmentId}`;
+          if (!shipmentGroups[shipmentKey]) {
+            shipmentGroups[shipmentKey] = {
               poNumber: poNumber,
-              appointmentId: row[1],
+              appointmentId: appointmentId,
               invoiceNumber: row[2],
-              shipmentDate: Timestamp.fromDate(parseDate(row[3])),
-              status: 'Prepared' as const,
-              createdBy_uid: user.uid,
-              createdBy_name: getUserDisplayName(user, userData),
-              lineItems: existingPO.lineItems.map(item => ({
-                itemName: item.itemName,
-                barcode: item.barcode || '',
-                sku: item.sku || '',
-                size: item.size || '',
-                shippedQty: item.quantity, // Ship all items by default
-                unitPrice: item.unitPrice,
-                total: item.total
-              })),
-              totalAmount: existingPO.totalAmount
+              shipmentDate: parseDate(row[3]),
+              expectedDeliveryDate: row[4] ? parseDate(row[4]) : null,
+              carrier: row[5] || '',
+              trackingNumber: row[6] || '',
+              notes: row[15] || '',
+              lineItems: []
             };
-
-            // Only add optional fields if they have values
-            if (row[4]) {
-              shipmentData.expectedDeliveryDate = Timestamp.fromDate(parseDate(row[4]));
-            }
-            if (row[5]) {
-              shipmentData.carrier = row[5];
-            }
-            if (row[6]) {
-              shipmentData.trackingNumber = row[6];
-            }
-            if (row[7]) {
-              shipmentData.notes = row[7];
-            }
-
-            console.log('Creating shipment with data:', shipmentData);
-
-            // Generate shipment ID and create directly
-            const shipmentId = `SHP-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-            const shipmentRef = doc(db, 'shipments', shipmentId);
-            const shipmentWithId = {
-              ...shipmentData,
-              id: shipmentId,
-              createdAt: serverTimestamp() as Timestamp,
-            };
-            
-            console.log('Saving shipment to Firestore:', shipmentWithId);
-            await setDoc(shipmentRef, shipmentWithId);
-            console.log('Shipment saved successfully with ID:', shipmentId);
-
-            // Create appointment for imported shipment
-            const appointmentId = `APT-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-            const appointmentRef = doc(db, 'appointments', appointmentId);
-            const appointmentData = {
-              id: appointmentId,
-              appointmentId: row[1] || appointmentId, // Use provided appointment ID or generate new
-              poNumber: poNumber,
-              poId: existingPO.id,
-              vendorName: existingPO.vendorName,
-              appointmentDate: shipmentData.shipmentDate,
-              appointmentTime: '10:00', // Default time
-              location: 'Warehouse', // Default location
-              contactPerson: shipmentData.carrier || 'TBD',
-              notes: `Imported shipment appointment for ${shipmentId}`,
-              status: 'scheduled',
-              purpose: 'delivery',
-              transporterId: '',
-              transporterName: shipmentData.carrier || '',
-              transporterEmail: '',
-              docketNumber: shipmentData.trackingNumber || '',
-              createdBy: getUserDisplayName(user, userData),
-              createdAt: serverTimestamp(),
-              shipmentId: shipmentId // Link to shipment
-            };
-            
-            await setDoc(appointmentRef, appointmentData);
-            console.log('Appointment created for imported shipment:', appointmentId);
-
-            // Log audit event for shipment import
-            const userInfo = getUserInfo(user, userData);
-            await auditService.logEvent(
-              userInfo.uid,
-              userInfo.name,
-              userInfo.role,
-              'create',
-              'shipment',
-              shipmentId,
-              `Shipment ${shipmentId}`,
-              `Imported shipment for PO ${poNumber} (Invoice: ${row[2]})`,
-              undefined,
-              {
-                poNumber: poNumber,
-                appointmentId: row[1],
-                invoiceNumber: row[2],
-                importedAt: new Date().toISOString()
-              }
-            );
-
-            // Add automatic comment to PO
-            try {
-              await commentService.addComment(
-                existingPO.id!,
-                getUserInfo(user, userData),
-                `📦 Shipment imported: ${shipmentId} (Invoice: ${row[2]})`
-              );
-            } catch (commentError) {
-              console.error('Failed to add shipment import comment:', commentError);
-            }
-            
-            result.success++;
-            
-          } catch (error: any) {
-            console.error('Shipment creation error details:', {
-              error: error,
-              message: error.message,
-              stack: error.stack,
-              poNumber: row[0],
-              row: row,
-              shipmentData: shipmentData || 'Not created'
-            });
-            result.errors.push({
-              row: rowNumber,
-              error: error.message || `Failed to create shipment: ${JSON.stringify(error)}`,
-              data: row
-            });
           }
+          
+          // Add line item to shipment
+          const shippedQty = parseInt(row[12]) || 0;
+          const unitPrice = parseFloat(row[13]) || 0;
+          const lineTotal = parseFloat(row[14]) || (shippedQty * unitPrice);
+          
+          shipmentGroups[shipmentKey].lineItems.push({
+            itemName: row[7],
+            barcode: row[8] || '',
+            sku: row[9] || '',
+            size: row[10] || '',
+            shippedQty: shippedQty,
+            unitPrice: unitPrice,
+            total: lineTotal
+          });
+
+          // Don't count success here - will count after shipment is created
         } else if (type === 'appointments') {
           const validation = validateAppointmentData(row);
           
@@ -546,63 +475,44 @@ export default function DataImportExport({ type, isOpen, onClose, onImportComple
             continue;
           }
 
-          try {
-            // Create appointment data
-            const appointmentData = {
-              appointmentId: row[0],
+          const appointmentIdFromRow = row[0];
+          
+          // Group appointment line items by Appointment ID
+          if (!appointmentGroups[appointmentIdFromRow]) {
+            appointmentGroups[appointmentIdFromRow] = {
+              appointmentId: appointmentIdFromRow,
               poNumber: row[1],
               vendorName: row[2],
-              appointmentDate: Timestamp.fromDate(parseDate(row[3])),
+              appointmentDate: parseDate(row[3]),
               appointmentTime: row[4],
               location: row[5],
               purpose: row[6].toLowerCase(),
               status: row[7].toLowerCase(),
               transporterName: row[8] || '',
               docketNumber: row[9] || '',
-              notes: row[10] || '',
-              createdBy: getUserDisplayName(user, userData),
-              createdAt: serverTimestamp()
+              invoiceNumber: row[10] || '',
+              notes: row[19] || '',
+              lineItems: []
             };
-
-            // Generate appointment ID and create directly
-            const appointmentId = `APT-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-            const appointmentRef = doc(db, 'appointments', appointmentId);
-            const appointmentWithId = {
-              ...appointmentData,
-              id: appointmentId
-            };
-            
-            await setDoc(appointmentRef, appointmentWithId);
-            
-            // Log audit event for appointment import
-            const userInfoApt = getUserInfo(user, userData);
-            await auditService.logEvent(
-              userInfoApt.uid,
-              userInfoApt.name,
-              userInfoApt.role,
-              'create',
-              'system',
-              appointmentId,
-              `Appointment ${appointmentData.appointmentId}`,
-              `Imported appointment for PO ${appointmentData.poNumber}`,
-              undefined,
-              {
-                poNumber: appointmentData.poNumber,
-                appointmentId: appointmentData.appointmentId,
-                importedAt: new Date().toISOString()
-              }
-            );
-            
-            result.success++;
-            
-          } catch (error: any) {
-            console.error('Appointment creation error:', error);
-            result.errors.push({
-              row: rowNumber,
-              error: error.message || 'Failed to create appointment',
-              data: row
-            });
           }
+          
+          // Add line item to appointment
+          const appointmentQty = parseInt(row[16]) || 0;
+          const unitPrice = parseFloat(row[17]) || 0;
+          const lineTotal = parseFloat(row[18]) || (appointmentQty * unitPrice);
+          
+          appointmentGroups[appointmentIdFromRow].lineItems.push({
+            itemName: row[11],
+            barcode: row[12] || '',
+            sku: row[13] || '',
+            size: row[14] || '',
+            warehouse: row[15] || 'Main Warehouse',
+            appointmentQty: appointmentQty,
+            unitPrice: unitPrice,
+            total: lineTotal
+          });
+          
+          result.success++;
         }
       }
 
@@ -634,6 +544,167 @@ export default function DataImportExport({ type, isOpen, onClose, onImportComple
               row: 0,
               error: `Failed to create PO ${poNumber}: ${error.message}`,
               data: [poNumber]
+            });
+          }
+        }
+      }
+
+      // Create shipments from grouped data (only for shipment import)
+      if (type === 'shipments') {
+        for (const [shipmentKey, group] of Object.entries(shipmentGroups)) {
+          try {
+            // Calculate total amount
+            const totalAmount = group.lineItems.reduce((sum: number, item: any) => sum + item.total, 0);
+            
+            const shipmentData = {
+              poNumber: group.poNumber,
+              appointmentId: group.appointmentId,
+              invoiceNumber: group.invoiceNumber,
+              shipmentDate: Timestamp.fromDate(group.shipmentDate),
+              status: 'Prepared' as const,
+              createdBy_uid: user.uid,
+              createdBy_name: getUserDisplayName(user, userData),
+              lineItems: group.lineItems,
+              totalAmount: totalAmount,
+              ...(group.expectedDeliveryDate && { expectedDeliveryDate: Timestamp.fromDate(group.expectedDeliveryDate) }),
+              ...(group.carrier && { carrier: group.carrier }),
+              ...(group.trackingNumber && { trackingNumber: group.trackingNumber }),
+              ...(group.notes && { notes: group.notes })
+            };
+
+            // Create shipment using proper service that updates PO sentQty
+            const { createShipment } = await import('@/lib/firestore');
+            const shipmentResult = await createShipment(group.poNumber, shipmentData);
+            
+            console.log('Shipment created successfully:', shipmentResult);
+            
+            // Create appointment for this shipment
+            console.log('🚀 Creating appointment for shipment:', shipmentResult.id);
+            try {
+              const appointmentDocId = `APT-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+              const appointmentRef = doc(db, 'appointments', appointmentDocId);
+              
+              // Get vendor name from PO
+              console.log('Fetching PO data for:', group.poNumber);
+              const existingPOs = await getPOs(user.uid, userData?.role);
+              const relatedPO = existingPOs.find(po => po.poNumber === group.poNumber);
+              console.log('Found PO:', relatedPO?.poNumber, 'Vendor:', relatedPO?.vendorName);
+              
+              const appointmentData = {
+                id: appointmentDocId,
+                appointmentId: group.appointmentId,
+                poNumber: group.poNumber,
+                vendorName: relatedPO?.vendorName || 'Unknown Vendor',
+                appointmentDate: shipmentData.shipmentDate,
+                appointmentTime: '10:00',
+                location: 'Warehouse',
+                purpose: 'delivery',
+                status: 'scheduled',
+                transporterId: '',
+                transporterName: group.carrier || '',
+                transporterEmail: '',
+                transporterPhone: '',
+                docketNumber: group.trackingNumber || '',
+                invoiceNumber: group.invoiceNumber,
+                notes: `Imported shipment appointment for ${shipmentResult.id}`,
+                createdBy: getUserDisplayName(user, userData),
+                createdAt: serverTimestamp(),
+                shipmentId: shipmentResult.id,
+                lineItems: group.lineItems.map((item: any) => ({
+                  itemName: item.itemName,
+                  barcode: item.barcode || '',
+                  sku: item.sku || '',
+                  size: item.size || '',
+                  warehouse: item.warehouse || 'Main Warehouse',
+                  appointmentQty: item.shippedQty,
+                  unitPrice: item.unitPrice,
+                  total: item.total
+                })),
+                totalAmount: totalAmount
+              };
+              
+              console.log('About to create appointment with data:', appointmentData);
+              await setDoc(appointmentRef, appointmentData);
+              console.log('✅ Appointment created successfully:', appointmentDocId);
+              
+              // Update shipment with appointmentDocId
+              try {
+                const shipmentRef = doc(db, 'shipments', shipmentResult.id);
+                await updateDoc(shipmentRef, {
+                  appointmentDocId: appointmentDocId,
+                  appointmentId: group.appointmentId
+                });
+                console.log('✅ Shipment updated with appointment reference');
+              } catch (updateError: any) {
+                console.error('❌ Failed to update shipment with appointment:', updateError);
+              }
+            } catch (appointmentError: any) {
+              console.error('❌ Failed to create appointment for shipment:', appointmentError);
+              console.error('Error message:', appointmentError.message);
+              console.error('Error details:', appointmentError);
+              // Add error to result instead of silently continuing
+              result.errors.push({
+                row: 0,
+                error: `Failed to create appointment for shipment ${shipmentResult.id}: ${appointmentError.message}`,
+                data: [group.poNumber, group.appointmentId]
+              });
+            }
+            
+            result.success++;
+          } catch (error: any) {
+            console.error('🔴 Shipment creation error for', shipmentKey, ':', error);
+            result.errors.push({
+              row: 0,
+              error: `Failed to create shipment ${shipmentKey}: ${error.message || JSON.stringify(error)}`,
+              data: [shipmentKey]
+            });
+          }
+        }
+      }
+
+      // Create appointments from grouped data (only for appointment import)
+      if (type === 'appointments') {
+        for (const [appointmentKey, group] of Object.entries(appointmentGroups)) {
+          try {
+            // Calculate total amount
+            const totalAmount = group.lineItems.reduce((sum: number, item: any) => sum + item.total, 0);
+            
+            const appointmentDataToSave = {
+              appointmentId: group.appointmentId,
+              poNumber: group.poNumber,
+              vendorName: group.vendorName,
+              appointmentDate: Timestamp.fromDate(group.appointmentDate),
+              appointmentTime: group.appointmentTime,
+              location: group.location,
+              purpose: group.purpose,
+              status: group.status,
+              transporterName: group.transporterName,
+              docketNumber: group.docketNumber,
+              invoiceNumber: group.invoiceNumber,
+              notes: group.notes,
+              lineItems: group.lineItems,
+              totalAmount: totalAmount,
+              createdBy: getUserDisplayName(user, userData),
+              createdAt: serverTimestamp()
+            };
+
+            // Generate appointment ID and create directly
+            const appointmentDocId = `APT-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            const appointmentRef = doc(db, 'appointments', appointmentDocId);
+            const appointmentWithId = {
+              ...appointmentDataToSave,
+              id: appointmentDocId
+            };
+            
+            await setDoc(appointmentRef, appointmentWithId);
+            
+            console.log('Appointment created successfully:', appointmentDocId);
+            result.success = result.success + 1;
+          } catch (error: any) {
+            result.errors.push({
+              row: 0,
+              error: `Failed to create appointment ${appointmentKey}: ${error.message}`,
+              data: [appointmentKey]
             });
           }
         }

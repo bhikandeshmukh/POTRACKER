@@ -56,7 +56,7 @@ export default function ComparisonView({ data, period = 'month' }: ComparisonVie
         pendingQuantity: calculateChange(current.pendingQuantity, previous.pendingQuantity),
       }
     };
-  }, [data, period]);
+  }, [data]);
 
   const MetricCard = ({ 
     title, 

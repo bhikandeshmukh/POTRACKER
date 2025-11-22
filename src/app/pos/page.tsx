@@ -9,7 +9,7 @@ import Sidebar from '@/components/Sidebar';
 import EnhancedPOTable from '@/components/EnhancedPOTable';
 import { getPOs, PurchaseOrder } from '@/lib/firestore';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, Download, Search, Filter, RefreshCw } from 'lucide-react';
+import { Plus, Download, Search, Filter, RefreshCw, Package, Truck, CheckCircle, Clock } from 'lucide-react';
 import DataImportExport from '@/components/DataImportExport';
 import AdvancedSearch from '@/components/AdvancedSearch';
 import AdvancedFilters, { FilterConfig } from '@/components/AdvancedFilters';
@@ -201,6 +201,63 @@ export default function PosPage() {
               </Link>
             </div>
           </div>
+
+          {/* PO Summary Cards */}
+          {filteredPOs.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
+              {/* Total Ordered Qty */}
+              <div className={`${getThemeClasses.card()} ${getThemeClasses.cardPadding()} flex items-center gap-3 hover:shadow-md transition-shadow duration-200`}>
+                <div className="p-2 sm:p-2.5 rounded-full bg-blue-50 text-blue-600 flex-shrink-0">
+                  <Package className={getThemeClasses.icon('medium')} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className={`${getThemeClasses.kpiTitle()} truncate`}>Total Ordered Qty</p>
+                  <p className={`${getThemeClasses.kpiValue()} mt-1`}>
+                    {filteredPOs.reduce((sum, po) => sum + po.lineItems.reduce((itemSum, item) => itemSum + item.quantity, 0), 0).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+
+              {/* Sent Qty */}
+              <div className={`${getThemeClasses.card()} ${getThemeClasses.cardPadding()} flex items-center gap-3 hover:shadow-md transition-shadow duration-200`}>
+                <div className="p-2 sm:p-2.5 rounded-full bg-green-50 text-green-600 flex-shrink-0">
+                  <Truck className={getThemeClasses.icon('medium')} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className={`${getThemeClasses.kpiTitle()} truncate`}>Sent Qty</p>
+                  <p className={`${getThemeClasses.kpiValue()} mt-1 text-green-600`}>
+                    {filteredPOs.reduce((sum, po) => sum + po.lineItems.reduce((itemSum, item) => itemSum + (item.sentQty || 0), 0), 0).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+
+              {/* Received Qty */}
+              <div className={`${getThemeClasses.card()} ${getThemeClasses.cardPadding()} flex items-center gap-3 hover:shadow-md transition-shadow duration-200`}>
+                <div className="p-2 sm:p-2.5 rounded-full bg-blue-50 text-blue-600 flex-shrink-0">
+                  <CheckCircle className={getThemeClasses.icon('medium')} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className={`${getThemeClasses.kpiTitle()} truncate`}>Received Qty</p>
+                  <p className={`${getThemeClasses.kpiValue()} mt-1 text-blue-600`}>
+                    {filteredPOs.reduce((sum, po) => sum + po.lineItems.reduce((itemSum, item) => itemSum + (item.receivedQty || 0), 0), 0).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+
+              {/* Pending Qty */}
+              <div className={`${getThemeClasses.card()} ${getThemeClasses.cardPadding()} flex items-center gap-3 hover:shadow-md transition-shadow duration-200`}>
+                <div className="p-2 sm:p-2.5 rounded-full bg-orange-50 text-orange-600 flex-shrink-0">
+                  <Clock className={getThemeClasses.icon('medium')} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className={`${getThemeClasses.kpiTitle()} truncate`}>Pending Qty</p>
+                  <p className={`${getThemeClasses.kpiValue()} mt-1 text-orange-600`}>
+                    {filteredPOs.reduce((sum, po) => sum + po.lineItems.reduce((itemSum, item) => itemSum + (item.pendingQty || (item.quantity - (item.sentQty || 0))), 0), 0).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Empty State */}
           {filteredPOs.length === 0 && pos.length > 0 ? (

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Clock, User, FileText, Edit, Trash, Plus, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { getAuditLogs, AuditLog } from '@/lib/auditLogs';
@@ -31,11 +31,7 @@ export default function VersionHistory({ entityId, entityType, onRestore }: Vers
   const [loading, setLoading] = useState(true);
   const [selectedVersion, setSelectedVersion] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadVersionHistory();
-  }, [entityId]);
-
-  const loadVersionHistory = async () => {
+  const loadVersionHistory = useCallback(async () => {
     setLoading(true);
     
     try {
@@ -63,7 +59,11 @@ export default function VersionHistory({ entityId, entityType, onRestore }: Vers
     } finally {
       setLoading(false);
     }
-  };
+  }, [entityId, entityType]);
+
+  useEffect(() => {
+    loadVersionHistory();
+  }, [entityId, loadVersionHistory]);
 
   const getActionIcon = (action: string) => {
     switch (action) {

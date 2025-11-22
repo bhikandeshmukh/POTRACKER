@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Shield, Save, RotateCcw, Lock, Unlock, AlertCircle, CheckCircle } from 'lucide-react';
 import { 
   RoleType, 
@@ -28,11 +28,7 @@ export default function PermissionsManager() {
   const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
-  useEffect(() => {
-    loadPermissions();
-  }, []);
-
-  const loadPermissions = async () => {
+  const loadPermissions = useCallback(async () => {
     try {
       setLoading(true);
       const allPerms = await getAllRolePermissions();
@@ -54,7 +50,11 @@ export default function PermissionsManager() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showError]);
+
+  useEffect(() => {
+    loadPermissions();
+  }, [loadPermissions]);
 
   const togglePermission = (role: RoleType, permission: Permission) => {
     setRolePermissions(prev => {

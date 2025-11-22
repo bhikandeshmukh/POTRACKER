@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
@@ -26,13 +26,7 @@ export default function NewReturnOrderPage() {
     }
   }, [user, loading, router]);
 
-  useEffect(() => {
-    if (user) {
-      loadPOs();
-    }
-  }, [user]);
-
-  const loadPOs = async () => {
+  const loadPOs = useCallback(async () => {
     try {
       const poList = await getPOs(user?.uid, userData?.role);
       // Only show approved/shipped/received POs
@@ -43,7 +37,13 @@ export default function NewReturnOrderPage() {
     } catch (error) {
       console.error('Error loading POs:', error);
     }
-  };
+  }, [user, userData]);
+
+  useEffect(() => {
+    if (user) {
+      loadPOs();
+    }
+  }, [user, loadPOs]);
 
   const handlePOSelect = (poId: string) => {
     const po = pos.find(p => p.id === poId);

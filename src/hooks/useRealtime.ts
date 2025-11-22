@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { realtimeService } from '@/lib/services';
 import { BaseEntity, QueryOptions } from '@/lib/types';
 
@@ -50,6 +50,8 @@ export function useRealtimeCollection<T extends BaseEntity>(
     }
   }, [subscriptionId]);
 
+  const optionsString = useMemo(() => JSON.stringify(optionsRef.current), [optionsRef.current]);
+
   useEffect(() => {
     if (!enabled) {
       if (subscriptionId) {
@@ -84,7 +86,7 @@ export function useRealtimeCollection<T extends BaseEntity>(
     return () => {
       realtimeService.unsubscribe(subId);
     };
-  }, [collectionName, enabled, JSON.stringify(optionsRef.current)]);
+  }, [collectionName, enabled, subscriptionId, optionsString]);
 
   return {
     data,
@@ -107,6 +109,7 @@ export function useRealtimeDocument<T extends BaseEntity>(
   const [subscriptionId, setSubscriptionId] = useState<string | null>(null);
   
   const { enabled = true } = options;
+  const includeMetadataChanges = options?.includeMetadataChanges ?? false;
 
   const refetch = useCallback(() => {
     if (subscriptionId) {
@@ -153,7 +156,7 @@ export function useRealtimeDocument<T extends BaseEntity>(
     return () => {
       realtimeService.unsubscribe(subId);
     };
-  }, [collectionName, documentId, enabled, options.includeMetadataChanges]);
+  }, [collectionName, documentId, enabled, subscriptionId, includeMetadataChanges]);
 
   return {
     data,
@@ -187,7 +190,7 @@ export function useRealtimeSubscriptions() {
     return () => {
       subscriptions.forEach(id => realtimeService.unsubscribe(id));
     };
-  }, []);
+  }, [subscriptions]);
 
   return {
     subscriptions,

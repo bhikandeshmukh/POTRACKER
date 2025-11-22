@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Search, X, FileText, Users, Package } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { getPOs, getVendors, getAllUsers } from '@/lib/firestore';
@@ -111,7 +111,7 @@ export default function GlobalSearch() {
     }, 300);
 
     return () => clearTimeout(delayedSearch);
-  }, [query]);
+  }, [query, performSearch]);
 
   // Keyboard shortcuts
   useEffect(() => {

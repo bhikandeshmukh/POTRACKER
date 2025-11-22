@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getShipments, Shipment, PurchaseOrder, ShipmentLineItem } from '@/lib/firestore';
 import { shipmentService } from '@/lib/services';
@@ -49,18 +49,18 @@ export default function ShipmentManagement({ po, onUpdate }: ShipmentManagementP
   const [selectedShipment, setSelectedShipment] = useState<Shipment | null>(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    loadShipments();
-  }, [po.poNumber]);
-
-  const loadShipments = async () => {
+  const loadShipments = useCallback(async () => {
     try {
       const shipmentList = await getShipments(po.poNumber);
       setShipments(shipmentList);
     } catch (error) {
       console.error('Error loading shipments:', error);
     }
-  };
+  }, [po.poNumber]);
+
+  useEffect(() => {
+    loadShipments();
+  }, [po.poNumber, loadShipments]);
 
   const canCreateShipment = userData?.role === 'Manager' || userData?.role === 'Admin';
   const canUpdateShipment = userData?.role === 'Manager' || userData?.role === 'Admin';
@@ -116,7 +116,7 @@ export default function ShipmentManagement({ po, onUpdate }: ShipmentManagementP
                 </div>
               </div>
               
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
                 <div>
                   <span className="text-gray-600">Invoice:</span>
                   <span className="ml-1 font-mono">{shipment.invoiceNumber}</span>
@@ -124,6 +124,10 @@ export default function ShipmentManagement({ po, onUpdate }: ShipmentManagementP
                 <div>
                   <span className="text-gray-600">Ship Date:</span>
                   <span className="ml-1">{format(shipment.shipmentDate.toDate(), 'MMM dd, yyyy')}</span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Total Qty:</span>
+                  <span className="ml-1 font-medium">{shipment.lineItems.reduce((sum, item) => sum + (item.shippedQty || 0), 0).toLocaleString()}</span>
                 </div>
                 <div>
                   <span className="text-gray-600">Items:</span>
@@ -328,44 +332,98 @@ function CreateShipmentModal({ po, isOpen, onClose, onSuccess }: {
         shipmentData.notes = formData.notes;
       }
 
-      // Generate shipment ID and create directly
-      const shipmentId = `SHP-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      const shipmentRef = doc(db, 'shipments', shipmentId);
-      const shipmentWithId = {
-        ...shipmentData,
-        id: shipmentId,
-        poNumber: po.poNumber,
-        createdAt: serverTimestamp() as Timestamp,
-      };
-      
-      await setDoc(shipmentRef, shipmentWithId);
+      // Create shipment using proper service that updates PO sentQty
+      console.log('📦 Creating shipment...');
+      let shipmentId;
+      try {
+        const { createShipment } = await import('@/lib/firestore');
+        const shipmentResult = await createShipment(po.poNumber, shipmentData);
+        shipmentId = shipmentResult.id;
+        console.log('✅ Shipment created with ID:', shipmentId);
+      } catch (shipmentError: any) {
+        console.error('❌ Shipment creation failed:', shipmentError);
+        throw shipmentError; // Re-throw to stop execution
+      }
 
       // Create appointment for this shipment
-      const appointmentId = `APT-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      const appointmentRef = doc(db, 'appointments', appointmentId);
+      console.log('🚀 Starting appointment creation process...');
+      console.log('formData.appointmentId:', formData.appointmentId);
+      
+      const appointmentDocId = `APT-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const appointmentRef = doc(db, 'appointments', appointmentDocId);
+      
+      // Ensure we have a valid appointment ID
+      const validAppointmentId = formData.appointmentId || appointmentDocId;
+      console.log('Creating appointment with ID:', validAppointmentId);
+      console.log('Firestore document ID:', appointmentDocId);
+      
       const appointmentData = {
-        id: appointmentId,
-        appointmentId: formData.appointmentId || appointmentId,
+        id: appointmentDocId,
+        appointmentId: validAppointmentId, // Use the user-entered appointment ID or fallback
         poNumber: po.poNumber,
         poId: po.id,
         vendorName: po.vendorName,
-        appointmentDate: shipmentData.shipmentDate,
+        appointmentDate: shipmentData.shipmentDate, // This is already a Timestamp
         appointmentTime: '10:00', // Default time
         location: 'Warehouse', // Default location
-        contactPerson: formData.carrier || 'TBD',
-        notes: `Shipment appointment for ${shipmentId}`,
-        status: 'scheduled',
         purpose: 'delivery',
+        status: 'scheduled',
         transporterId: '',
         transporterName: formData.carrier || '',
         transporterEmail: '',
+        transporterPhone: '',
         docketNumber: formData.trackingNumber || '',
+        invoiceNumber: formData.invoiceNumber || '',
+        notes: `Shipment appointment for ${shipmentId}`,
         createdBy: getUserDisplayName(user, userData),
         createdAt: serverTimestamp(),
-        shipmentId: shipmentId // Link to shipment
+        shipmentId: shipmentId, // Link to shipment
+        lineItems: itemsToShip.map(item => ({
+          itemName: item.itemName,
+          barcode: item.barcode || '',
+          sku: item.sku || '',
+          size: item.size || '',
+          warehouse: 'Main Warehouse', // Default warehouse
+          appointmentQty: item.shippedQty,
+          unitPrice: item.unitPrice,
+          total: item.total
+        })),
+        totalAmount: totalAmount
       };
       
-      await setDoc(appointmentRef, appointmentData);
+      let appointmentCreated = false;
+      try {
+        console.log('About to create appointment with data:', appointmentData);
+        await setDoc(appointmentRef, appointmentData);
+        console.log('✅ Appointment created successfully in Firestore:', appointmentDocId);
+        appointmentCreated = true;
+        alert(`Appointment ${validAppointmentId} created successfully!`);
+      } catch (appointmentError: any) {
+        console.error('❌ Failed to create appointment:', appointmentError);
+        console.error('Error message:', appointmentError.message);
+        console.error('Error stack:', appointmentError.stack);
+        console.error('Appointment data that failed:', appointmentData);
+        alert(`❌ Failed to create appointment: ${appointmentError.message || appointmentError}`);
+        // Continue with shipment creation even if appointment fails
+      }
+      
+      // Update shipment with appointmentDocId if appointment was created successfully
+      if (appointmentCreated) {
+        try {
+          console.log('📝 Updating shipment with appointmentDocId:', appointmentDocId);
+          const { updateDoc } = await import('firebase/firestore');
+          const shipmentRef = doc(db, 'shipments', shipmentId);
+          await updateDoc(shipmentRef, {
+            appointmentDocId: appointmentDocId,
+            appointmentId: validAppointmentId
+          });
+          console.log('✅ Shipment updated with appointment reference');
+        } catch (updateError: any) {
+          console.error('❌ Failed to update shipment with appointment:', updateError);
+        }
+      }
+      
+      console.log('✅ Appointment creation process completed');
 
       // Log audit event for shipment creation
       const userInfo = getUserInfo(user, userData);
@@ -399,7 +457,11 @@ function CreateShipmentModal({ po, isOpen, onClose, onSuccess }: {
         console.error('Failed to add shipment comment:', commentError);
       }
 
-      showSuccess('Success', 'Shipment created successfully');
+      console.log('🎉 All operations completed successfully');
+      showSuccess('Success', 'Shipment and appointment created successfully');
+      
+      // Small delay before closing to see logs
+      await new Promise(resolve => setTimeout(resolve, 1000));
       onSuccess();
     } catch (error) {
       console.error('Error creating shipment:', error);
