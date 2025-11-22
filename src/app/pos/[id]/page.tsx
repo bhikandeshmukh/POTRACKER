@@ -144,6 +144,14 @@ export default function PoDetailPage() {
   }, [resizing, handleMouseMove, handleMouseUp]);
 
   // REGULAR FUNCTIONS AFTER ALL HOOKS
+  /****
+  * Synchronizes the purchase order status by sending the update request and optionally prompting for rejection reasons.
+  * @example
+  * sync('Approved')
+  * undefined
+  * @param {{PurchaseOrder['status']}} {{status}} - Status to which the purchase order should be updated.
+  * @returns {{Promise<void>}} Promise resolving once the update request has finished.
+  ****/
   const handleStatusUpdate = async (status: PurchaseOrder['status']) => {
     if (!po || !user || !userData) return;
     
@@ -228,6 +236,15 @@ export default function PoDetailPage() {
     setShowAllRows(false);
   };
 
+  /**
+  * Computes inline styles for a table cell for the specified column.
+  * @example
+  * functionName('price', 'right')
+  * { height: '32px', lineHeight: '22px', width: 120, maxWidth: 120, textAlign: 'right' }
+  * @param {{string}} {{columnKey}} - Key of the column to derive width and base styles.
+  * @param {{'left'|'right'|'center'}} {{textAlign}} - Desired horizontal text alignment.
+  * @returns {{height: string, lineHeight: string, width: number, maxWidth: number, textAlign: 'left'|'right'|'center'}} Return styles for the column cell.
+  **/
   const getCellStyle = (columnKey: string, textAlign: 'left' | 'right' | 'center' = 'left') => {
     const column = columns.find(c => c.key === columnKey);
     const width = columnWidths[columnKey] || column?.minWidth || 100;

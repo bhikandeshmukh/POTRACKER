@@ -13,6 +13,15 @@ export class UserService extends BaseService<User> {
     return email.replace(/[@.]/g, '-'); 
  }
 
+  /**
+  * Creates a new user in Firebase Auth, persists the user document, and logs an audit event.
+  * @example
+  * createUser({ email: 'user@example.com', password: 'securePass', name: 'User Name', role: 'member' }, { uid: 'adminUid', name: 'Admin', role: 'admin' })
+  * { success: true }
+  * @param {{CreateUserForm}} userData - Payload containing the new user details.
+  * @param {{{ uid: string; name: string; role: string }}} createdBy - Metadata about the actor creating the user.
+  * @returns {{Promise<{success: boolean; error?: string}>}} Promise resolving to the operation result.
+  **/
   async createUser(
     userData: CreateUserForm,
     createdBy: { uid: string; name: string; role: string }
@@ -66,6 +75,16 @@ export class UserService extends BaseService<User> {
     }
   }
 
+  /*******************************************
+  * Updates a user record by id, auditing changes and logging the update event.
+  * @example
+  * updateUser("user-123", { name: "Jane Doe" }, { uid: "admin-1", name: "Admin", role: "administrator" })
+  * { success: true, data: { ... }, error: undefined }
+  * @param {{string}} {{id}} - Unique identifier of the user to update.
+  * @param {{Partial<User>}} {{updateData}} - Partial user data containing fields to update.
+  * @param {{{uid: string; name: string; role: string}}} {{updatedBy}} - Operator metadata for auditing the change.
+  * @returns {{Promise<{success: boolean; data?: User; error?: string}>}} Result of the update operation indicating success or error details.
+  *******************************************/
   async updateUser(
     id: string,
     updateData: Partial<User>,
@@ -118,6 +137,15 @@ export class UserService extends BaseService<User> {
     }
   }
 
+  /**
+  * Deletes a user by ID, logs the action, and returns the deletion result.
+  * @example
+  * deleteUser('123', { uid: 'u1', name: 'Admin', role: 'admin' })
+  * { success: true }
+  * @param {{string}} id - ID of the user to delete.
+  * @param {{{ uid: string; name: string; role: string }}} deletedBy - Metadata about who initiated the deletion.
+  * @returns {{Promise<{success: boolean; error?: string}>}} Promise resolving with the deletion result.
+  **/
   async deleteUser(
     id: string,
     deletedBy: { uid: string; name: string; role: string }
@@ -165,6 +193,14 @@ export class UserService extends BaseService<User> {
     });
   }
 
+  /**/ **
+  * Searches users by name or email, returning the filtered subset of users.
+  * @example
+  * searchUsers("alice")
+  * { success: true, data: { data: [{ id: 1, name: "Alice", ... }], total: 1 } }
+  * @param {{string}} {{searchTerm}} - Term used to match against user name or email.
+  * @returns {{Promise<{success: boolean, data: { data: Array<any>, total: number, [key: string]: any }}|{success: boolean, error?: any}>>}} Promise resolving with filtered users or the original result.
+  **/*/
   async searchUsers(searchTerm: string) {
     const result = await this.findMany();
     

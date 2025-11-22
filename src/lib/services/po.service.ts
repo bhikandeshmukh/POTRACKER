@@ -19,6 +19,17 @@ export class POService extends BaseService<PurchaseOrder> {
     return poNumber.replace(/[^a-zA-Z0-9]/g, '-');
   }
 
+  /**
+  * Creates a purchase order, logs an audit event for successful creation, and handles errors centrally.
+  * @example
+  * createPO(formData, { uid: 'u1', name: 'Alice', role: 'manager' }, 'Acme Supplies', 'PO-2025-001')
+  * { success: true }
+  * @param {{CreatePOForm}} {{formData}} - Form data used to construct the purchase order.
+  * @param {{{ uid: string; name: string; role: string }}} {{createdBy}} - User metadata performing the creation.
+  * @param {{string}} {{vendorName}} - Name of the vendor associated with the purchase order.
+  * @param {{string}} {{customPONumber}} - Optional custom purchase order number.
+  * @returns {{Promise<{success: boolean; error?: string}>}} Promise resolving with the creation result.
+  **/
   async createPO(
     formData: CreatePOForm,
     createdBy: { uid: string; name: string; role: string },
@@ -88,6 +99,17 @@ export class POService extends BaseService<PurchaseOrder> {
     }
   }
 
+  /*****
+  * Updates the status of a purchase order, logs the change, and optionally comments on significant transitions.
+  * @example
+  * updateStatus('PO123', 'Approved', { uid: 'u1', name: 'Alex', role: 'approver' }, 'Reviewed and approved')
+  * { success: true, data: {...} }
+  * @param {{string}} id - Identifier of the purchase order to update.
+  * @param {{PurchaseOrder['status']}} status - Target status to set on the purchase order.
+  * @param {{{ uid: string; name: string; role: string }}} updatedBy - User information for who is performing the update.
+  * @param {{string}} reason - Optional reason describing why the status is being changed.
+  * @returns {{Promise<{ success: boolean; data?: PurchaseOrder; error?: string; }}} Result of the update operation, including success flag and any data or error details.
+  ******/
   async updateStatus(
     id: string,
     status: PurchaseOrder['status'],
@@ -173,6 +195,16 @@ export class POService extends BaseService<PurchaseOrder> {
     }
   }
 
+  /**
+  * Retrieves purchase orders for a user, optionally filtered by creator when the user is an employee.
+  * @example
+  * getPOsForUser('user123', 'Employee', 20)
+  * [{ orderId: 'PO1', ... }]
+  * @param {{string}} {{userId}} - The unique identifier of the user requesting purchase orders.
+  * @param {{string}} {{role}} - The role of the user, influencing whether the results are filtered by creator.
+  * @param {{number}} {{limitCount}} - Maximum number of purchase orders to return; defaults to 50.
+  * @returns {{Array}} Array of purchase orders matching the query criteria.
+  **/
   async getPOsForUser(userId: string, role: string, limitCount: number = 50) {
     if (role === 'Employee') {
       return this.findMany({
@@ -190,6 +222,16 @@ export class POService extends BaseService<PurchaseOrder> {
     }
   }
 
+  /**
+   * Searches a user’s purchase orders by PO number or vendor name.
+   * @example
+   * searchPOs('widget', 'user123', 'Admin')
+   * {success: true, data: {...}}
+   * @param {{string}} {{searchTerm}} - Term to match against PO numbers and vendor names.
+   * @param {{string}} {{userId}} - Optional user identifier to scope the search.
+   * @param {{string}} {{role}} - Optional role to determine access; defaults to Admin when not provided.
+   * @returns {{object}} Search result containing filtered POs and metadata.
+   **/
   async searchPOs(searchTerm: string, userId?: string, role?: string) {
     // Note: Firestore doesn't support full-text search natively
     // This is a simplified implementation - consider using Algolia or similar for production

@@ -107,6 +107,14 @@ export class ErrorHandler {
     };
   }
 
+  /**
+  * Returns a localized message suitable for displaying to the user based on the supplied error.
+  * @example
+  * getUserMessage(new Error('Invalid input'))
+  * 'Invalid input. Please check your data and try again.'
+  * @param {Error | AppError} error - Error object that may originate from application logic or third-party libraries.
+  * @returns {string} Returns a friendly message describing the error circumstances or a default fallback.
+  **/
   static getUserMessage(error: Error | AppError): string {
     const handled = this.handle(error);
     

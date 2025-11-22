@@ -85,6 +85,14 @@ export default function TransportersPage() {
     }
   }, [user, loadTransporters]);
 
+  /****
+  * Handles the submission of the transporter form by validating input, creating a transporter, and refreshing the list.
+  * @example
+  * sync(event)
+  * undefined
+  * @param {{React.FormEvent}} {{e}} - The form event triggered by submission.
+  * @returns {{Promise<void>}} Void promise resolved after processing the form submission.
+  ****/
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -110,6 +118,14 @@ export default function TransportersPage() {
     setFormData(transporter);
   };
 
+  /**
+  * Synchronizes transporter data by updating the transporter form and refreshing the list.
+  * @example
+  * sync('transporterId123')
+  * undefined
+  * @param {{string}} {{transporterId}} - Identifier of the transporter to synchronize.
+  * @returns {{Promise<void>}} Promise resolving when the transporter update process completes.
+  **/
   const handleUpdate = async (transporterId: string) => {
     try {
       await updateTransporter(transporterId, formData, user?.uid || undefined, user?.email || undefined);
@@ -123,6 +139,15 @@ export default function TransportersPage() {
     }
   };
 
+  /**
+  * Prompts for confirmation before deleting the specified transporter and refreshes the transporter list on success.
+  * @example
+  * sync('transporter123', 'Acme Transport')
+  * undefined
+  * @param {{string}} {{transporterId}} - The ID of the transporter to delete.
+  * @param {{string}} {{transporterName}} - The name of the transporter to display in the confirmation dialog and messages.
+  * @returns {{Promise<void>}} Completes after attempting to delete the transporter, showing success or error feedback.
+  **/
   const handleDelete = async (transporterId: string, transporterName: string) => {
     if (confirm(`Are you sure you want to delete "${transporterName}"?`)) {
       try {
@@ -136,6 +161,13 @@ export default function TransportersPage() {
     }
   };
 
+  /**
+  * Resets transporter form state to default empty values.
+  * @example
+  * resetTransporterForm()
+  * undefined
+  * @returns {void} Undefined since the function only updates form state.
+  **/
   const resetForm = () => {
     setFormData({
       name: '',
@@ -163,6 +195,14 @@ export default function TransportersPage() {
     setExpandedTransporters(newExpanded);
   };
 
+  /**
+  * Initializes the warehouse form state for the given transporter identifier.
+  * @example
+  * openWarehouseForm('transporter-123')
+  * undefined
+  * @param {{string}} transporterId - Identifier of the transporter to associate the new warehouse with.
+  * @returns {{void}} Indicates that no value is returned.
+  **/
   const handleAddWarehouse = (transporterId: string) => {
     setShowWarehouseForm(transporterId);
     setWarehouseFormData({
@@ -178,6 +218,14 @@ export default function TransportersPage() {
     });
   };
 
+  /**
+  * Adds a new warehouse to the selected transporter and refreshes the transporter list.
+  * @example
+  * sync('transporter123')
+  * undefined
+  * @param {{string}} transporterId - Unique identifier of the transporter to update.
+  * @returns {{Promise<void>}} Promise that resolves once the warehouse has been added and related updates run.
+  **/
   const handleWarehouseSubmit = async (transporterId: string) => {
     try {
       const transporter = transporters.find(t => t.id === transporterId);
@@ -203,6 +251,15 @@ export default function TransportersPage() {
     }
   };
 
+  /**
+  * Prompts for confirmation and deletes the specified warehouse from the transporter if confirmed.
+  * @example
+  * sync('transporter123', 'warehouse456')
+  * undefined
+  * @param {{string}} transporterId - Transporter identifier whose warehouse should be removed.
+  * @param {{string}} warehouseId - Identifier of the warehouse to delete.
+  * @returns {{Promise<void>}} Resolves when the deletion process and related updates complete.
+  **/
   const handleDeleteWarehouse = async (transporterId: string, warehouseId: string) => {
     if (confirm('Are you sure you want to delete this warehouse?')) {
       try {

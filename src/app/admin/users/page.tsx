@@ -9,6 +9,14 @@ import { getAllUsers, createUser, updateUser, deleteUser, User } from '@/lib/fir
 import { Plus, User as UserIcon, Edit, Trash2, Save, X } from 'lucide-react';
 import { getThemeClasses } from '@/styles/theme';
 
+/**
+* Renders the admin users management interface with list, creation form, and action controls.
+* @example
+* UsersManagementPage()
+* <div>...</div>
+* @param {void} none - No parameters are required for this component.
+* @returns {JSX.Element} A fully interactive users management page for administrators.
+**/
 export default function UsersManagementPage() {
   const { user, userData, loading } = useAuth();
   const router = useRouter();
@@ -41,6 +49,14 @@ export default function UsersManagementPage() {
     }
   }, [user, userData]);
 
+  /**
+  * Loads users, handles state updates, and logs the process, ensuring loading flag is cleared.
+  * @example
+  * sync()
+  * undefined
+  * @param {{}} none - No arguments are required.
+  * @returns {Promise<void>} Resolves after users are loaded and state is updated.
+  **/
   const loadUsers = async () => {
     try {
       console.log('Loading users...');
@@ -54,6 +70,14 @@ export default function UsersManagementPage() {
     }
   };
 
+  /**
+  * Handles form submission to create a new user and refresh users list.
+  * @example
+  * sync(event)
+  * undefined
+  * @param {{React.FormEvent}} {{e}} - Form event triggered by submitting the new user form.
+  * @returns {{void}} No return value.
+  **/
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {

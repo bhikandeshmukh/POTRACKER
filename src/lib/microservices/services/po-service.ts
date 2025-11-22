@@ -5,6 +5,14 @@ import { PurchaseOrder, CreatePOForm } from '../../types';
 import { logger } from '../../logger';
 
 export class POMicroservice extends BaseMicroservice {
+  /**
+  * Initializes the PoService with its retry policy and circuit breaker configuration.
+  * @example
+  * new PoService()
+  * undefined
+  * @param {{}} [config] - No arguments required.
+  * @returns {{void}} Instantiates the service with the predefined configuration.
+  **/
   constructor() {
     const config: ServiceConfig = {
       name: 'po-service',
@@ -26,6 +34,13 @@ export class POMicroservice extends BaseMicroservice {
     super(config);
   }
 
+  /**
+  * Initializes the PO microservice by registering health checks and event handlers.
+  * @example
+  * initialize()
+  * undefined
+  * @returns {Promise<void>} Promise that resolves when initialization completes.
+  **/
   async initialize(): Promise<void> {
     logger.debug('Initializing PO Microservice');
     
@@ -59,6 +74,14 @@ export class POMicroservice extends BaseMicroservice {
     // Cleanup resources if needed
   }
 
+  /**
+  * Handles PO service requests by routing to the appropriate endpoint handler and normalizing errors.
+  * @example
+  * handleRequest({ method: 'GET', endpoint: '/pos', data: null, params: {} })
+  * { success: true, data: [] }
+  * @param {{ServiceRequest<T>}} {{request}} - The request payload describing method, endpoint, data, and params.
+  * @returns {{Promise<ServiceResponse<T>>}} Normalized service response including success flag and any data or error details.
+  **/
   async handleRequest<T>(request: ServiceRequest<T>): Promise<ServiceResponse<T>> {
     const { method, endpoint, data, params } = request;
 
@@ -106,6 +129,16 @@ export class POMicroservice extends BaseMicroservice {
   }
 
   // Endpoint handlers
+  /**
+  * Handles purchase order endpoint requests with appropriate HTTP methods.
+  * @example
+  * handlePOsEndpoint('GET', null, { limit: 10 })
+  * { success: true, data: [...] }
+  * @param {{string}} method - HTTP method for the /pos endpoint.
+  * @param {{any}} data - Payload data for POST requests.
+  * @param {{any}} params - Query parameters for GET requests.
+  * @returns {{Promise<ServiceResponse<any>>}} Service response indicating success, failure, or error details.
+  **/
   private async handlePOsEndpoint(
     method: string, 
     data: any, 
@@ -128,6 +161,16 @@ export class POMicroservice extends BaseMicroservice {
     }
   }
 
+  /**
+  * Handles a single PO request for the specified HTTP method.
+  * @example
+  * handleSinglePO('GET', 'po-123', null)
+  * { success: true, data: {...} }
+  * @param {{string}} {{method}} - HTTP method to execute for the PO.
+  * @param {{string}} {{poId}} - Identifier of the purchase order.
+  * @param {{any}} {{data}} - Payload for PUT or DELETE requests.
+  * @returns {{Promise<ServiceResponse<any>>}} Result of the requested PO operation.
+  **/
   private async handleSinglePO(
     method: string, 
     poId: string, 
@@ -152,6 +195,14 @@ export class POMicroservice extends BaseMicroservice {
     }
   }
 
+  /**
+  * Handles creation of a purchase order by validating input, invoking legacy service, and publishing events.
+  * @example
+  * handleCreatePO({ poData: { sku: '123' }, userContext: { userId: 'u-1' } })
+  * { success: true, data: { id: 'po-1', poNumber: 'PO-001' } }
+  * @param {{any}} {{data}} - Payload containing poData, userContext, and optional vendor information.
+  * @returns {{Promise<ServiceResponse<PurchaseOrder>>}} Returns the converted service response for the purchase order creation.
+  **/
   private async handleCreatePO(data: any): Promise<ServiceResponse<PurchaseOrder>> {
     if (!data || !data.poData || !data.userContext) {
       return {
@@ -185,6 +236,14 @@ export class POMicroservice extends BaseMicroservice {
     return this.convertApiResponse(result);
   }
 
+  /**
+   * Handles searching purchase orders by delegating to legacy service and converting the response.
+   * @example
+   * handleSearchPOs({ searchTerm: 'order123', userId: 'user1', role: 'admin' })
+   * { success: true, data: [...] }
+   * @param {{any}} {{params}} - Parameters containing searchTerm, userId, and role for the query.
+   * @returns {{Promise<ServiceResponse<any>>}} Converted service response with the search results.
+   */
   private async handleSearchPOs(params: any): Promise<ServiceResponse<any>> {
     const { searchTerm, userId, role } = params;
     
@@ -203,6 +262,13 @@ export class POMicroservice extends BaseMicroservice {
     return this.convertApiResponse(result);
   }
 
+  /**
+  * Computes purchase order statistics from legacy service data.
+  * @example
+  * this.handlePOStats()
+  * { success: true, data: { total: 5, byStatus: { OPEN: 2, CLOSED: 3 }, totalAmount: 15000 } }
+  * @returns {Promise<ServiceResponse<any>>} Aggregated counts and amounts grouped by purchase order status.
+  **/
   private async handlePOStats(): Promise<ServiceResponse<any>> {
     // Since getPOStats doesn't exist, let's create a basic stats implementation
     const result = await legacyPOService.findMany({ limit: 1000 });
@@ -227,6 +293,14 @@ export class POMicroservice extends BaseMicroservice {
     };
   }
 
+  /**
+  * Retrieves purchase orders either for a specific user or based on provided query filters in one call.
+  * @example
+  * getPOs({ userId: '123', role: 'manager', limit: 10 })
+  * { success: true, data: [...] }
+  * @param {{any}} params - Parameters including optional userId, role, limit, status, and vendorId.
+  * @returns {{Promise<ServiceResponse<any>>}} Service response containing purchase order data.
+  **/
   private async getPOs(params: any): Promise<ServiceResponse<any>> {
     const { userId, role, limit, status, vendorId } = params;
     
@@ -253,6 +327,15 @@ export class POMicroservice extends BaseMicroservice {
     return this.convertApiResponse(result);
   }
 
+  /**
+  * Updates a purchase order, handling status changes specially and publishing related events.
+  * @example
+  * updatePO('po123', { updates: { status: 'APPROVED' }, userContext: 'user1', reason: 'reviewed' })
+  * { success: true, data: { ... } }
+  * @param {{string}} poId - Identifier for the purchase order to update.
+  * @param {{any}} data - Payload containing updates, user context, and optional reason.
+  * @returns {{ServiceResponse<PurchaseOrder>}} Service response containing the updated purchase order.
+  **/
   private async updatePO(poId: string, data: any): Promise<ServiceResponse<PurchaseOrder>> {
     if (!data.updates || !data.userContext) {
       return {
@@ -303,6 +386,15 @@ export class POMicroservice extends BaseMicroservice {
     return this.convertApiResponse(result);
   }
 
+  /****
+  * Deletes a purchase order and optionally publishes a delete event when successful.
+  * @example
+  * deletePO('abc123', { userContext: 'user-1' })
+  * { success: true }
+  * @param {{string}} {poId} - ID of the purchase order to delete.
+  * @param {{any}} {data} - Payload containing required context for deletion.
+  * @returns {{Promise<ServiceResponse<void>>}} Promise resolving to the service response for the deletion request.
+  ****/
   private async deletePO(poId: string, data: any): Promise<ServiceResponse<void>> {
     if (!data.userContext) {
       return {
@@ -329,6 +421,14 @@ export class POMicroservice extends BaseMicroservice {
   }
 
   // Event handlers
+  /**
+  * Handles purchase order status change events and triggers follow-up actions.
+  * @example
+  * handlePOStatusChanged({ data: { poId: 'PO123', newStatus: 'Approved', vendorId: 'VEND1' }})
+  * undefined
+  * @param {{any}} event - Event payload containing PO status and related metadata.
+  * @returns {{Promise<void>}} Promise resolved once the status change has been processed.
+  **/
   private async handlePOStatusChanged(event: any): Promise<void> {
     logger.debug(`Handling PO status change event: ${event.data.poId}`);
     
@@ -378,6 +478,14 @@ export class POMicroservice extends BaseMicroservice {
   }
 
   // Helper method to convert ApiResponse to ServiceResponse
+  /**
+  * Maps a raw API response into the internal ServiceResponse format.
+  * @example
+  * convertApiResponse({ success: true, data: { id: 1 } })
+  * { success: true, data: { id: 1 } }
+  * @param {{any}} apiResponse - API response object containing success flag and payload or error details.
+  * @returns {{ServiceResponse<T>}} Standardized service response wrapping success data or error details.
+  **/
   private convertApiResponse<T>(apiResponse: any): ServiceResponse<T> {
     if (apiResponse.success) {
       return {

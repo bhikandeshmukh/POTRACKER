@@ -19,6 +19,17 @@ export class CommentService extends BaseService<Comment> {
     return mentions;
   }
 
+  /**
+  * Creates and persists a comment for a purchase order while capturing mentions and logging an audit event.
+  * @example
+  * addComment('PO123', { uid: 'user1', name: 'Casey', role: 'editor' }, 'Looks good to me', 'parent123')
+  * { success: true, data: { id: 'c1', ... } }
+  * @param {{string}} poId - Purchase order identifier to which the comment belongs.
+  * @param {{uid: string; name: string; role: string}} user - Metadata describing the comment author.
+  * @param {{string}} content - Text content of the comment, possibly including mentions.
+  * @param {{string}} parentId - Optional identifier of the parent comment when replying to another comment.
+  * @returns {{Promise<{ success: boolean; data?: Comment; error?: string }›}} Promise resolving to the result of the comment creation attempt.
+  **/
   async addComment(
     poId: string,
     user: { uid: string; name: string; role: string },
@@ -78,6 +89,14 @@ export class CommentService extends BaseService<Comment> {
     }
   }
 
+  /**
+  * Fetches comments for a given purchase order, trying an ordered query and falling back to client-side sorting if necessary.
+  * @example
+  * getCommentsForPO('abc123')
+  * { success: true, data: { data: [...], total: N, page: 1, limit: N, hasMore: false } }
+  * @param {{string}} poId - Identifier of the purchase order to retrieve comments for.
+  * @returns {{Promise<{success: boolean, data?: {data: Comment[], total: number, page: number, limit: number, hasMore: boolean}, error?: string}>}} Return object indicating success with paginated comment data or failure with an error message.
+  **/
   async getCommentsForPO(poId: string) {
     try {
       // First try with orderBy (requires composite index)
@@ -154,6 +173,16 @@ export class CommentService extends BaseService<Comment> {
     }
   }
 
+  /**
+  * Updates a comment, marks it as edited, and logs the audit event for the updater.
+  * @example
+  * updateComment('c1', 'Updated comment', { uid: 'user1', name: 'Alice', role: 'admin' })
+  * { success: true }
+  * @param {{string}} {{commentId}} - ID of the comment being updated.
+  * @param {{string}} {{content}} - New content to save in the comment.
+  * @param {{{ uid: string; name: string; role: string }}} {{user}} - User performing the update for audit logging.
+  * @returns {{Promise<{ success: boolean; error?: string }}} Result of the update attempt.
+  **/
   async updateComment(
     commentId: string,
     content: string,
@@ -188,6 +217,15 @@ export class CommentService extends BaseService<Comment> {
     }
   }
 
+  /**
+  * Deletes a comment and logs an audit event when successful.
+  * @example
+  * deleteComment('comment123', { uid: 'user1', name: 'Jane', role: 'admin' })
+  * { success: true }
+  * @param {{type: string}} commentId - ID of the comment to delete.
+  * @param {{uid: string; name: string; role: string}} user - User performing the deletion.
+  * @returns {{success: boolean; error?: string}} Result of the delete attempt.
+  **/
   async deleteComment(
     commentId: string,
     user: { uid: string; name: string; role: string }
@@ -218,6 +256,16 @@ export class CommentService extends BaseService<Comment> {
     }
   }
 
+  /**
+  * Synchronizes a user's like state for a given comment.
+  * @example
+  * likeComment('commentId123', 'userId456', true)
+  * { success: true, data: { likes: ['userId456'] } }
+  * @param {{string}} {{commentId}} - The identifier of the comment to adjust likes for.
+  * @param {{string}} {{userId}} - The identifier of the user toggling the like.
+  * @param {{boolean}} {{isLiking}} - Whether the user is liking (true) or unliking (false) the comment.
+  * @returns {{Promise<{success: boolean, error?: string, data?: any}>>}} The result of updating the comment’s likes, including errors if any.
+  **/
   async likeComment(commentId: string, userId: string, isLiking: boolean) {
     try {
       const currentResult = await this.findById(commentId);

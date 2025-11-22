@@ -53,6 +53,15 @@ export class ErrorTrackingService {
   }
 
   // Determine error severity
+  /**
+  * Determine the severity level of an error based on its message and operation context.
+  * @example
+  * determineSeverity(new Error('Database connection failed'), {operation: 'updateRecord'})
+  * 'critical'
+  * @param {{Error}} {{error}} - The error object to evaluate for severity clues.
+  * @param {{ErrorContext}} {{context}} - Context containing the operation that triggered the error.
+  * @returns {{'low' | 'medium' | 'high' | 'critical'}} The assessed severity level for the error.
+  **/
   private determineSeverity(error: Error, context: ErrorContext): 'low' | 'medium' | 'high' | 'critical' {
     const message = error.message?.toLowerCase() || '';
     const operation = context.operation.toLowerCase();
@@ -77,6 +86,15 @@ export class ErrorTrackingService {
   }
 
   // Extract tags from error and context
+  /**
+  * Builds tags from the error and context for tracking purposes.
+  * @example
+  * extractTags(new Error('Network timeout occurred'), {service: 'payment', operation: 'charge', userRole: 'admin'})
+  * ['service:payment', 'operation:charge', 'network', 'timeout', 'role:admin']
+  * @param {{Error}} error - The error whose message is inspected for keywords.
+  * @param {{ErrorContext}} context - Metadata containing service, operation, and optional user role.
+  * @returns {{string[]}} The list of tags derived from the error and context.
+  **/
   private extractTags(error: Error, context: ErrorContext): string[] {
     const tags: string[] = [];
     const message = error.message?.toLowerCase() || '';
@@ -102,6 +120,15 @@ export class ErrorTrackingService {
   }
 
   // Track an error
+  /**
+  * Records or updates an error occurrence with context and notifies callbacks.
+  * @example
+  * rackError(new Error('Test'), { userId: '123' })
+  * { id: 'fingerprint', message: 'Test', ... }
+  * @param {{Error}} error - Error instance to track.
+  * @param {{ErrorContext}} context - Additional context associated with the error.
+  * @returns {{TrackedError}} The tracked error record with updated metadata.
+  **/
   trackError(error: Error, context: ErrorContext): TrackedError {
     const fingerprint = this.generateFingerprint(error, context);
     const now = new Date();
@@ -153,6 +180,14 @@ export class ErrorTrackingService {
   }
 
   // Log error with appropriate level
+  /**
+  * Logs tracked error details with severity-based logging actions.
+  * @example
+  * logError({ id: '123', message: 'failure', severity: 'high', context: { service: 'auth', operation: 'login', userId: 'user@example.com' }, occurrences: 1, tags: ['auth'] })
+  * undefined
+  * @param {{TrackedError}} {{trackedError}} - The tracked error containing metadata, service context, and severity.
+  * @returns {{void}} Does not return a value.
+  **/
   private logError(trackedError: TrackedError): void {
     const logData = {
       errorId: trackedError.id,
@@ -182,6 +217,13 @@ export class ErrorTrackingService {
   }
 
   // Cleanup old errors
+  /**
+  * Removes the oldest tracked errors to keep the error store within limits.
+  * @example
+  * cleanupOldErrors()
+  * undefined
+  * @returns {void} Cleans up a portion of stored errors when the limit is reached.
+  **/
   private cleanupOldErrors(): void {
     const errors = Array.from(this.errors.values());
     const sortedErrors = errors.sort((a, b) => a.lastOccurrence.getTime() - b.lastOccurrence.getTime());
@@ -217,6 +259,14 @@ export class ErrorTrackingService {
   }
 
   // Get errors by filter
+  /****
+  * Filters tracked errors by the provided criteria and returns them sorted by most recent occurrence.
+  * @example
+  * etErrorsByFilter({ service: 'auth', resolved: true })
+  * [TrackedError, TrackedError]
+  * @param {{service?: string; operation?: string; severity?: string; resolved?: boolean; userId?: string; tags?: string[]; timeRange?: { start: Date; end: Date }}} filter - Filters used to narrow tracked errors.
+  * @returns {{TrackedError[]}} Sorted array of tracked errors matching the filter.
+  ****/
   getErrorsByFilter(filter: {
     service?: string;
     operation?: string;
@@ -265,6 +315,24 @@ export class ErrorTrackingService {
   }
 
   // Get error metrics
+  /**
+  * Computes aggregated error metrics such as counts, rates, top occurrences, and resolution times optionally scoped to a time range.
+  * @example
+  * etMetrics({ start: new Date('2025-01-01'), end: new Date('2025-01-02') })
+  * {
+  *   totalErrors: 42,
+  *   errorsByService: {...},
+  *   errorsByOperation: {...},
+  *   errorsByUser: {...},
+  *   errorsBySeverity: {...},
+  *   errorRate: 1.75,
+  *   averageResolutionTime: 3600000,
+  *   topErrors: [...],
+  *   recentErrors: [...]
+  * }
+  * @param {{ start: Date; end: Date }} [timeRange] - Optional time range to filter the errors included in the metrics.
+  * @returns {{totalErrors: number; errorsByService: Record<string, number>; errorsByOperation: Record<string, number>; errorsByUser: Record<string, number>; errorsBySeverity: Record<string, number>; errorRate: number; averageResolutionTime: number; topErrors: ErrorRecord[]; recentErrors: ErrorRecord[]}} Aggregated error metrics for the specified time window or the last 24 hours by default.
+  **/
   getMetrics(timeRange?: { start: Date; end: Date }): ErrorMetrics {
     let errors = Array.from(this.errors.values());
 

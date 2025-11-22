@@ -8,6 +8,13 @@ import Sidebar from '@/components/Sidebar';
 import RecentActivity from '@/components/RecentActivity';
 import { getThemeClasses } from '@/styles/theme';
 
+/**
+* Renders the activity dashboard or redirects unauthenticated users to the login page.
+* @example
+* ActivityPage()
+* <JSX.Element />
+* @returns {JSX.Element} Returns the activity page layout or a loading indicator while auth state resolves.
+**/
 export default function ActivityPage() {
   const { user, loading } = useAuth();
   const router = useRouter();

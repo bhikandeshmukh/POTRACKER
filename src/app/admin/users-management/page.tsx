@@ -17,6 +17,13 @@ import { Edit, Trash2, X, Save } from 'lucide-react';
 
 type TabType = 'users' | 'create' | 'role-permissions' | 'user-permissions';
 
+/**
+* Renders the admin users management interface with tabs for listing, creating, and managing permissions.
+* @example
+* UsersManagementPage()
+* <div className="min-h-screen bg-gray-50">…</div>
+* @returns {JSX.Element} A JSX tree containing the users management dashboard UI.
+**/
 export default function UsersManagementPage() {
   const { user, userData, loading } = useAuth();
   const router = useRouter();
@@ -71,6 +78,14 @@ export default function UsersManagementPage() {
     setEditingUser(null);
   };
 
+  /**
+  * Handles synchronizing user edits by submitting form data and updating the user list.
+  * @example
+  * sync(sampleEvent)
+  * Promise<void>
+  * @param {{React.FormEvent}} {{e}} - Form event for submitting edited user data.
+  * @returns {{Promise<void>}} Promise that resolves when the update process completes.
+  **/
   const handleUpdateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -90,6 +105,14 @@ export default function UsersManagementPage() {
     }
   };
 
+  /**
+  * Prompts for confirmation and deletes a user if confirmed, handling success and error messaging.
+  * @example
+  * sync(userToDelete)
+  * undefined
+  * @param {{any}} {{userToDelete}} - The user object to delete, including id and name.
+  * @returns {{Promise<void>}} Promise resolving when the deletion flow completes.
+  **/
   const handleDeleteUser = async (userToDelete: any) => {
     if (!confirm(`Are you sure you want to delete ${userToDelete.name}?`)) {
       return;

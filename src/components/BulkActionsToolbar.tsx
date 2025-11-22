@@ -16,6 +16,33 @@ interface BulkActionsToolbarProps {
   className?: string;
 }
 
+/**
+* Displays a floating toolbar for bulk actions when items are selected.
+* @example
+* BulkActionsToolbar({
+*   selectedCount: 3,
+*   totalCount: 10,
+*   isAllSelected: false,
+*   isIndeterminate: false,
+*   isProcessing: false,
+*   actions: [],
+*   onToggleSelectAll: () => {},
+*   onClearSelection: () => {},
+*   onExecuteAction: () => {}
+* })
+* <BulkActionsToolbar ... />
+* @param {{number}} selectedCount - Current number of selected items.
+* @param {{number}} totalCount - Total number of selectable items.
+* @param {{boolean}} isAllSelected - Whether all items are currently selected.
+* @param {{boolean}} isIndeterminate - Whether the selection is partially complete.
+* @param {{boolean}} isProcessing - Whether an action is currently processing.
+* @param {{Array}} actions - List of bulk actions with id, label, icon, and color.
+* @param {{() => void}} onToggleSelectAll - Callback to toggle select all state.
+* @param {{() => void}} onClearSelection - Callback to clear the current selection.
+* @param {{(actionId: string) => void}} onExecuteAction - Callback to execute a bulk action.
+* @param {{string}} className - Additional CSS classes for the toolbar container.
+* @returns {{JSX.Element | null}} Floating toolbar element or null when no items selected.
+**/
 export default function BulkActionsToolbar({
   selectedCount,
   totalCount,

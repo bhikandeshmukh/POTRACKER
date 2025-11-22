@@ -23,6 +23,15 @@ const formatCurrency = (amount: number): string => {
 };
 
 // Export single PO with detailed line items
+/**
+* Generates an Excel export for a purchase order, optionally including metadata, and triggers a download.
+* @example
+* sync(purchaseOrder, { includeMetadata: true })
+* undefined
+* @param {{PurchaseOrder}} po - Purchase order data to export.
+* @param {{ExcelExportOptions}} options - Optional Excel export settings.
+* @returns {{Promise<void>}} Promise that resolves once the download is triggered.
+**/
 export const exportSinglePOToExcel = async (po: PurchaseOrder, options: ExcelExportOptions = {}) => {
   const {
     filename = `PO-${po.poNumber}-${new Date().toISOString().split('T')[0]}.xlsx`,
@@ -157,6 +166,15 @@ export const exportSinglePOToExcel = async (po: PurchaseOrder, options: ExcelExp
 };
 
 // Export multiple POs (bulk export)
+/**
+* Generates Excel workbook with PO summary, optional line items, and statistics, then triggers download.
+* @example
+* sync(pos, { includeLineItems: false })
+* undefined
+* @param {{PurchaseOrder[]}} {{pos}} - Array of purchase orders to include in the export.
+* @param {{ExcelExportOptions}} {{options}} - Optional export settings such as filename and line item inclusion.
+* @returns {{Promise<void>}} Promise that resolves once the Excel file download is initiated.
+**/
 export const exportBulkPOsToExcel = async (pos: PurchaseOrder[], options: ExcelExportOptions = {}) => {
   const {
     filename = `POs-Bulk-Export-${new Date().toISOString().split('T')[0]}.xlsx`,
@@ -294,6 +312,16 @@ export const exportBulkPOsToExcel = async (pos: PurchaseOrder[], options: ExcelE
 };
 
 // Export filtered POs with custom options
+/**
+* Synchronizes purchase orders with provided filters and exports them to Excel with optional overrides.
+* @example
+* sync([{ id: 123 }], { status: 'open' })
+* Promise<void>
+* @param {{PurchaseOrder[]}} {{pos}} - Array of purchase orders to include in the export.
+* @param {{Record<string, any>}} {{filters}} - Filters used to describe and name the export.
+* @param {{ExcelExportOptions}} {{options}} - Optional Excel export overrides such as filename.
+* @returns {{Promise<void>}} Promise resolved once the export completes.
+**/
 export const exportFilteredPOsToExcel = async (
   pos: PurchaseOrder[], 
   filters: Record<string, any>,

@@ -10,6 +10,13 @@ import { Shield, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { getThemeClasses } from '@/styles/theme';
 
+/**
+* Renders the admin permissions page with navigation, loading state handling, and permissions manager.
+* @example
+* PermissionsPage()
+* <div className="min-h-screen bg-gray-50">…</div>
+* @returns {{JSX.Element}} JSX structure for the permissions management layout.
+**/
 export default function PermissionsPage() {
   const { user, userData, loading } = useAuth();
   const router = useRouter();

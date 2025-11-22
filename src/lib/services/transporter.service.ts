@@ -15,6 +15,15 @@ export class TransporterService extends BaseService<Transporter> {
       .replace(/^-|-$/g, '');
   }
 
+  /**
+  * Creates a transporter record and logs an audit event when successful.
+  * @example
+  * createTransporter({ name: 'Acme Logistics', contactPerson: 'Jane Doe', phone: '555-1234', vehicleNumber: 'XYZ123', vehicleType: 'Truck' }, { uid: 'u123', name: 'Admin', role: 'admin' })
+  * { success: true }
+  * @param {{Omit<Transporter, 'id' | 'createdAt' | 'updatedAt'>}} transporterData - Transporter data to persist without identifiers or timestamps.
+  * @param {{uid: string; name: string; role: string}} createdBy - Metadata about the user creating the transporter.
+  * @returns {{Promise<{ success: boolean; error?: string }}} A promise resolving with success status or error details.
+  **/
   async createTransporter(
     transporterData: Omit<Transporter, 'id' | 'createdAt' | 'updatedAt'>,
     createdBy: { uid: string; name: string; role: string }
@@ -54,6 +63,16 @@ export class TransporterService extends BaseService<Transporter> {
     }
   }
 
+  /**
+  * Updates a transporter, audits the changes, and returns the update result.
+  * @example
+  * updateTransporter('transporterId', { name: 'New Name' }, { uid: 'user1', name: 'Alice', role: 'admin' })
+  * { success: true, data: {...} }
+  * @param {string} id - Identifier of the transporter to update.
+  * @param {Partial<Transporter>} updateData - Partial transporter fields to update.
+  * @param {{ uid: string; name: string; role: string }} updatedBy - User performing the update.
+  * @returns {Promise<{ success: boolean; error?: string; data?: Transporter }>} Result of the update operation.
+  **/
   async updateTransporter(
     id: string,
     updateData: Partial<Transporter>,
@@ -106,6 +125,15 @@ export class TransporterService extends BaseService<Transporter> {
     }
   }
 
+  /**
+  * Deletes a transporter, logs an audit event, and returns the deletion result.
+  * @example
+  * deleteTransporter('transporterId', { uid: 'user123', name: 'Alice', role: 'admin' })
+  * { success: true }
+  * @param {{string}} {{id}} - Identifier of the transporter to delete.
+  * @param {{{ uid: string; name: string; role: string }}} {{deletedBy}} - Metadata of the user performing the deletion.
+  * @returns {{Object}} Result of the deletion operation with success flag and optional error message.
+  **/
   async deleteTransporter(
     id: string,
     deletedBy: { uid: string; name: string; role: string }
@@ -148,6 +176,14 @@ export class TransporterService extends BaseService<Transporter> {
     });
   }
 
+  /**
+  * Searches cached transporters matching the provided term in name, contact person, vehicle number, or driver name.
+  * @example
+  * searchTransporters('acme')
+  * { success: true, data: { data: [...], total: 2 } }
+  * @param {{string}} {{searchTerm}} - Term to match against transporter name, contact person, vehicle or driver details.
+  * @returns {{Promise<{success: boolean; data?: any}>>}} Promise resolving to the filtered transporter list or the original result.
+  **/
   async searchTransporters(searchTerm: string) {
     const result = await this.findMany();
     
