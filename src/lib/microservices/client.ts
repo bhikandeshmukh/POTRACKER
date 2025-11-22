@@ -49,7 +49,7 @@ export class MicroserviceClient {
     }
 
     while (attempt < (this.config.retries || 1)) {
-      attempt++;
+      attempt+=1;
 
       try {
         const response = await this.executeRequest<T, R>(processedRequest);

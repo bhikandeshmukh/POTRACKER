@@ -113,7 +113,7 @@ export default function PoForm() {
         // Expected headers: PO Number, Vendor Name, Order Date, Delivery Date, Barcode, SKU, Size, Order Qty, Item Price, Sent Qty, Pending Qty, Line Total
         const importedItems: LineItem[] = [];
         
-        for (let i = 1; i < lines.length; i++) {
+        for (let i = 1; i < lines.length; i+=1) {
           const values = lines[i].split(',').map(v => v.trim());
           console.log(`Row ${i}:`, values);
           
