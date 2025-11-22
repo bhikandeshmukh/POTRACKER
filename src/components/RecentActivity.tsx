@@ -14,6 +14,14 @@ interface RecentActivityProps {
   showFilters?: boolean;
 }
 
+/**
+* Displays a recent activity panel with optional filters, loading state, and navigation to activity details.
+* @example
+* RecentActivity({ userId: 'user123', limit: 5, showFilters: true })
+* React.ReactElement
+* @param {{RecentActivityProps}} {{props}} - Props object containing optional userId, pagination limit, and filter visibility toggle.
+* @returns {{React.ReactElement}} React element rendering the recent activity feed with filtering controls.
+**/
 export default function RecentActivity({ userId, limit = 10, showFilters = true }: RecentActivityProps) {
   const { user, userData } = useAuth();
   const [filter, setFilter] = useState<'all' | 'po' | 'shipment' | 'comment'>('all');
@@ -71,6 +79,14 @@ export default function RecentActivity({ userId, limit = 10, showFilters = true 
     }
   };
 
+  /**
+  * Calculates human-readable relative time for the provided timestamp.
+  * @example
+  * formatRecentActivityTimestamp(new Date(Date.now() - 5 * 60000))
+  * "5m ago"
+  * @param {{Date}} {{timestamp}} - The timestamp to describe relative to now.
+  * @returns {{string}} A relative time string for this timestamp.
+  **/
   const formatTimestamp = (timestamp: Date) => {
     const now = new Date();
     const diff = now.getTime() - timestamp.getTime();

@@ -10,6 +10,14 @@ interface VirtualScrollTableProps {
   className?: string;
 }
 
+/**
+* Renders a virtualized scrollable table that only measures and renders visible rows for performance.
+* @example
+* VirtualScrollTable({ data: sampleRows, renderRow: (row) => <div>{row.label}</div> })
+* <div className="overflow-auto ..."><div style={{ height: `${totalHeight}px` }} /></div>
+* @param {{VirtualScrollTableProps}} props - Props containing the dataset, rendering callback, and optional sizing and styling overrides.
+* @returns {{JSX.Element}} Virtual scroll container element with only visible rows rendered.
+**/
 export default function VirtualScrollTable({
   data,
   rowHeight = 80,

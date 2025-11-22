@@ -41,6 +41,13 @@ export default function PoForm() {
     loadVendors();
   }, []);
 
+  /**
+  * Loads vendors from the service and updates state, logging errors on failure.
+  * @example
+  * sync()
+  * Promise<void>
+  * @returns {{Promise<void>}} Resolves after vendor state is updated or errors are logged.
+  **/
   const loadVendors = async () => {
     try {
       const result = await vendorService.findMany();
@@ -54,6 +61,14 @@ export default function PoForm() {
     }
   };
 
+  /**
+  * Adds a default empty line item placeholder to the current line items list.
+  * @example
+  * addLineItem()
+  * undefined
+  * @param {{void}} _ - No parameters are required.
+  * @returns {{void}} No return value.
+  **/
   const addLineItem = () => {
     setLineItems([...lineItems, { 
       itemName: '', 
@@ -69,6 +84,14 @@ export default function PoForm() {
     }]);
   };
 
+  /**
+  * Parses a CSV file selected through an input, validates and imports line items, and updates the form state with parsed data.
+  * @example
+  * handleCsvImport(event)
+  * void
+  * @param {{React.ChangeEvent<HTMLInputElement>}} {{event}} - Change event from file input containing the selected CSV file.
+  * @returns {{void}} Updates line items, form data, and UI state based on the imported CSV contents.
+  **/
   const handleCSVImport = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -182,6 +205,16 @@ export default function PoForm() {
     setLineItems(lineItems.filter((_, i) => i !== index));
   };
 
+  /**
+  * Updates a line item’s field, recalculating totals and pending quantities when necessary before saving the new state.
+  * @example
+  * updateLineItem(0, 'quantity', 5)
+  * undefined
+  * @param {{number}} {{index}} - Index of the line item to update.
+  * @param {{keyof LineItem}} {{field}} - Field name to update on the line item.
+  * @param {{any}} {{value}} - New value to assign to the specified field.
+  * @returns {{void}} Updates the line items state without returning a value.
+  **/
   const updateLineItem = (index: number, field: keyof LineItem, value: any) => {
     const updated = [...lineItems];
     updated[index] = { ...updated[index], [field]: value };
@@ -203,6 +236,14 @@ export default function PoForm() {
 
   const totalAmount = lineItems.reduce((sum, item) => sum + item.total, 0);
 
+  /****
+  * Synchronizes form submission by preventing default behavior, creating a purchase order, and navigating or showing errors based on the result.
+  * @example
+  * sync(event)
+  * undefined
+  * @param {{React.FormEvent}} {{e}} - Form submission event that triggers the PO creation process.
+  * @returns {{Promise<void>}} Promise that resolves once the submission workflow (including navigation or error handling) completes.
+  ****/
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !userData) return;

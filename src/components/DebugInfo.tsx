@@ -3,6 +3,13 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useState } from 'react';
 
+/**
+* Renders a development-only overlay showing authentication and Firebase configuration status.
+* @example
+* DebugInfo()
+* <div className="fixed bottom-4 right-4 bg-black text-white p-4 rounded-lg text-xs max-w-sm">...</div>
+* @returns {JSX.Element | null} Overlay with debug information or null when not in development.
+**/
 export default function DebugInfo() {
   const { user, userData, loading } = useAuth();
   const [firebaseConfig, setFirebaseConfig] = useState<any>(null);

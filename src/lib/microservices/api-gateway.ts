@@ -42,6 +42,13 @@ export class ApiGatewayImpl implements ApiGateway {
     this.setupDefaultMiddleware();
   }
 
+  /**
+  * Routes incoming service request through discovery, middleware, and metrics while tracking errors and returning the appropriate service response.
+  * @example
+  * await apiGateway.route({endpoint: '/users', method: 'GET', headers: {}, body: {}});
+  * @param {{ServiceRequest<T>}} {{request}} - Request object containing endpoint, method, headers, and payload for routing.
+  * @returns {{Promise<ServiceResponse<T>>}} Promise resolving to the routed service response or an error result.
+  **/
   async route<T>(request: ServiceRequest<T>): Promise<ServiceResponse<T>> {
     const startTime = Date.now();
     const requestId = this.generateRequestId();
@@ -102,6 +109,16 @@ export class ApiGatewayImpl implements ApiGateway {
     }
   }
 
+  /**
+  * Registers a new route mapping with an optional set of HTTP methods and middleware in the gateway.
+  * @example
+  * ddRoute('/users', 'users-service')
+  * undefined
+  * @param {{string}} pattern - Pattern string to match incoming request paths.
+  * @param {{string}} serviceName - Target service name associated with the route.
+  * @param {{{methods?: string[]; middleware?: string[];}}} [options] - Optional configuration for HTTP methods and middleware.
+  * @returns {{void}} No value is returned.
+  **/
   addRoute(pattern: string, serviceName: string, options?: {
     methods?: string[];
     middleware?: string[];
@@ -151,6 +168,13 @@ export class ApiGatewayImpl implements ApiGateway {
   }
 
   // Get gateway statistics
+  /**
+  * Aggregate statistics about registered routes, middleware, and request metrics.
+  * @example
+  * etStats()
+  * { totalRoutes: 10, totalMiddleware: 5, metrics: { ... }, routes: [ { pattern: "/foo", serviceName: "foo", methods: ["GET"] } ] }
+  * @returns {{ totalRoutes: number; totalMiddleware: number; metrics: RequestMetrics; routes: Array<{ pattern: string; serviceName: string; methods?: string[] }> }} Aggregated route, middleware, and metric statistics.
+  **/
   getStats(): {
     totalRoutes: number;
     totalMiddleware: number;
@@ -174,6 +198,16 @@ export class ApiGatewayImpl implements ApiGateway {
   }
 
   // Health check
+  /**
+  * Checks the current health of the API gateway and reports summary metrics.
+  * @example
+  * healthCheck()
+  * {
+  *   status: 'healthy',
+  *   details: { totalRoutes: 5, errorRate: 2.3, averageResponseTime: 180 }
+  * }
+  * @returns {{Promise<{status: 'healthy' | 'degraded' | 'unhealthy'; details: {totalRoutes: number; errorRate: number; averageResponseTime: number}}}} Promise resolving with the health status and metrics.
+  **/
   async healthCheck(): Promise<{
     status: 'healthy' | 'degraded' | 'unhealthy';
     details: {
@@ -210,6 +244,16 @@ export class ApiGatewayImpl implements ApiGateway {
     return null;
   }
 
+  /**
+  * Executes the configured middleware chain for a route before invoking the primary handler.
+  * @example
+  * executeMiddlewareChain(request, route, handler)
+  * Promise<ServiceResponse<T>>
+  * @param {{ServiceRequest<T>}} request - Incoming service request processed through the middleware stack.
+  * @param {{Route}} route - Route metadata that identifies middleware to apply for this request.
+  * @param {{(req: ServiceRequest<T>) => Promise<ServiceResponse<T>>}} handler - Primary handler invoked after all middleware have run.
+  * @returns {{Promise<ServiceResponse<T>>}} Promise resolving to the service response produced by the handler.
+  **/
   private async executeMiddlewareChain<T>(
     request: ServiceRequest<T>,
     route: Route,
@@ -234,6 +278,15 @@ export class ApiGatewayImpl implements ApiGateway {
     return next();
   }
 
+  /**
+  * Makes a simulated HTTP call to the given microservice and returns a mock response.
+  * @example
+  * callService('user-service', { payload: {} })
+  * Promise<{ success: true, data: {}, metadata: { requestId: 'abc', timestamp: Date, duration: 42 } }>
+  * @param {{string}} serviceName - Name of the microservice to invoke.
+  * @param {{ServiceRequest<T>}} request - Payload describing the service call.
+  * @returns {{Promise<ServiceResponse<T>>}} Simulated response from the microservice.
+  **/
   private async callService<T>(serviceName: string, request: ServiceRequest<T>): Promise<ServiceResponse<T>> {
     // This would typically make an HTTP call to the microservice
     // For now, we'll simulate it by returning a success response
@@ -248,6 +301,16 @@ export class ApiGatewayImpl implements ApiGateway {
     };
   }
 
+  /**
+  * Generates a standardized error response object for failed requests.
+  * @example
+  * this.createErrorResponse('INVALID_INPUT', 'The provided data is invalid.', 400)
+  * { success: false, error: { code: 'INVALID_INPUT', message: 'The provided data is invalid.', statusCode: 400, retryable: false }, metadata: { requestId: '...', timestamp: ..., duration: 0 } }
+  * @param {{string}} code - Error code identifying the type of failure.
+  * @param {{string}} message - Human-readable error message describing the failure.
+  * @param {{number}} statusCode - HTTP status code associated with the error response.
+  * @returns {{ServiceResponse<T>}} Standardized service response marking the operation as unsuccessful.
+  **/
   private createErrorResponse<T>(code: string, message: string, statusCode: number): ServiceResponse<T> {
     return {
       success: false,
@@ -269,6 +332,17 @@ export class ApiGatewayImpl implements ApiGateway {
     return `gw_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
   }
 
+  /**
+  * Updates aggregate request metrics for monitoring purposes.
+  * @example
+  * updateMetrics('orders', '/orders', 120, true)
+  * undefined
+  * @param {{string}} serviceName - Name of the service that handled the request.
+  * @param {{string}} endpoint - Endpoint that was invoked.
+  * @param {{number}} duration - Duration of the request in milliseconds.
+  * @param {{boolean}} success - Whether the request succeeded.
+  * @returns {{void}} No return value.
+  **/
   private updateMetrics(serviceName: string, endpoint: string, duration: number, success: boolean): void {
     this.requestMetrics.totalRequests += 1;
     this.requestMetrics.requestsByService[serviceName] = 
@@ -288,6 +362,13 @@ export class ApiGatewayImpl implements ApiGateway {
       this.requestMetrics.totalRequests;
   }
 
+  /**
+  * Initializes default middleware for logging, rate limiting, and CORS, and registers the logging middleware globally.
+  * @example
+  * setupDefaultMiddleware()
+  * undefined
+  * @returns {void} Performs setup without returning a value.
+  **/
   private setupDefaultMiddleware(): void {
     // Logging middleware
     this.middlewareMap.set('logging', {

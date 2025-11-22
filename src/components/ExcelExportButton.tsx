@@ -22,6 +22,14 @@ interface ExcelExportButtonProps {
   className?: string;
 }
 
+/**
+* Renders Excel export controls for single, bulk, or dropdown variants based on provided PO data and options.
+* @example
+* ExcelExportButton({ po, pos, filteredPOs, filters, variant: 'bulk', size: 'md', className: '' })
+* <ExcelExportButton ... />
+* @param {{ExcelExportButtonProps}} props - Props containing PO data, filters, UI variants, and styling options.
+* @returns {{JSX.Element | null}} JSX element representing the export button(s) or null if nothing renders.
+**/
 export default function ExcelExportButton({
   po,
   pos = [],
@@ -34,6 +42,14 @@ export default function ExcelExportButton({
   const [isExporting, setIsExporting] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
 
+  /****
+  * Syncs the current purchase order export state and initiates export to Excel with metadata.
+  * @example
+  * sync()
+  * undefined
+  * @param {{}} {{}} - .
+  * @returns {{Promise<void>}} Indicates completion of the export process.
+  ****/
   const handleSingleExport = async () => {
     if (!po) return;
     
@@ -51,6 +67,14 @@ export default function ExcelExportButton({
     }
   };
 
+  /**
+  * Exports filtered or bulk purchase orders to Excel, optionally including line items.
+  * @example
+  * sync(true)
+  * undefined
+  * @param {{boolean}} {{includeLineItems}} - Whether to include line items in the exported workbook.
+  * @returns {{Promise<void>}} Completion promise for the export operation.
+  **/
   const handleBulkExport = async (includeLineItems = true) => {
     const dataToExport = filteredPOs.length > 0 ? filteredPOs : pos;
     if (dataToExport.length === 0) return;

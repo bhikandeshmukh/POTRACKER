@@ -15,6 +15,14 @@ interface ActivityFeedProps {
   className?: string;
 }
 
+/**
+* Displays a customizable activity feed with filters, icons, colors, and formatted timestamps for various activity types.
+* @example
+* ActivityFeed({ entityType: 'po', limit: 20, showFilters: true, className: 'mb-6' })
+* <div className="bg-white rounded-lg border border-gray-200 ...">...</div>
+* @param {{ActivityFeedProps}} {{props}} - Props including optional entity filtering, pagination limit, filter visibility, and container styling.
+* @returns {{JSX.Element}} JSX element rendering the activity feed list or fallback states.
+**/
 export default function ActivityFeed({ 
   entityType = 'all', 
   entityId, 
@@ -96,6 +104,14 @@ export default function ActivityFeed({
     { dependencies: [filter] }
   );
 
+  /**
+  * Returns the corresponding activity icon component for a given activity type.
+  * @example
+  * getActivityIcon('po_created')
+  * <FileText className="size-4 text-blue-600" />
+  * @param {{string}} {{type}} - Activity type identifier.
+  * @returns {{JSX.Element}} JSX icon component representing the activity.
+  **/
   const getActivityIcon = (type: string) => {
     switch (type) {
       case 'po_created':
@@ -119,6 +135,14 @@ export default function ActivityFeed({
     }
   };
 
+  /**
+  * Returns background and border utility classes matching a given activity type.
+  * @example
+  * getActivityTypeClasses('po_created')
+  * 'bg-blue-50 border-blue-200'
+  * @param {{string}} {{type}} - Activity type identifier used to determine styling.
+  * @returns {{string}} Utility classes that correspond to the activity type.
+  **/
   const getActivityColor = (type: string) => {
     switch (type) {
       case 'po_created':
@@ -142,6 +166,14 @@ export default function ActivityFeed({
     }
   };
 
+  /**
+  * Returns a relative human-readable time string for the given timestamp.
+  * @example
+  * formatTimeAgo(new Date(Date.now() - 300000))
+  * '5m ago'
+  * @param {{Date}} {{timestamp}} - The timestamp to compute the relative time from.
+  * @returns {{string}} A string describing how long ago the timestamp occurred.
+  **/
   const formatTimestamp = (timestamp: Date) => {
     const now = new Date();
     const diff = now.getTime() - timestamp.getTime();

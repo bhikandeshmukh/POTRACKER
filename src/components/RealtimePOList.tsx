@@ -16,6 +16,14 @@ interface RealtimePOListProps {
   };
 }
 
+/**
+* Renders a real-time purchase order list with optional filters and connection status feedback.
+* @example
+* RealtimePOList({ filters: { status: 'open', vendorId: 'vendor123', limit: 25 } })
+* <div className="space-y-4">...</div>
+* @param {{RealtimePOListProps}} {{filters}} - Filters and options used to query and display purchase orders in real time.
+* @returns {{JSX.Element}} Rendered list of purchase orders with loading, error, and connection state handling.
+**/
 export default function RealtimePOList({ filters }: RealtimePOListProps) {
   const { userData } = useAuth();
   

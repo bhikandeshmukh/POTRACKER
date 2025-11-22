@@ -4,6 +4,14 @@ interface LoadingSpinnerProps {
   overlay?: boolean;
 }
 
+/**
+* Renders a size- and text-configurable loading indicator, optionally centered on an overlay.
+* @example
+* LoadingSpinner({ size: 'lg', text: 'Loading data...', overlay: true })
+* <div className="fixed inset-0 ...">...</div>
+* @param {{LoadingSpinnerProps}} {{props}} - Configuration for spinner size, text, and overlay display.
+* @returns {{JSX.Element}} JSX element representing the spinner (with optional overlay).
+**/
 export default function LoadingSpinner({ 
   size = 'md', 
   text = 'Loading...', 

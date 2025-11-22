@@ -72,6 +72,23 @@ export interface Comment {
 }
 
 // Create audit log entry
+/**
+* Logs an audit event with required and optional metadata and persists it to Firestore.
+* @example
+* sync('userId', 'Jane Doe', 'admin', 'update', 'document', 'docId', 'Doc Name')
+* undefined
+* @param {{string}} userId - Argument description in one line.
+* @param {{string}} userName - Argument description in one line.
+* @param {{string}} userRole - Argument description in one line.
+* @param {{AuditLog['action']}} action - Argument description in one line.
+* @param {{AuditLog['entityType']}} entityType - Argument description in one line.
+* @param {{string}} entityId - Argument description in one line.
+* @param {{string}} entityName - Argument description in one line.
+* @param {{string=}} description - Argument description in one line.
+* @param {{Record<string, { old: any; new: any }>=}} changes - Argument description in one line.
+* @param {{Record<string, any>=}} metadata - Argument description in one line.
+* @returns {{Promise<void>}} Return description in one line.
+**/
 export const logAuditEvent = async (
   userId: string,
   userName: string,
@@ -132,6 +149,17 @@ export const logAuditEvent = async (
 };
 
 // Get audit logs with filtering
+/****
+* Fetches recent audit logs filtered by optional identifiers and returns them sorted by timestamp.
+* @example
+* sync('entityId123', undefined, undefined, 25)
+* [{ id: 'log1', entityId: 'entityId123', timestamp: Timestamp.now(), ... }]
+* @param {{string}} {{entityId}} - Optional identifier to filter logs by a specific entity.
+* @param {{string}} {{entityType}} - Optional identifier to filter logs by entity type.
+* @param {{string}} {{userId}} - Optional identifier to filter logs by the acting user.
+* @param {{number}} {{limitCount}} - Number of log entries to return, defaults to 50.
+* @returns {{Promise<AuditLog[]>}} Promise resolving to an array of audit log entries.
+****/
 export const getAuditLogs = async (
   entityId?: string,
   entityType?: string,
@@ -163,6 +191,14 @@ export const getAuditLogs = async (
 };
 
 // Convert audit logs to activity items for UI
+/****
+* Maps audit log entries to activity items by translating log actions into activity types and extracting relevant metadata.
+* @example
+* auditLogsToActivityItems(auditLogs)
+* [{ id: '1', type: 'po_created', ... }]
+* @param {{AuditLog[]}} {{auditLogs}} - List of audit logs to transform.
+* @returns {{ActivityItem[]}} List of activity items derived from the audit logs.
+****/
 export const convertAuditLogsToActivities = (auditLogs: AuditLog[]): ActivityItem[] => {
   return auditLogs.map(log => {
     let activityType: ActivityItem['type'];
@@ -249,6 +285,20 @@ export const convertAuditLogsToActivities = (auditLogs: AuditLog[]): ActivityIte
 };
 
 // Comments system
+/**
+ * Creates a new comment document for a purchase order and logs the creation event.
+ * @example
+ * sync("po123", "user456", "Jane Doe", "admin", "Looks good to me", undefined, ["user789"])
+ * "newCommentId123"
+ * @param {{string}} {{poId}} - Identifier of the purchase order the comment belongs to.
+ * @param {{string}} {{userId}} - Identifier of the user creating the comment.
+ * @param {{string}} {{userName}} - Name of the user creating the comment.
+ * @param {{string}} {{userRole}} - Role of the user creating the comment.
+ * @param {{string}} {{content}} - Text content of the comment.
+ * @param {{string}} {{parentId}} - Optional identifier of the parent comment (for replies).
+ * @param {{string[]}} {{mentions}} - Optional list of mentioned user identifiers.
+ * @returns {{Promise<string>}} Returns the new comment document ID.
+ **/
 export const addComment = async (
   poId: string,
   userId: string,
@@ -296,6 +346,14 @@ export const addComment = async (
   }
 };
 
+/**
+* Synchronizes and retrieves comments for a purchase order sorted by timestamp.
+* @example
+* sync("po123")
+* [ { id: "c1", text: "Approved", timestamp: 2025-11-22T12:34:56.000Z }, ... ]
+* @param {{string}} {{poId}} - Purchase order identifier to filter comments.
+* @returns {{Promise<Comment[]>}} Promise resolving to a list of matching comments.
+**/
 export const getComments = async (poId: string): Promise<Comment[]> => {
   try {
     const commentsRef = collection(db, 'comments');
@@ -317,6 +375,18 @@ export const getComments = async (poId: string): Promise<Comment[]> => {
   }
 };
 
+/**
+* Update a comment with new content and log an audit event for the update
+* @example
+* sync('commentId123', 'Updated content', 'userId456', 'Jane Doe', 'admin')
+* undefined
+* @param {{string}} {{commentId}} - Identifier of the comment to update.
+* @param {{string}} {{content}} - New content to replace the existing comment.
+* @param {{string}} {{userId}} - Identifier of the user performing the update.
+* @param {{string}} {{userName}} - Name of the user performing the update.
+* @param {{string}} {{userRole}} - Role of the user performing the update.
+* @returns {{Promise<void>}} Promise resolving when the update and audit log are complete.
+**/
 export const updateComment = async (
   commentId: string,
   content: string,
@@ -351,6 +421,17 @@ export const updateComment = async (
   }
 };
 
+/**
+ * Deletes a comment and logs the deletion audit event.
+ * @example
+ * sync('comment123', 'user456', 'Jane Doe', 'admin')
+ * undefined
+ * @param {{string}} commentId - Identifier of the comment to delete.
+ * @param {{string}} userId - Identifier of the user performing the deletion.
+ * @param {{string}} userName - Name of the user performing the deletion.
+ * @param {{string}} userRole - Role of the user performing the deletion.
+ * @returns {{Promise<void>}} Promise that resolves once the comment is deleted and the audit log is recorded.
+ **/
 export const deleteComment = async (
   commentId: string,
   userId: string,
@@ -380,6 +461,16 @@ export const deleteComment = async (
   }
 };
 
+/**
+* Syncs like/unlike status for a comment.
+* @example
+* sync('commentId123', 'userId456', true)
+* Promise<void>
+* @param {{string}} commentId - Identifier of the comment to update.
+* @param {{string}} userId - Identifier of the user toggling the like.
+* @param {{boolean}} isLiking - Whether the user is liking (true) or unliking (false) the comment.
+* @returns {{Promise<void>}} Promise that resolves when the operation completes.
+**/
 export const likeComment = async (
   commentId: string,
   userId: string,
@@ -408,6 +499,17 @@ export const likeComment = async (
 };
 
 // Get recent activities for dashboard
+/**
+* Fetches recent activity items based on user context and provided filters.
+* @example
+* sync('user123', 'Employee', 5, 'po')
+* [{ id: 'activity1', type: 'po' }]
+* @param {{string}} {{userId}} - Optional ID of the user whose activities should be returned.
+* @param {{string}} {{userRole}} - Optional role of the user to determine the scope of visible activities.
+* @param {{number}} {{limitCount}} - Maximum number of activity items to return, defaults to 10.
+* @param {{'all' | 'po' | 'shipment' | 'comment'}} {{filter}} - Optional filter to restrict activities to a specific entity type.
+* @returns {{Promise<ActivityItem[]>}} Promise resolving to the matching activity items.
+**/
 export const getRecentActivities = async (
   userId?: string,
   userRole?: string,
@@ -440,6 +542,16 @@ export const getRecentActivities = async (
 };
 
 // Log user login
+/**
+* Logs a successful user login into the audit trail after ensuring required information is present.
+* @example
+* sync('user-123', 'Jane Doe', 'admin')
+* Promise<void>
+* @param {{string}} {{userId}} - Unique identifier for the user logging in.
+* @param {{string}} {{userName}} - Name of the user logging in.
+* @param {{string}} {{userRole}} - Role assigned to the user performing the login.
+* @returns {{Promise<void>}} Resolves once the audit log entry for the login has been recorded.
+**/
 export const logUserLogin = async (userId: string, userName: string, userRole: string) => {
   // Validate required parameters
   if (!userId || !userName || !userRole) {
@@ -462,6 +574,16 @@ export const logUserLogin = async (userId: string, userName: string, userRole: s
 };
 
 // Log user logout
+/**
+* Logs a user logout audit event after validating required parameters.
+* @example
+* sync('12345', 'jdoe', 'admin')
+* undefined
+* @param {{string}} {{userId}} - Unique identifier for the user.
+* @param {{string}} {{userName}} - Display name of the user.
+* @param {{string}} {{userRole}} - Role of the user performing the logout.
+* @returns {{Promise<void>}} Return description in one line.
+**/
 export const logUserLogout = async (userId: string, userName: string, userRole: string) => {
   // Validate required parameters
   if (!userId || !userName || !userRole) {
@@ -484,6 +606,21 @@ export const logUserLogout = async (userId: string, userName: string, userRole: 
 };
 
 // Log PO status changes with proper audit trail
+/**
+ * Logs audit event whenever the PO status changes.
+ * @example
+ * sync('id', 'PO-123', 'Pending', 'Approved', 'user-1', 'Alice', 'approver', 'Reviewed and ok')
+ * undefined
+ * @param {{string}} {{poId}} - Purchase order identifier.
+ * @param {{string}} {{poNumber}} - Purchase order number.
+ * @param {{string}} {{oldStatus}} - Previous PO status.
+ * @param {{string}} {{newStatus}} - Updated PO status.
+ * @param {{string}} {{userId}} - Identifier of the acting user.
+ * @param {{string}} {{userName}} - Display name of the acting user.
+ * @param {{string}} {{userRole}} - Role of the acting user.
+ * @param {{string}} {{reason}} - Optional reason for the status change.
+ * @returns {{Promise<void>}} Promise resolving once the audit log is written.
+ **/
 export const logPOStatusChange = async (
   poId: string,
   poNumber: string,

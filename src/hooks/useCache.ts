@@ -21,6 +21,14 @@ class CacheManager {
     });
   }
 
+  /**
+  * Retrieves cached data by key if still valid, otherwise cleans up expired entry.
+  * @example
+  * et<string>('user_123')
+  * { name: 'Alice' }
+  * @param {{string}} {{key}} - The cache key to retrieve data for.
+  * @returns {{T | null}} Returns the cached value or null if missing/expired.
+  **/
   get<T>(key: string): T | null {
     const entry = this.cache.get(key);
     
@@ -51,6 +59,13 @@ class CacheManager {
     this.cache.clear();
   }
 
+  /**
+  * Retrieves cache statistics including size, keys, and entry metadata.
+  * @example
+  * etStats()
+  * { size: 5, keys: ['a'], entries: [{ key: 'a', timestamp: 1690000000000, expiry: 1690000005000, isExpired: false }] }
+  * @returns {{size:number, keys:string[], entries:{key:string, timestamp:number, expiry:number, isExpired:boolean}[]}} Cache statistics.
+  **/
   getStats() {
     return {
       size: this.cache.size,
@@ -69,6 +84,16 @@ class CacheManager {
 const cacheManager = new CacheManager();
 
 // Hook for caching data with automatic invalidation
+/**
+* Hook that caches and manages asynchronous data fetching with optional invalidation and staleness checks.
+* @example
+* useCache('user', () => fetchUser(), { ttl: 60000, enabled: true })
+* { data: User | null, loading: boolean, error: Error | null, refetch: () => Promise<User>, invalidate: () => Promise<User>, isStale: () => boolean }
+* @param {{string}} key - Key identifying the cache entry.
+* @param {{() => Promise<T>}} fetcher - Async function used to fetch the data when cache is missing or stale.
+* @param {{{ttl?: number, enabled?: boolean, dependencies?: any[]}}} options - Optional settings for ttl, enabled flag, and dependency list for effects.
+* @returns {{{data: T | null, loading: boolean, error: Error | null, refetch: () => Promise<T>, invalidate: () => Promise<T>, isStale: () => boolean}}} Return object containing current cache state and control actions.
+**/
 export function useCache<T>(
   key: string,
   fetcher: () => Promise<T>,
@@ -143,6 +168,16 @@ export function useCache<T>(
 }
 
 // Hook for caching lists with pagination
+/**
+* Manages paginated data fetching with caching, exposing helpers for navigation and cache invalidation
+* @example
+* useCachedList('users', fetchUsersPage, { pageSize: 25 })
+* { items: [...], allItems: [...], totalItems: 100, currentPage: 1, totalPages: 4, loading: false, error: null, loadPage, invalidateAll, setCurrentPage }
+* @param {{string}} baseKey - Base cache key prefix shared across cached pages.
+* @param {{function(number, number): Promise<{ items: T[]; total: number }>}} fetcher - Fetch function that returns a page of items and total count.
+* @param {{Object}} options - Optional settings such as ttl, enabled flag, and pageSize override.
+* @returns {{Object}} Hook state and actions for paginated cached data, including items, metadata, and controls.
+**/
 export function useCachedList<T>(
   baseKey: string,
   fetcher: (page: number, limit: number) => Promise<{ items: T[]; total: number }>,
@@ -248,6 +283,13 @@ export function useCachedList<T>(
 }
 
 // Hook for real-time cache invalidation
+/**
+* Provides callbacks to invalidate vendor, PO, user caches and to fetch cache stats.
+* @example
+* useCacheInvalidation()
+* { invalidateVendors: [Function], invalidatePOs: [Function], invalidateUsers: [Function], invalidateAll: [Function], getCacheStats: [Function] }
+* @returns {{ invalidateVendors: Function, invalidatePOs: Function, invalidateUsers: Function, invalidateAll: Function, getCacheStats: Function }} Provides cache invalidation callbacks and a method to retrieve cache statistics.
+**/
 export function useCacheInvalidation() {
   const invalidateVendors = useCallback(() => {
     cacheManager.invalidatePattern('vendors');

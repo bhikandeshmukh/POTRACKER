@@ -21,6 +21,26 @@ export interface ValidationErrors {
   [key: string]: string;
 }
 
+/**
+* Manages form state, validation, and helpers using provided initial values and schema.
+* @example
+* useFormValidation({ name: '', email: '' }, validationSchema)
+* { values: { name: '', email: '' }, errors: {}, touched: {}, handleChange: [Function], ... }
+* @param {{T}} initialValues - Initial form values keyed by field name.
+* @param {{ValidationSchema}} validationSchema - Rules to validate each form field.
+* @returns {{{
+*   values: T,
+*   errors: ValidationErrors,
+*   touched: Record<string, boolean>,
+*   handleChange: (name: string, value: any) => void,
+*   handleBlur: (name: string) => void,
+*   validateForm: () => boolean,
+*   resetForm: () => void,
+*   setFieldValue: (name: string, value: any) => void,
+*   setFieldError: (name: string, error: string) => void,
+*   isValid: boolean
+* }}} Object containing form state, validation handlers, and status.
+**/
 export function useFormValidation<T extends Record<string, any>>(
   initialValues: T,
   validationSchema: ValidationSchema

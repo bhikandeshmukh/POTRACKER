@@ -10,6 +10,14 @@ import { getThemeClasses } from '@/styles/theme';
 import { getPOs, createReturnOrder, ReturnOrderItem } from '@/lib/firestore';
 import Link from 'next/link';
 
+/**
+* Renders the New Return Order page with form logic and UI for creating return orders.
+* @example
+* NewReturnOrderPage()
+* <JSX.Element representing the populated return order creation page>
+* @param {void} _ - No arguments are required to render this page.
+* @returns {JSX.Element} The fully interactive React component for initiating a new return order.
+**/
 export default function NewReturnOrderPage() {
   const { user, userData, loading } = useAuth();
   const router = useRouter();
@@ -45,6 +53,14 @@ export default function NewReturnOrderPage() {
     }
   }, [user, loadPOs]);
 
+  /****
+  * Sets the selected purchase order and initializes its line items for return processing.
+  * @example
+  * handlePurchaseOrderSelection('PO123')
+  * undefined
+  * @param {{string}} {{poId}} - ID of the purchase order to select.
+  * @returns {{void}} Nothing.
+  ****/
   const handlePOSelect = (poId: string) => {
     const po = pos.find(p => p.id === poId);
     if (po) {
@@ -81,6 +97,14 @@ export default function NewReturnOrderPage() {
     setLineItems(lineItems.filter((_, i) => i !== index));
   };
 
+  /**
+   * Adds a new damaged line item with default values to the line items state array.
+   * @example
+   * addLineItem()
+   * undefined
+   * @param {{void}} _ - No parameters.
+   * @returns {{void}} Nothing.
+   **/
   const addLineItem = () => {
     setLineItems([...lineItems, {
       itemName: '',
@@ -95,6 +119,14 @@ export default function NewReturnOrderPage() {
     }]);
   };
 
+  /**
+  * Handles form submission by creating a return order when valid line items are selected.
+  * @example
+  * sync(event)
+  * Promise<void>
+  * @param {{React.FormEvent}} {{e}} - Form event triggered when submitting the return order.
+  * @returns {{Promise<void>}} Promise that resolves after attempting to create the return order.
+  **/
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     

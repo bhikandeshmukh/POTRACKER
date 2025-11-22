@@ -29,6 +29,14 @@ export class MicroserviceClient {
   }
 
   // Make a request to a microservice
+  /**
+  * Executes a microservice request with interceptors, retries, and metric/error tracking.
+  * @example
+  * request({ endpoint: '/users', method: 'GET' })
+  * Promise<ServiceResponse<{ data: string }>>
+  * @param {{ServiceRequest<T>}} request - Service request containing endpoint, method, and payload.
+  * @returns {{Promise<ServiceResponse<R>>}} Promise resolving to the processed service response.
+  **/
   async request<T, R = any>(request: ServiceRequest<T>): Promise<ServiceResponse<R>> {
     const startTime = Date.now();
     let attempt = 0;
@@ -153,6 +161,14 @@ export class MicroserviceClient {
   }
 
   // Private helper methods
+  /**
+  * Executes a service request against the configured microservice endpoint and normalizes the response.
+  * @example
+  * executeRequest({ endpoint: '/users', method: 'GET' })
+  * Promise<ServiceResponse<R>>
+  * @param {{ServiceRequest<T>}} {request} - Request configuration including method, endpoint, headers, and payload.
+  * @returns {{Promise<ServiceResponse<R>>}} Normalized service response with success metadata and error handling.
+  **/
   private async executeRequest<T, R>(request: ServiceRequest<T>): Promise<ServiceResponse<R>> {
     // In a real implementation, this would make HTTP requests
     // For now, we'll simulate the request by calling the orchestrator directly
@@ -246,6 +262,13 @@ export class MicroserviceClient {
     });
   }
 
+  /**
+  * Sets up default request and response interceptors for logging and optional authentication headers.
+  * @example
+  * setupDefaultInterceptors()
+  * undefined
+  * @returns {void} No return value.
+  **/
   private setupDefaultInterceptors(): void {
     // Request logging interceptor
     this.addRequestInterceptor((request) => {

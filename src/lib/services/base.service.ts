@@ -38,6 +38,15 @@ export abstract class BaseService<T extends BaseEntity> {
   }
 
   // Wrap method with both retry logic and performance monitoring
+  /**
+  * Wraps an operation with performance monitoring and retry handling in one step.
+  * @example
+  * wrapWithRetryAndPerformance('fetchList', async () => await fetchList())
+  * Promise.resolve(list)
+  * @param {{string}} {{operation}} - Name of the collection operation being executed.
+  * @param {{(...args: any[]) => Promise<any>}} {{fn}} - Async function that performs the actual operation.
+  * @returns {{Promise<any>}} Promise that resolves with the wrapped operation result.
+  **/
   private wrapWithRetryAndPerformance<TArgs extends any[], TReturn>(
     operation: string,
     fn: (...args: TArgs) => Promise<TReturn>
@@ -80,6 +89,14 @@ export abstract class BaseService<T extends BaseEntity> {
     return doc(db, this.collectionName, id);
   }
 
+  /****
+  * Constructs Firestore query constraints from the supplied options.
+  * @example
+  * buildQuery({ where: [{ field: 'status', operator: '==', value: 'active' }], orderBy: 'createdAt', orderDirection: 'desc', limit: 10 })
+  * [where(...), orderBy(...), limit(...)]
+  * @param {{QueryOptions}} {{options}} - Optional filters, sorting, and pagination settings.
+  * @returns {{QueryConstraint[]}} Array of Firestore query constraints built from options.
+  ****/
   protected buildQuery(options?: QueryOptions): QueryConstraint[] {
     const constraints: QueryConstraint[] = [];
 
@@ -100,6 +117,17 @@ export abstract class BaseService<T extends BaseEntity> {
     return constraints;
   }
 
+  /**
+  * Handles errors by tracking and logging them, returning an AppError.
+  * @example
+  * handleError(new Error('oops'), 'create', 'user123', 'admin')
+  * {code: 'UNKNOWN_ERROR', message: 'Failed to create', details: Error}
+  * @param {{any}} {{error}} - Error object to process and track.
+  * @param {{string}} {{operation}} - Operation name where the error occurred.
+  * @param {{string}} {{userId}} - Optional identifier of the user performing the operation.
+  * @param {{string}} {{userRole}} - Optional role of the user performing the operation.
+  * @returns {{AppError}} Simplified application error payload with tracking metadata.
+  **/
   protected handleError(error: any, operation: string, userId?: string, userRole?: string): AppError {
     // Track the error
     errorTrackingService.trackError(error, {
@@ -134,6 +162,15 @@ export abstract class BaseService<T extends BaseEntity> {
     cacheService.invalidatePattern(cachePattern);
   }
 
+  /**
+   * Retrieves a cached or freshly fetched document by ID, optionally using the cache.
+   * @example
+   * findById('documentId', true)
+   * { success: true, data: { id: 'documentId', ... } }
+   * @param {{string}} id - The identifier of the document to fetch.
+   * @param {{boolean}} useCache - Whether to use cached results before querying the backend.
+   * @returns {{Promise<ApiResponse<T>>}} The API response containing the document data or an error.
+   **/
   async findById(id: string, useCache: boolean = true): Promise<ApiResponse<T>> {
     const cacheKey = this.getCacheKey('findById', id);
     
@@ -173,6 +210,15 @@ export abstract class BaseService<T extends BaseEntity> {
     }
   }
 
+  /****
+  * Fetches a paginated list of records, considering cache when enabled
+  * @example
+  * findMany({ limit: 10 }, true)
+  * Promise resolved with ApiResponse containing PaginatedResponse of records
+  * @param {{QueryOptions}} [options] - Optional filters and pagination settings for the query.
+  * @param {{boolean}} useCache - Whether to use cached results when available, defaulting to true.
+  * @returns {{Promise<ApiResponse<PaginatedResponse<T>>>}} Promise that resolves to the API response wrapping the paginated data.
+  ****/
   async findMany(options?: QueryOptions, useCache: boolean = true): Promise<ApiResponse<PaginatedResponse<T>>> {
     const cacheKey = this.getCacheKey('findMany', options);
     
@@ -219,6 +265,15 @@ export abstract class BaseService<T extends BaseEntity> {
     }
   }
 
+  /****
+  * Create a new entity with generated timestamps and optional custom ID.
+  * @example
+  * create({ name: 'Sample' })
+  * { success: true, data: { id: 'generatedId', name: 'Sample', createdAt: ..., updatedAt: ... } }
+  * @param {{Omit<T, 'id' | 'createdAt' | 'updatedAt'>}} {{data}} - Payload for the new entity excluding metadata fields.
+  * @param {{string}} {{customId}} - Optional custom identifier to use instead of auto-generated ID.
+  * @returns {{Promise<ApiResponse<T>>}} Promise resolving to the API response containing the created entity or an error.
+  ****/
   async create(data: Omit<T, 'id' | 'createdAt' | 'updatedAt'>, customId?: string): Promise<ApiResponse<T>> {
     try {
       const entityData = {
@@ -250,6 +305,15 @@ export abstract class BaseService<T extends BaseEntity> {
     }
   }
 
+  /**
+  * Updates an existing record with provided data, refreshes cache, and returns the fresh document.
+  * @example
+  * this.update('abc123', { name: 'New Name' })
+  * { success: true, data: { id: 'abc123', name: 'New Name', ... } }
+  * @param {{string}} {{id}} - Document identifier to update.
+  * @param {{Partial<Omit<T, 'id' | 'createdAt'>>}} {{data}} - Fields to update excluding id and createdAt.
+  * @returns {{Promise<ApiResponse<T>>}} Promise resolving with API response containing the updated document or an error.
+  **/
   async update(id: string, data: Partial<Omit<T, 'id' | 'createdAt'>>): Promise<ApiResponse<T>> {
     try {
       const docRef = this.getDocRef(id);
@@ -274,6 +338,14 @@ export abstract class BaseService<T extends BaseEntity> {
     }
   }
 
+  /**
+  * Deletes a document by id, invalidates cache, and returns the deletion result.
+  * @example
+  * delete("doc123")
+  * { success: true }
+  * @param {{string}} {{id}} - Identifier of the document to delete.
+  * @returns {{Promise<ApiResponse<void>>}} Promise resolving to the deletion outcome.
+  **/
   async delete(id: string): Promise<ApiResponse<void>> {
     try {
       const docRef = this.getDocRef(id);

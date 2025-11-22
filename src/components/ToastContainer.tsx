@@ -25,6 +25,14 @@ interface ToastProviderProps {
   children: ReactNode;
 }
 
+/**
+* Provides the toast context and renders a container for queued toasts while exposing helper functions.
+* @example
+* ToastProvider({ children: <App /> })
+* <ToastContext.Provider>…</ToastContext.Provider>
+* @param {{ToastProviderProps}} {{props}} - Props containing the children to render inside the provider.
+* @returns {{React.ReactElement}} The toast provider tree that includes the toast container and context.
+**/
 export function ToastProvider({ children }: ToastProviderProps) {
   const [toasts, setToasts] = useState<(ToastProps & { id: string })[]>([]);
 

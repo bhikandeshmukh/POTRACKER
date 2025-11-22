@@ -8,6 +8,14 @@ interface ComplianceReportsProps {
   onGenerateReport?: (reportType: string, dateRange: { start: Date; end: Date }) => void;
 }
 
+/**
+* Renders the compliance reporting UI with report type, date range selection, preview, and CSV export handling.
+* @example
+* ComplianceReports({ onGenerateReport: (type, range) => console.log(type, range) })
+* <div>...</div>
+* @param {{ComplianceReportsProps}} {{props}} - Props for customizing report generation including optional callback.
+* @returns {{JSX.Element}} Rendered compliance report interface.
+**/
 export default function ComplianceReports({ onGenerateReport }: ComplianceReportsProps) {
   const [reportType, setReportType] = useState<'audit' | 'access' | 'changes' | 'approvals'>('audit');
   const [dateRange, setDateRange] = useState({
@@ -47,6 +55,13 @@ export default function ComplianceReports({ onGenerateReport }: ComplianceReport
     }
   ];
 
+  /**
+  * Triggers compliance report generation, downloads it as a CSV, and manages loading state.
+  * @example
+  * sync()
+  * Promise<void>
+  * @returns {Promise<void>} Resolves after the report download process completes.
+  **/
   const handleGenerateReport = async () => {
     setGenerating(true);
     
@@ -72,6 +87,14 @@ export default function ComplianceReports({ onGenerateReport }: ComplianceReport
     setGenerating(false);
   };
 
+  /**
+  * Generates a CSV-formatted compliance activity report string.
+  * @example
+  * generateComplianceReportCsv()
+  * "Timestamp,User,Action,Entity Type,Entity ID,Details\n2025-11-22 10:20:30,Rajesh Kumar,Updated,Purchase Order,PO-2024-015,Changed status from Pending to Approved\n2025-11-22 08:20:30,Priya Sharma,Created,Purchase Order,PO-2024-014,Created new purchase order"
+  * @param {{void}} {{}} - No arguments.
+  * @returns {{string}} CSV-formatted history log.
+  **/
   const generateComplianceReport = () => {
     const headers = ['Timestamp', 'User', 'Action', 'Entity Type', 'Entity ID', 'Details'];
     const rows = [

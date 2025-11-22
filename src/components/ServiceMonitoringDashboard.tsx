@@ -29,6 +29,14 @@ interface MetricCard {
   icon: React.ReactNode;
 }
 
+/****
+* Renders the service monitoring dashboard that aggregates live stats from multiple services.
+* @example
+* ServiceMonitoringDashboard()
+* <div>...</div>
+* @param {{void}} {{none}} - No parameters are required for this component.
+* @returns {{JSX.Element}} Returns the JSX structure representing the dashboard.
+****/
 export default function ServiceMonitoringDashboard() {
   const [performanceStats, setPerformanceStats] = useState(performanceService.getStats());
   const [errorMetrics, setErrorMetrics] = useState(errorTrackingService.getMetrics());
@@ -38,6 +46,14 @@ export default function ServiceMonitoringDashboard() {
   const [healthStatus, setHealthStatus] = useState<any>(null);
   const [lastUpdate, setLastUpdate] = useState(new Date());
 
+  /**
+  * Synchronizes monitoring stats, health, and cache metrics for the dashboard.
+  * @example
+  * sync()
+  * undefined
+  * @param {{void}} {{none}} - No parameters required.
+  * @returns {{Promise<void>}} Resolves once monitoring stats and health information are refreshed.
+  **/
   const refreshData = async () => {
     setPerformanceStats(performanceService.getStats());
     setErrorMetrics(errorTrackingService.getMetrics());

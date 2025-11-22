@@ -5,6 +5,13 @@ import GlobalSearch from './GlobalSearch';
 import TeamNotifications from './TeamNotifications';
 import { getThemeClasses } from '@/styles/theme';
 
+/**
+* Renders a fixed top navigation bar with the project title, search, and notifications controls.
+* @example
+* Navbar()
+* <nav className="fixed top-0 ...">...</nav>
+* @returns {JSX.Element} The composed navigation bar element ready for rendering.
+**/
 export default function Navbar() {
 
   return (

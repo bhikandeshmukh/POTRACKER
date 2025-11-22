@@ -27,6 +27,14 @@ interface TeamNotificationsProps {
   className?: string;
 }
 
+/**
+* Renders a notifications bell and dropdown UI tied to team-related events.
+* @example
+* TeamNotifications({ className: 'custom-class' })
+* <div>Rendered notification bell and dropdown</div>
+* @param {{TeamNotificationsProps}} {{props}} - Props including optional className for styling the root container.
+* @returns {{JSX.Element}} Return description about rendering the notifications UI.
+**/
 export default function TeamNotifications({ className = '' }: TeamNotificationsProps) {
   const { user, userData } = useAuth();
   const { showSuccess } = useToast();
@@ -87,6 +95,14 @@ export default function TeamNotifications({ className = '' }: TeamNotificationsP
     setIsOpen(false);
   };
 
+  /**
+  * Returns the corresponding icon element for a notification type.
+  * @example
+  * getNotificationIcon('mention')
+  * <MessageCircle className="size-4 text-blue-600" />
+  * @param {{string}} {{type}} - Notification type to render an icon for.
+  * @returns {{JSX.Element}} Matching icon element for the provided notification type.
+  **/
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'mention':
@@ -104,6 +120,14 @@ export default function TeamNotifications({ className = '' }: TeamNotificationsP
     }
   };
 
+  /**
+  * Converts a Date timestamp into a human-readable relative time string.
+  * @example
+  * timeSince(new Date('2025-11-22T08:00:00Z'))
+  * '3h ago'
+  * @param {{Date}} {{timestamp}} - Timestamp from which to compute the relative time.
+  * @returns {{string}} Human-readable relative time description.
+  **/
   const formatTimestamp = (timestamp: Date) => {
     const now = new Date();
     const diff = now.getTime() - timestamp.getTime();

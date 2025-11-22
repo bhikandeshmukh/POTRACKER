@@ -15,6 +15,14 @@ interface EnhancedPOTableProps {
   onRefresh: () => void;
 }
 
+/**
+* Renders an interactive list of purchase orders with expandable details and action buttons.
+* @example
+* EnhancedPOTable({ pos: samplePosList, onRefresh: () => {} })
+* <div>...</div>
+* @param {{EnhancedPOTableProps}} {{props}} - Props containing purchase order data and a refresh callback.
+* @returns {{JSX.Element | null}} Rendered enhanced purchase order table or an empty state placeholder.
+**/
 export default function EnhancedPOTable({ pos, onRefresh }: EnhancedPOTableProps) {
   const [expandedPO, setExpandedPO] = useState<string | null>(null);
   const [processingPO, setProcessingPO] = useState<string | null>(null);
@@ -31,6 +39,16 @@ export default function EnhancedPOTable({ pos, onRefresh }: EnhancedPOTableProps
     router.push(`/pos/${poId}`);
   };
 
+  /**
+  * Syncs purchase order status after user confirmation and handles UI feedback.
+  * @example
+  * sync('po123', 'Approved', event)
+  * undefined
+  * @param {{string}} poId - Purchase order identifier for the status update.
+  * @param {{'Approved'|'Rejected'}} status - Desired status to transition the purchase order to.
+  * @param {{React.MouseEvent}} e - Mouse event to stop propagation and trigger confirmation dialog.
+  * @returns {{void}} void
+  **/
   const handleStatusChange = async (poId: string, status: 'Approved' | 'Rejected', e: React.MouseEvent) => {
     e.stopPropagation();
     
@@ -70,6 +88,14 @@ export default function EnhancedPOTable({ pos, onRefresh }: EnhancedPOTableProps
     }
   };
 
+  /**
+  * Computes aggregate quantities and progress percentage from line items.
+  * @example
+  * calculateLineItemProgress([{ quantity: 10, sentQty: 5, pendingQty: 5 }])
+  * { totalQty: 10, sentQty: 5, pendingQty: 5, progressPercentage: 50 }
+  * @param {{any[]}} lineItems - Array of line item objects with quantity fields.
+  * @returns {{object}} Return contains total, sent, pending quantities and progress percentage.
+  **/
   const calculatePOProgress = (lineItems: any[]) => {
     const totalQty = lineItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
     const sentQty = lineItems.reduce((sum, item) => sum + (item.sentQty || 0), 0);

@@ -54,6 +54,14 @@ interface MicroserviceMetrics {
   };
 }
 
+/**
+* Renders a telemetry dashboard showing orchestrator, services, registry, and event bus metrics with periodic refresh.
+* @example
+* MicroservicesDashboard()
+* <div className="p-6 space-y-6">…</div>
+* @param {void} - No parameters are required to render the dashboard.
+* @returns {JSX.Element} The assembled microservices dashboard UI with latest metrics and status indicators.
+**/
 export default function MicroservicesDashboard() {
   const [metrics, setMetrics] = useState<MicroserviceMetrics | null>(null);
   const [serviceHealth, setServiceHealth] = useState<Record<string, any>>({});
@@ -63,6 +71,13 @@ export default function MicroservicesDashboard() {
   const [lastUpdate, setLastUpdate] = useState(new Date());
   const [loading, setLoading] = useState(true);
 
+  /**
+  * Synchronizes dashboard data by refreshing metrics, status, health, and stats for microservices.
+  * @example
+  * sync()
+  * undefined
+  * @returns {{Promise<void>}} Resolves when dashboard data refresh completes.
+  **/
   const refreshData = async () => {
     try {
       setLoading(true);
@@ -116,6 +131,14 @@ export default function MicroservicesDashboard() {
     return `${seconds}s`;
   };
 
+  /**
+  * Returns CSS classes for a microservice status badge.
+  * @example
+  * statusClass('healthy')
+  * 'text-green-600 bg-green-100'
+  * @param {{string}} status - Current health status.
+  * @returns {{string}} CSS classes for the status badge.
+  **/
   const getStatusColor = (status: string): string => {
     switch (status) {
       case 'healthy':
@@ -133,6 +156,14 @@ export default function MicroservicesDashboard() {
     }
   };
 
+  /****
+  * Returns the appropriate status icon for a microservice based on the provided status.
+  * @example
+  * renderStatusIcon('healthy')
+  * <CheckCircle className="size-5" />
+  * @param {{string}} {{status}} - Current microservice status.
+  * @returns {{JSX.Element}} Icon that represents the status.
+  ****/
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'healthy':

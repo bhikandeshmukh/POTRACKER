@@ -14,6 +14,15 @@ interface UseDataFetchingReturn<T> {
   reset: () => void;
 }
 
+/****
+ * Manages API calls, loading state, and error handling for data fetching hooks.
+ * @example
+ * useDataFetching(() => fetchDataFromApi(), { immediate: false })
+ * { data: null, loading: true, error: null, refetch: [Function], reset: [Function] }
+ * @param {{() => Promise<ApiResponse<T>>}} {{fetchFunction}} - Function that performs the API call and returns a promise.
+ * @param {{UseDataFetchingOptions}} {{options}} - Optional settings to control immediacy and dependencies.
+ * @returns {{UseDataFetchingReturn<T>}} Return object containing current data, loading state, error, refetch, and reset helpers.
+ ****/
 export function useDataFetching<T>(
   fetchFunction: () => Promise<ApiResponse<T>>,
   options: UseDataFetchingOptions = {}

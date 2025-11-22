@@ -30,6 +30,13 @@ export abstract class BaseMicroservice {
   abstract handleRequest<T>(request: ServiceRequest<T>): Promise<ServiceResponse<T>>;
 
   // Service lifecycle management
+  /**
+   * Starts the base microservice, handling initialization, registry registration, running state, and service.started event publication.
+   * @example
+   * start()
+   * undefined
+   * @returns {Promise<void>} Indicates completion of the start operation.
+   */
   async start(): Promise<void> {
     try {
       logger.debug(`Starting microservice: ${this.config.name}`);
@@ -58,6 +65,13 @@ export abstract class BaseMicroservice {
     }
   }
 
+  /**
+  * Stops the microservice, unregistering it, shutting it down, and publishing a service stopped event.
+  * @example
+  * stop()
+  * Promise that resolves once the microservice has fully stopped.
+  * @returns {{Promise<void>}} Promise that resolves when the microservice is fully stopped.
+  **/
   async stop(): Promise<void> {
     try {
       logger.debug(`Stopping microservice: ${this.config.name}`);
@@ -88,6 +102,14 @@ export abstract class BaseMicroservice {
   }
 
   // Request processing with middleware
+  /****
+   * Processes a service request by enriching metadata, applying retry logic, recording performance, and tracking errors.
+   * @example
+   * processRequest({ endpoint: 'GET /items', method: 'GET', headers: {}, payload: null })
+   * Promise<ServiceResponse<{ items: string[] }>>
+   * @param {ServiceRequest<T>} request - Service request payload including endpoint, headers, and payload.
+   * @returns {Promise<ServiceResponse<T>>} Promise resolving to enriched response metadata or a failure response with error details.
+   ****/
   async processRequest<T>(request: ServiceRequest<T>): Promise<ServiceResponse<T>> {
     const startTime = Date.now();
     const requestId = this.generateRequestId();
@@ -160,6 +182,14 @@ export abstract class BaseMicroservice {
   }
 
   // Health check implementation
+  /****
+  * Retrieves the current health status of the service, iterating through each registered health check and summarizing the results.
+  * @example
+  * await baseService.getHealth()
+  * { status: 'healthy', timestamp: Date, checks: [...], metadata: {...} }
+  * @param {{void}} none - No arguments are required.
+  * @returns {{Promise<ServiceHealth>}} The aggregated health information for the service.
+  ****/
   async getHealth(): Promise<ServiceHealth> {
     const checks: any[] = [];
     let overallStatus: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
@@ -240,6 +270,13 @@ export abstract class BaseMicroservice {
     this.healthChecks.set(name, checkFn);
   }
 
+  /**
+  * Registers default health checks for service liveness and memory usage.
+  * @example
+  * service.registerDefaultHealthChecks()
+  * undefined
+  * @returns {void} Registers health checks for service status and memory consumption.
+  **/
   private registerDefaultHealthChecks(): void {
     // Basic service health check
     this.registerHealthCheck('service', async () => {
@@ -272,6 +309,15 @@ export abstract class BaseMicroservice {
     }
   }
 
+  /****
+  * Protected helper to call a microservice by name asynchronously.
+  * @example
+  * callService('orders', { payload: { orderId: 123 } })
+  * { success: true, data: {}, metadata: { requestId: 'req-1', timestamp: new Date(), duration: 0 } }
+  * @param {{string}} {{serviceName}} - Name of the service to call.
+  * @param {{ServiceRequest<T>}} {{request}} - Request payload for the microservice.
+  * @returns {{Promise<ServiceResponse<R>>}} Promise resolving with the microservice response.
+  ****/
   protected async callService<T, R>(
     serviceName: string, 
     request: ServiceRequest<T>

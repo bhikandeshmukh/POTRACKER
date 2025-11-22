@@ -56,6 +56,13 @@ const DEFAULT_PERMISSIONS = {
   }
 };
 
+/**
+* Initializes default role permissions in Firestore and logs summaries
+* @example
+* initializePermissions()
+* undefined
+* @returns {Promise<void>} Resolves when all permissions are written to Firestore or rejects on error
+**/
 async function initializePermissions() {
   try {
     console.log('Initializing role permissions in Firestore...\n');

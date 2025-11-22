@@ -6,6 +6,14 @@ interface StatusBadgeProps {
   animated?: boolean;
 }
 
+/**
+* Renders a styled badge reflecting the provided status.
+* @example
+* StatusBadge({ status: 'Approved', animated: true })
+* <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full ...">...</span>
+* @param {{StatusBadgeProps}} {{props}} - Configuration object containing the current status and optional animation toggle.
+* @returns {{JSX.Element}} Rendered badge element with status-specific styling and icon.
+**/
 export default function StatusBadge({ status, animated = true }: StatusBadgeProps) {
   const config = {
     Pending: {
