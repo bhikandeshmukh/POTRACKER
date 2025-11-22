@@ -156,35 +156,37 @@ export default function AppointmentsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      // Validate line items if PO is selected
+      // Validate line items if PO is selected and creating new appointment
       const itemsToSchedule = formData.lineItems?.filter(item => item.appointmentQty > 0) || [];
-      if (formData.poNumber && itemsToSchedule.length === 0) {
+      if (!editingId && formData.poNumber && selectedPO && itemsToSchedule.length === 0) {
         alert('Please select at least one item with quantity for the appointment');
         return;
       }
 
-      const appointmentData = {
+      const appointmentData: any = {
         appointmentId: formData.appointmentId,
         poNumber: formData.poNumber,
-        poId: formData.poId,
         vendorName: formData.vendorName,
-        transporterId: formData.transporterId,
-        transporterName: formData.transporterName,
-        transporterEmail: formData.transporterEmail,
-        transporterPhone: formData.transporterPhone,
         appointmentDate: Timestamp.fromDate(new Date(formData.appointmentDate!)),
         appointmentTime: formData.appointmentTime,
-        location: formData.location,
-        docketNumber: formData.docketNumber,
-        invoiceNumber: formData.invoiceNumber,
+        location: formData.location || '',
         purpose: formData.purpose,
         status: formData.status,
-        notes: formData.notes,
         lineItems: itemsToSchedule,
         totalAmount: formData.totalAmount || 0,
         createdBy: user?.displayName || user?.email || 'Unknown',
         updatedAt: serverTimestamp()
       };
+
+      // Only add optional fields if they have values
+      if (formData.poId) appointmentData.poId = formData.poId;
+      if (formData.transporterId) appointmentData.transporterId = formData.transporterId;
+      if (formData.transporterName) appointmentData.transporterName = formData.transporterName;
+      if (formData.transporterEmail) appointmentData.transporterEmail = formData.transporterEmail;
+      if (formData.transporterPhone) appointmentData.transporterPhone = formData.transporterPhone;
+      if (formData.docketNumber) appointmentData.docketNumber = formData.docketNumber;
+      if (formData.invoiceNumber) appointmentData.invoiceNumber = formData.invoiceNumber;
+      if (formData.notes) appointmentData.notes = formData.notes;
 
       if (editingId) {
         // Update existing appointment
@@ -366,10 +368,17 @@ export default function AppointmentsPage() {
     if (!formData.lineItems) return;
     
     const updatedItems = [...formData.lineItems];
-    const poItem = selectedPO?.lineItems[index];
-    const maxQty = poItem?.pendingQty || poItem?.quantity || 0;
     
-    updatedItems[index].appointmentQty = Math.min(qty, maxQty);
+    // Allow any quantity in edit mode, only restrict in create mode
+    if (selectedPO?.lineItems?.[index]) {
+      const poItem = selectedPO.lineItems[index];
+      const maxQty = poItem?.pendingQty || poItem?.quantity || 999999;
+      updatedItems[index].appointmentQty = editingId ? qty : Math.min(qty, maxQty);
+    } else {
+      // In edit mode without selectedPO, allow any quantity
+      updatedItems[index].appointmentQty = qty;
+    }
+    
     updatedItems[index].total = updatedItems[index].appointmentQty * updatedItems[index].unitPrice;
     
     const totalAmount = updatedItems.reduce((sum, item) => sum + item.total, 0);
@@ -736,22 +745,24 @@ export default function AppointmentsPage() {
                         </thead>
                         <tbody className="divide-y divide-gray-200">
                           {formData.lineItems.map((item, index) => {
-                            const poItem = selectedPO.lineItems[index];
-                            const availableQty = poItem?.pendingQty || poItem?.quantity || 0;
+                            const poItem = selectedPO?.lineItems?.[index];
+                            const availableQty = poItem?.pendingQty || poItem?.quantity || 999999;
                             
                             return (
                               <tr key={index}>
                                 <td className="px-4 py-3 text-sm text-gray-900">{item.itemName}</td>
                                 <td className="px-4 py-3 text-sm text-gray-900 font-mono">{item.sku || '-'}</td>
                                 <td className="px-4 py-3 text-sm text-gray-900">{item.warehouse}</td>
-                                <td className="px-4 py-3 text-sm text-gray-900">{availableQty}</td>
+                                <td className="px-4 py-3 text-sm text-gray-900">{poItem ? (poItem.pendingQty || poItem.quantity || 0) : '-'}</td>
                                 <td className="px-4 py-3">
                                   <input
                                     type="number"
                                     min="0"
-                                    max={availableQty}
                                     value={item.appointmentQty}
-                                    onChange={(e) => updateLineItemQty(index, parseInt(e.target.value) || 0)}
+                                    onChange={(e) => {
+                                      const newQty = parseInt(e.target.value) || 0;
+                                      updateLineItemQty(index, newQty);
+                                    }}
                                     className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
                                   />
                                 </td>
@@ -818,110 +829,64 @@ export default function AppointmentsPage() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full text-sm">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Appointment ID</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">PO Number</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vendor</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date & Time</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Items</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Transporter</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Appointment ID</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">PO Number</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Vendor</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date & Time</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Items</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Transporter</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Docket ID</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
+                  <tbody className="divide-y divide-gray-200 bg-white">
                     {appointments.map((appointment) => (
                       <tr key={appointment.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="font-medium text-blue-600">{appointment.appointmentId}</span>
+                        <td className="px-3 py-3 whitespace-nowrap">
+                          <span className="font-medium text-blue-600 text-xs">{appointment.appointmentId}</span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center space-x-2">
-                            <FileText className="w-4 h-4 text-gray-400" />
+                        <td className="px-3 py-3 whitespace-nowrap">
                           <span className="font-medium text-gray-900">{appointment.poNumber}</span>
+                        </td>
+                        <td className="px-3 py-3 whitespace-nowrap text-gray-700">{appointment.vendorName}</td>
+                        <td className="px-3 py-3 whitespace-nowrap text-gray-700">
+                          <div className="flex flex-col">
+                            <span className="font-medium">{new Date(appointment.appointmentDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                            <span className="text-xs text-gray-500">{appointment.appointmentTime}</span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-gray-700">{appointment.vendorName}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center space-x-2 text-gray-700">
-                            <Calendar className="w-4 h-4 text-gray-400" />
-                          <span>{new Date(appointment.appointmentDate).toLocaleDateString()}</span>
-                            <Clock className="w-4 h-4 text-gray-400 ml-2" />
-                          <span>{appointment.appointmentTime}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-gray-700">
+                        <td className="px-3 py-3 whitespace-nowrap text-gray-700">
                           {appointment.lineItems ? (
-                            <div className="flex items-center space-x-1">
-                              <Package className="w-4 h-4 text-gray-400" />
-                            <span>{appointment.lineItems.length} items</span>
-                            </div>
+                            <span>{appointment.lineItems.reduce((sum, item) => sum + item.appointmentQty, 0)} qty</span>
                           ) : (
                             <span className="text-gray-400">-</span>
                           )}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-gray-700">
-                          {appointment.totalAmount ? (
-                            <span className="font-medium">₹{appointment.totalAmount.toLocaleString()}</span>
-                          ) : (
-                            <span className="text-gray-400">-</span>
-                          )}
+                        <td className="px-3 py-3 whitespace-nowrap text-gray-700">
+                          {appointment.transporterName || '-'}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {appointment.transporterName ? (
-                            <div className="flex items-center space-x-2">
-                              <span className="text-gray-700">{appointment.transporterName}</span>
-                              {appointment.transporterEmail && (
-                                <button
-                                  onClick={() => sendEmailToTransporter(appointment)}
-                                  className="text-blue-600 hover:text-blue-900"
-                                  title="Send email to transporter"
-                                >
-                                  <Mail className="w-4 h-4" />
-                              </button>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-gray-400">-</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-gray-700">
+                        <td className="px-3 py-3 whitespace-nowrap text-gray-700">
                           {appointment.docketNumber || '-'}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <select
-                            value={appointment.status}
-                            onChange={(e) => handleStatusChange(appointment.id!, e.target.value as any)}
-                            className={`px-3 py-1 rounded-full text-xs font-semibold border-0 ${getStatusColor(appointment.status)}`}
-                          >
-                            <option value="scheduled">📅 Scheduled</option>
-                            <option value="confirmed">✅ Confirmed</option>
-                            <option value="prepared">📦 Prepared</option>
-                            <option value="shipped">🚚 Shipped</option>
-                            <option value="in-transit">🛣️ In Transit</option>
-                            <option value="delivered">📍 Delivered</option>
-                            <option value="cancelled">❌ Cancelled</option>
-                          </select>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex space-x-2">
+                        <td className="px-3 py-3 whitespace-nowrap">
+                          <div className="flex space-x-1">
                             <button
                               onClick={() => handleEdit(appointment)}
-                              className="text-blue-600 hover:text-blue-900"
+                              className="p-1 text-blue-600 hover:bg-blue-50 rounded"
                               title="Edit"
                             >
                               <Edit className="w-4 h-4" />
-size-4                     </button>
+                            </button>
                             <button
                               onClick={() => handleDelete(appointment.id!)}
-                              className="text-red-600 hover:text-red-900"
+                              className="p-1 text-red-600 hover:bg-red-50 rounded"
                               title="Delete"
                             >
                               <Trash2 className="w-4 h-4" />
-size-4                     </button>
+                            </button>
                           </div>
                         </td>
                       </tr>

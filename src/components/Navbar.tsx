@@ -19,7 +19,7 @@ export default function Navbar() {
       <div className="h-16 relative flex items-center justify-between px-4">
         {/* PO Tracker - Fixed position relative to viewport */}
         <div className="absolute left-16 top-1/2 -translate-y-1/2">
-          <Link href="/dashboard" className={`${getThemeClasses.pageTitle()} text-blue-600 hover:text-blue-700 transition-colors cursor-pointer`}>
+          <Link href="/dashboard" className="text-2xl sm:text-2xl md:text-2xl font-bold text-blue-600 hover:text-blue-500 transition-colors cursor-pointer">
             PO Tracker
           </Link>
         </div>

@@ -1,28 +1,40 @@
 // Global Theme Configuration for consistent styling across all pages
 
 export const theme = {
-  // Typography
+  // Typography - Standardized text sizes (reduced by 10%)
   typography: {
-    // Page titles
-    pageTitle: 'text-lg font-semibold text-gray-900',
+    // Page titles - 24px -> 21.6px
+    pageTitle: 'font-bold text-gray-900',
     
-    // Section headings
-    sectionHeading: 'text-base font-semibold text-gray-900 mb-4',
+    // Section headings - 18px -> 16.2px
+    sectionHeading: 'font-semibold text-gray-900',
     
-    // Card titles
-    cardTitle: 'text-sm font-medium text-gray-900',
+    // Card titles - 16px -> 14.4px
+    cardTitle: 'font-semibold text-gray-900',
     
-    // Descriptions
-    description: 'text-sm text-gray-600',
+    // Descriptions - 14px -> 12.6px
+    description: 'text-gray-600',
     
-    // Small text
-    smallText: 'text-xs text-gray-500',
+    // Body text - 14px -> 12.6px
+    bodyText: 'text-gray-700',
     
-    // KPI values
-    kpiValue: 'text-sm sm:text-base md:text-lg font-bold text-gray-900',
+    // Small text - 12px -> 10.8px
+    smallText: 'text-gray-500',
     
-    // KPI titles
-    kpiTitle: 'text-xs font-medium text-gray-500',
+    // Table header - 12px -> 10.8px
+    tableHeader: 'font-medium text-gray-500 uppercase',
+    
+    // Table cell - 14px -> 12.6px
+    tableCell: 'text-gray-700',
+    
+    // Button text - 14px -> 12.6px
+    buttonText: 'font-medium',
+    
+    // KPI values - Reduced size
+    kpiValue: 'text-large sm:text-medium text-gray-900',
+    
+    // KPI titles - Small size
+    kpiTitle: 'text-xs font-medium text-gray-400 uppercase',
   },
   
   // Icons
@@ -130,7 +142,11 @@ export const getThemeClasses = {
   sectionHeading: () => theme.typography.sectionHeading,
   cardTitle: () => theme.typography.cardTitle,
   description: () => theme.typography.description,
+  bodyText: () => theme.typography.bodyText,
   smallText: () => theme.typography.smallText,
+  tableHeader: () => theme.typography.tableHeader,
+  tableCell: () => theme.typography.tableCell,
+  buttonText: () => theme.typography.buttonText,
   kpiValue: () => theme.typography.kpiValue,
   kpiTitle: () => theme.typography.kpiTitle,
   
