@@ -193,14 +193,14 @@ export class UserService extends BaseService<User> {
     });
   }
 
-  /**/ **
+  /**
   * Searches users by name or email, returning the filtered subset of users.
   * @example
   * searchUsers("alice")
   * { success: true, data: { data: [{ id: 1, name: "Alice", ... }], total: 1 } }
   * @param {{string}} {{searchTerm}} - Term used to match against user name or email.
   * @returns {{Promise<{success: boolean, data: { data: Array<any>, total: number, [key: string]: any }}|{success: boolean, error?: any}>>}} Promise resolving with filtered users or the original result.
-  **/*/
+  */
   async searchUsers(searchTerm: string) {
     const result = await this.findMany();
     

@@ -458,11 +458,11 @@ export default function AppointmentsPage() {
 
   const getPurposeIcon = (purpose: string) => {
     switch (purpose) {
-      case 'delivery': return <MapPin className="w-size-4/>;
-      case 'inspection': return <CheckCircle className="w-size-4/>;
-      case 'meeting': return <User className="w-size-4/>;
-      case 'pickup': return <MapPin className="w-size-4/>;
-      default: return <Calendar className="w-size-4/>;
+      case 'delivery': return <MapPin className="w-4 h-4" />;
+      case 'inspection': return <CheckCircle className="w-4 h-4" />;
+      case 'meeting': return <User className="w-4 h-4" />;
+      case 'pickup': return <MapPin className="w-4 h-4" />;
+      default: return <Calendar className="w-4 h-4" />;
     }
   };
 
@@ -483,7 +483,7 @@ export default function AppointmentsPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="ananimate-spin rounded-full size-12 border-b-2 border-blue-600 mx-auto</div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading...</p>
         </div>
       </div>
@@ -508,7 +508,7 @@ export default function AppointmentsPage() {
                 onClick={() => setShowImportModal(true)}
                 className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
               >
-                <Upload className="w-size-5/>
+                <Upload className="w-5 h-5" />
                 <span>Import CSV</span>
               </button>
               <button
@@ -518,7 +518,7 @@ export default function AppointmentsPage() {
                 }}
                 className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
               >
-                <Plus className="w-size-5/>
+                <Plus className="w-5 h-5" />
                 <span>New Appointment</span>
               </button>
             </div>
@@ -805,13 +805,15 @@ export default function AppointmentsPage() {
           <div className={getThemeClasses.card()}>
             {appointments.length === 0 ? (
               <div className="text-center py-12">
-                <Calendar className="w-16 h-size-16 mx-auto text-gray-300 mb-4              <h3 className="text-lg font-medium text-gray-900 mb-2">No Appointments</h3>
+                <Calendar className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No Appointments</h3>
                 <p className="text-gray-500 mb-4">Create your first PO appointment to get started</p>
                 <button
                   onClick={() => setShowForm(true)}
                   className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
                 >
-                  <Plus className="w-5 h-5size-5                <span>New Appointment</span>
+                  <Plus className="w-5 h-5" />
+                <span>New Appointment</span>
                 </button>
               </div>
             ) : (
@@ -838,20 +840,24 @@ export default function AppointmentsPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center space-x-2">
-                            <FileText className="w-4 h-4size-4 text-gray-400                          <span className="font-medium text-gray-900">{appointment.poNumber}</span>
+                            <FileText className="w-4 h-4 text-gray-400" />
+                          <span className="font-medium text-gray-900">{appointment.poNumber}</span>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-gray-700">{appointment.vendorName}</td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center space-x-2 text-gray-700">
-                            <Calendar className="w-4 h-4size-4 text-gray-400                          <span>{new Date(appointment.appointmentDate).toLocaleDateString()}</span>
-                            <Clock className="w-4 h-4size-4 text-gray-400 ml-2                          <span>{appointment.appointmentTime}</span>
+                            <Calendar className="w-4 h-4 text-gray-400" />
+                          <span>{new Date(appointment.appointmentDate).toLocaleDateString()}</span>
+                            <Clock className="w-4 h-4 text-gray-400 ml-2" />
+                          <span>{appointment.appointmentTime}</span>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-gray-700">
                           {appointment.lineItems ? (
                             <div className="flex items-center space-x-1">
-                              <Package className="w-4 h-4size-4 text-gray-400                            <span>{appointment.lineItems.length} items</span>
+                              <Package className="w-4 h-4 text-gray-400" />
+                            <span>{appointment.lineItems.length} items</span>
                             </div>
                           ) : (
                             <span className="text-gray-400">-</span>
@@ -874,7 +880,8 @@ export default function AppointmentsPage() {
                                   className="text-blue-600 hover:text-blue-900"
                                   title="Send email to transporter"
                                 >
-                                  <Mail className="w-4 h-4size-4                              </button>
+                                  <Mail className="w-4 h-4" />
+                              </button>
                               )}
                             </div>
                           ) : (

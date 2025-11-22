@@ -485,10 +485,10 @@ function CreateShipmentModal({ po, isOpen, onClose, onSuccess }: {
                 onClick={() => setShowImportModal(true)}
                 className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm"
               >
-                <Download className="w-4 h-4" size-4            <span>Import</span>
+                 <Download className="w-4 h-4" size={4} /> <span>Import</span>
               </button>
               <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600">
-                <XCircle className="w-5 h-5" size-5          </button>
+                 <XCircle className="w-5 h-5" size={5} /> </button>
             </div>
           </div>
 
@@ -696,7 +696,8 @@ function ShipmentDetailModal({ shipment, isOpen, onClose, onStatusUpdate, canUpd
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <h2 className="text-xl font-semibold text-gray-900">Shipment Details</h2>
             <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600">
-              <XCircle className="w-5 h-5" size-5        </button>
+              <XCircle className="w-5 h-5" />
+            </button>
           </div>
 
           <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
@@ -802,7 +803,8 @@ function ShipmentDetailModal({ shipment, isOpen, onClose, onStatusUpdate, canUpd
                       onClick={() => onStatusUpdate('Shipped')}
                       className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                     >
-                      <Truck className="w-4 h-4" size-4                  <span>Mark as Shipped</span>
+                      <Truck className="w-4 h-4" />
+                      <span>Mark as Shipped</span>
                     </button>
                   )}
                   {(shipment.status === 'Shipped' || shipment.status === 'In Transit') && (
@@ -811,13 +813,15 @@ function ShipmentDetailModal({ shipment, isOpen, onClose, onStatusUpdate, canUpd
                         onClick={() => onStatusUpdate('In Transit')}
                         className="flex items-center space-x-2 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700"
                       >
-                        <Truck className="w-4 h-4" size-4                    <span>In Transit</span>
+                        <Truck className="w-4 h-4" />
+                        <span>In Transit</span>
                       </button>
                       <button
                         onClick={() => onStatusUpdate('Delivered')}
                         className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
                       >
-                        <Package className="w-4 h-4" size-4                    <span>Mark as Delivered</span>
+                        <Package className="w-4 h-4" />
+                        <span>Mark as Delivered</span>
                       </button>
                     </>
                   )}
@@ -826,7 +830,8 @@ function ShipmentDetailModal({ shipment, isOpen, onClose, onStatusUpdate, canUpd
                       onClick={() => onStatusUpdate('Cancelled')}
                       className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
                     >
-                      <XCircle className="w-4 h-4" size-4                  <span>Cancel</span>
+                      <XCircle className="w-4 h-4" />
+                      <span>Cancel</span>
                     </button>
                   )}
                 </div>

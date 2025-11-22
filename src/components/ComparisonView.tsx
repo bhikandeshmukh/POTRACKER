@@ -8,14 +8,12 @@ interface ComparisonViewProps {
   period?: 'month' | 'quarter' | 'year';
 }
 
-/**/ **
-* Renders a month-over-month comparison dashboard summarizing current and previous period metrics.
-* @example
-* ComparisonView({ data: sampleData, period: 'month' })
-* <div className="space-y-6">…</div>
-* @param {{ComparisonViewProps}} {{props}} - Props including filtered dataset and optional period selector (defaults to 'month').
-* @returns {{JSX.Element}} A comparison view with metric cards and a detailed breakdown table.
-* /*/
+/**
+ * Renders a month-over-month comparison dashboard summarizing current and previous period metrics.
+ * @example
+ * ComparisonView({ data: sampleData, period: 'month' })
+ * <div className="space-y-6">…</div>
+ */
 export default function ComparisonView({ data, period = 'month' }: ComparisonViewProps) {
   const comparison = useMemo(() => {
     const now = new Date();

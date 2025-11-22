@@ -34,15 +34,6 @@ export default function Pagination({
 }: PaginationProps) {
   
   // Calculate visible page numbers
-  /**/ **
-  * Generates a paginated range of page numbers with ellipses when pages are skipped.
-  * @example
-  * getPaginationRange(5, 10)
-  * [1, '...', 3, 4, 5, 6, 7, '...', 10]
-  * @param {{number}} {{currentPage}} - Current active page number.
-  * @param {{number}} {{totalPages}} - Total number of available pages.
-  * @returns {{Array<(number|string)>}} Returns an ordered list of page indicators with ellipses.
-  **/*/
   const getVisiblePages = () => {
     const delta = 2; // Number of pages to show on each side of current page
     const range = [];

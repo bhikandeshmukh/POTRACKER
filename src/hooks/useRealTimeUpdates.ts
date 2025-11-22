@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useToast } from '@/components/ToastContainer';
-import type { Timeout } from 'node:timers';
 
 interface UseRealTimeUpdatesProps {
   onUpdate: () => void;
@@ -25,7 +24,7 @@ export function useRealTimeUpdates({
 }: UseRealTimeUpdatesProps) {
   const [isActive, setIsActive] = useState(enabled);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
-  const intervalRef = useRef<Timeout | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const { showInfo } = useToast();
 
   useEffect(() => {

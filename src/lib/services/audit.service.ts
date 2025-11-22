@@ -8,8 +8,8 @@ export class AuditService extends BaseService<AuditLog> {
     super('auditLogs');
   }
 
-  /**/ **
-  * Logs an audit event with user, entity, and optional metadata details.
+  /**
+   * Logs an audit event with user, entity, and optional metadata details.
   * @example
   * logEvent("user123", "Jane Doe", "admin", "CREATE", "Document", "doc456", "Project Plan", "Created new document", { title: { old: null, new: "Project Plan" } }, { ip: "127.0.0.1" })
   * Promise<void>
@@ -24,7 +24,7 @@ export class AuditService extends BaseService<AuditLog> {
   * @param {{Record<string, { old: any; new: any }}}} changes - Optional map of field changes.
   * @param {{Record<string, any>}} metadata - Optional metadata to attach to the audit entry.
   * @returns {{Promise<void>}} Promise resolving when the audit log is stored.
-  **/*/
+   */
   async logEvent(
     userId: string,
     userName: string,

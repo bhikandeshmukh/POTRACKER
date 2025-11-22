@@ -120,7 +120,7 @@ export default function FileUpload({
                   error: success ? undefined : 'Upload failed. Please try again.'
                 }
               : f
-          ));
+          )));
 
           if (success) {
             resolve();

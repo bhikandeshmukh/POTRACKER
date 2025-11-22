@@ -58,13 +58,13 @@ export class CacheService {
     }
   }
 
-  /**/ **
-  * Removes the oldest entry from the cache if one exists.
+  /**
+   * Removes the oldest entry from the cache if one exists.
   * @example
   * evictOldest()
   * undefined
   * @returns {void} Void return since the method only mutates internal cache state.
-  **/*/
+  */
   private evictOldest() {
     if (this.cache.size === 0) return;
 

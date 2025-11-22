@@ -150,13 +150,13 @@ export class InMemoryServiceRegistry implements ServiceRegistry {
   }
 
   // Get service statistics
-  /**/ **
+  /**
   * Compiles service registry health metrics and details for every known service instance.
   * @example
   * serviceRegistry.getStats()
   * { totalServices: 5, healthyServices: 3, unhealthyServices: 1, degradedServices: 1, services: [{ name: "api", status: "healthy", registeredAt: new Date("2025-01-01"), lastHealthCheck: new Date("2025-11-22") }] }
   * @returns {{ totalServices: number; healthyServices: number; unhealthyServices: number; degradedServices: number; services: Array<{ name: string; status: string; registeredAt: Date; lastHealthCheck: Date; }> }} Aggregated health summary of the registered services.
-  **/*/
+  */
   getStats(): {
     totalServices: number;
     healthyServices: number;

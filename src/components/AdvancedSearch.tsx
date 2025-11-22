@@ -21,14 +21,8 @@ interface AdvancedSearchProps {
   pos?: any[];
 }
 
-/**/ **
-* Provides modal search UI for POs, vendors, and users with filters, keyboard navigation, and real PO data.
-* @example
-* AdvancedSearch({ isOpen: true, onClose: () => {}, placeholder: "Search...", pos: [] })
-* <div className="fixed inset-0 z-50 ..."></div>
-* @param {{AdvancedSearchProps}} {{props}} - Props controlling visibility, cleanup callback, placeholder text, and PO dataset.
-* @returns {{JSX.Element | null}} JSX for the search modal when visible, otherwise null.
-*/*/
+/**
+ */
 export default function AdvancedSearch({ isOpen, onClose, placeholder = "Search POs, vendors, users...", pos = [] }: AdvancedSearchProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -43,14 +37,6 @@ export default function AdvancedSearch({ isOpen, onClose, placeholder = "Search 
   const router = useRouter();
 
   // Search function using actual PO data
-  /**/ **
-  * Performs a filtered search for purchase orders and updates UI state based on the query.
-  * @example
-  * sync("PO123")
-  * undefined
-  * @param {{string}} {searchQuery} - Search query string to match against purchase order data.
-  * @returns {{Promise<void>}} Updates state with the search results once resolved.
-  ** /*/
   const performSearch = async (searchQuery: string) => {
     if (!searchQuery.trim()) {
       setResults([]);

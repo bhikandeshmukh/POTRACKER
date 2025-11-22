@@ -54,13 +54,13 @@ export default function AuditLogsPage() {
     }
   }, [user, loading, router]);
 
-  /**/ **
+  /**
   * Reloads audit logs by fetching the latest entries and updating the component state.
   * @example
   * sync()
   * undefined
   * @returns {Promise<void>} Resolves once the logs are refreshed.
-  **/*/
+  */
   const loadAuditLogs = async () => {
     setLoadingLogs(true);
     try {

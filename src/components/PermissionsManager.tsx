@@ -145,7 +145,7 @@ export default function PermissionsManager() {
   if (loading) {
     return (
       <div className="flex items-center justify-center p-12">
-        <div className="w-8size-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin/div>
+         <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
         <span className="ml-3 text-gray-600">Loading permissions...</span>
       </div>
     );
@@ -161,10 +161,10 @@ export default function PermissionsManager() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 flex items-center space-x-2">
-            <Shield className="w-7size-7 text-blue-600>
+             <Shield className="w-7 h-7 text-blue-600" />
             <span>Role Permissions Management</span>
           </h2>
-          <p className="text-sm text-gray-600 mt-1">
+           <p className="text-sm text-gray-600 mt-1">
             Configure permissions for each role. Only admins can modify these settings.
           </p>
         </div>
@@ -175,7 +175,7 @@ export default function PermissionsManager() {
               onClick={loadPermissions}
               className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
             >
-              <RotateCcw className="w-4size-4 inline mr-2>
+              <RotateCcw className="w-4 h-4 inline mr-2" />
               Discard Changes
             </button>
             <button
@@ -185,12 +185,12 @@ export default function PermissionsManager() {
             >
               {saving ? (
                 <>
-                  <div className="w-4size-4 border-2 border-white border-t-transparent rounded-full animate-spin/div>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   <span>Saving...</span>
                 </>
               ) : (
                 <>
-                  <Save className="w-4size-4>
+                  <Save className="w-4 h-4" />
                   <span>Save Changes</span>
                 </>
               )}
@@ -202,7 +202,7 @@ export default function PermissionsManager() {
       {/* Warning for non-admins */}
       {userData?.role !== 'Admin' && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start space-x-3">
-          <AlertCircle className="w-5size-5 text-yellow-600 flex-shrink-0 mt-0.5>
+          <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
           <div className="text-sm text-yellow-800">
             <p className="font-medium">View Only Mode</p>
             <p>You can view permissions but only administrators can modify them.</p>
@@ -255,7 +255,7 @@ export default function PermissionsManager() {
               disabled={userData?.role !== 'Admin'}
               className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <RotateCcw className="w-4size-4 inline mr-2>
+              <RotateCcw className="w-4 h-4 inline mr-2" />
               Reset to Defaults
             </button>
           </div>
@@ -306,14 +306,15 @@ export default function PermissionsManager() {
                           checked={isEnabled}
                           onChange={() => togglePermission(selectedRole, permission)}
                           disabled={userData?.role !== 'Admin'}
-                          className="w-5size-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed                       />
+                          className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"
+                        />
                         
                         <div className="flex-1">
                           <div className="flex items-center space-x-2">
                             {isEnabled ? (
-                              <Unlock className="w-4size-4 text-blue-600>
+                              <Unlock className="w-4 h-4 text-blue-600" />
                             ) : (
-                              <Lock className="w-4size-4 text-gray-400>
+                              <Lock className="w-4 h-4 text-gray-400" />
                             )}
                             <span className="font-medium text-gray-900">
                               {permission}
@@ -325,7 +326,7 @@ export default function PermissionsManager() {
                         </div>
 
                         {isEnabled && (
-                          <CheckCircle className="w-5size-5 text-blue-600>
+                          <CheckCircle className="w-5 h-5 text-blue-600" />
                         )}
                       </label>
                     );
@@ -340,7 +341,7 @@ export default function PermissionsManager() {
       {/* Summary */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <div className="flex items-start space-x-3">
-          <Shield className="w-5size-5 text-blue-600 flex-shrink-0 mt-0.5>
+          <Shield className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
           <div className="text-sm text-blue-800">
             <p className="font-medium mb-1">Permission Changes</p>
             <p>

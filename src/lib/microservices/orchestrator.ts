@@ -305,13 +305,13 @@ export class MicroserviceOrchestrator {
   }
 
   // Private helper methods
-  /**/ **
+  /**
   * Initializes and registers configured microservice instances with the event bus and registry.
   * @example
   * setupServices()
   * undefined
   * @returns {void} Registers configured services and logs the setup summary.
-  **/*/
+  */
   private setupServices(): void {
     // Create service instances based on configuration
     if (this.config.services.includes('po-service')) {

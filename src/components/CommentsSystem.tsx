@@ -285,14 +285,12 @@ export default function CommentsSystem({ poId, className = '' }: CommentsSystemP
     u.id !== user?.uid // Don't show current user
   ).slice(0, 5); // Limit to 5 suggestions
 
-  /**/ **
-  * Converts a Date or Firebase Timestamp into a human-readable relative time string.
-  * @example
-  * formatTimestampAgo(new Date())
-  * "Just now"
-  * @param {{Date | Timestamp}} {{timestamp}} - Date or Firestore Timestamp used to compute how long ago it occurred.
-  * @returns {{string}} Human-readable relative time string such as "5m ago" or full locale date.
-  * /*/
+  /**
+   * Converts a Date or Firebase Timestamp into a human-readable relative time string.
+   * @example
+   * formatTimestampAgo(new Date())
+   * "Just now"
+   */
   const formatTimestamp = (timestamp: Date | Timestamp) => {
     const date = timestamp instanceof Date ? timestamp : timestamp.toDate();
     const now = new Date();
