@@ -34,7 +34,7 @@ export default function ModernButton({
       disabled={disabled}
       className={`${baseStyles} ${variants[variant]} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
     >
-      {Icon && <Icon className="w-4 h-4" />}
+      {Icon && <Icon className="size-4" />}
       <span>{children}</span>
     </button>
   );

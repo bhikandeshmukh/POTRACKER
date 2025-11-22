@@ -29,7 +29,7 @@ export default function UserPermissionsPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full size-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading...</p>
         </div>
       </div>
@@ -49,7 +49,7 @@ export default function UserPermissionsPage() {
               href="/admin/dashboard"
               className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 transition-colors"
             >
-              <ArrowLeft className="w-4 h-4 mr-2" />
+              <ArrowLeft className="size-4 mr-2" />
               Back to Admin Dashboard
             </Link>
           </div>
@@ -58,7 +58,7 @@ export default function UserPermissionsPage() {
           <div className="mb-6">
             <div className="flex items-center space-x-3 mb-2">
               <div className="p-3 bg-blue-100 rounded-lg">
-                <User className="w-6 h-6 text-blue-600" />
+                <User className="size-6 text-blue-600" />
               </div>
               <div>
                 <h1 className={getThemeClasses.pageTitle()}>User Permissions</h1>

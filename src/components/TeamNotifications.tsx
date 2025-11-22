@@ -90,17 +90,17 @@ export default function TeamNotifications({ className = '' }: TeamNotificationsP
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'mention':
-        return <MessageCircle className="w-4 h-4 text-blue-600" />;
+        return <MessageCircle className="size-4 text-blue-600" />;
       case 'approval':
-        return <AlertCircle className="w-4 h-4 text-orange-600" />;
+        return <AlertCircle className="size-4 text-orange-600" />;
       case 'comment':
-        return <MessageCircle className="w-4 h-4 text-green-600" />;
+        return <MessageCircle className="size-4 text-green-600" />;
       case 'po_update':
-        return <FileText className="w-4 h-4 text-purple-600" />;
+        return <FileText className="size-4 text-purple-600" />;
       case 'system':
-        return <Bell className="w-4 h-4 text-gray-600" />;
+        return <Bell className="size-4 text-gray-600" />;
       default:
-        return <Bell className="w-4 h-4 text-gray-600" />;
+        return <Bell className="size-4 text-gray-600" />;
     }
   };
 
@@ -127,9 +127,9 @@ export default function TeamNotifications({ className = '' }: TeamNotificationsP
         onClick={() => setIsOpen(!isOpen)}
         className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
       >
-        <Bell className="w-5 h-5" />
+        <Bell className="size-5" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full size-5 flex items-center justify-center">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
@@ -165,7 +165,7 @@ export default function TeamNotifications({ className = '' }: TeamNotificationsP
                   onClick={() => setIsOpen(false)}
                   className="p-1 text-gray-400 hover:text-gray-600 rounded"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="size-4" />
                 </button>
               </div>
             </div>
@@ -174,7 +174,7 @@ export default function TeamNotifications({ className = '' }: TeamNotificationsP
             <div className="max-h-80 overflow-y-auto">
               {loading ? (
                 <div className="flex items-center justify-center p-8">
-                  <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                  <div className="size-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
                   <span className="ml-2 text-gray-600">Loading...</span>
                 </div>
               ) : notifications.length > 0 ? (
@@ -206,7 +206,7 @@ export default function TeamNotifications({ className = '' }: TeamNotificationsP
                               </span>
                               
                               {!notification.isRead && (
-                                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                <div className="size-2 bg-blue-500 rounded-full"></div>
                               )}
                             </div>
                           </div>
@@ -217,7 +217,7 @@ export default function TeamNotifications({ className = '' }: TeamNotificationsP
                           
                           {notification.fromUser && (
                             <div className="flex items-center space-x-2 text-xs text-gray-500">
-                              <User className="w-3 h-3" />
+                              <User className="size-3" />
                               <span>{notification.fromUser.name}</span>
                               <span>•</span>
                               <span>{notification.fromUser.role}</span>
@@ -226,7 +226,7 @@ export default function TeamNotifications({ className = '' }: TeamNotificationsP
                           
                           {notification.entityName && (
                             <div className="flex items-center space-x-2 text-xs text-gray-500 mt-1">
-                              <FileText className="w-3 h-3" />
+                              <FileText className="size-3" />
                               <span>{notification.entityName}</span>
                             </div>
                           )}
@@ -240,7 +240,7 @@ export default function TeamNotifications({ className = '' }: TeamNotificationsP
                             }}
                             className="p-1 text-gray-400 hover:text-red-600 rounded"
                           >
-                            <X className="w-3 h-3" />
+                            <X className="size-3" />
                           </button>
                         </div>
                       </div>
@@ -249,7 +249,7 @@ export default function TeamNotifications({ className = '' }: TeamNotificationsP
                 </div>
               ) : (
                 <div className="text-center p-8 text-gray-500">
-                  <Bell className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                  <Bell className="size-8 mx-auto mb-2 text-gray-300" />
                   <p>No notifications</p>
                 </div>
               )}

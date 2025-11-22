@@ -123,9 +123,9 @@ export default function DateRangePicker({ value, onChange, className = '' }: Dat
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center space-x-2 px-3 py-2 text-sm border border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
       >
-        <Calendar className="w-4 h-4 text-gray-500" />
+        <Calendar className="size-4 text-gray-500" />
         <span className="text-gray-700">{displayText}</span>
-        <ChevronDown className="w-4 h-4 text-gray-500" />
+        <ChevronDown className="size-4 text-gray-500" />
       </button>
 
       {isOpen && (

@@ -311,7 +311,7 @@ export default function PoForm() {
               onClick={addLineItem}
               className="flex items-center space-x-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="size-4" />
               <span>Add Item</span>
             </button>
           </div>
@@ -518,7 +518,7 @@ PO-2024-002,XYZ Suppliers,16/01/2024,01/02/2024,DESK-OFF-123GHI,DESK-OFF-WD,4x2 
                     onClick={() => removeLineItem(index)}
                     className="p-1 text-red-600 hover:bg-red-50 rounded transition"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="size-4" />
                   </button>
                 </div>
               )}

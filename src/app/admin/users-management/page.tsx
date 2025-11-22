@@ -109,7 +109,7 @@ export default function UsersManagementPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full size-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading...</p>
         </div>
       </div>
@@ -145,7 +145,7 @@ export default function UsersManagementPage() {
               href="/admin/dashboard"
               className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 transition-colors"
             >
-              <ArrowLeft className="w-4 h-4 mr-2" />
+              <ArrowLeft className="size-4 mr-2" />
               Back to Admin Dashboard
             </Link>
           </div>
@@ -154,7 +154,7 @@ export default function UsersManagementPage() {
           <div className="mb-6">
             <div className="flex items-center space-x-3 mb-2">
               <div className="p-3 bg-blue-100 rounded-lg">
-                <Users className="w-6 h-6 text-blue-600" />
+                <Users className="size-6 text-blue-600" />
               </div>
               <div>
                 <h1 className={getThemeClasses.pageTitle()}>Users Management</h1>
@@ -185,7 +185,7 @@ export default function UsersManagementPage() {
                         }
                       `}
                     >
-                      <Icon className="w-5 h-5" />
+                      <Icon className="size-5" />
                       <span>{tab.name}</span>
                       {tab.count !== undefined && (
                         <span className={`
@@ -212,14 +212,14 @@ export default function UsersManagementPage() {
                       onClick={() => setActiveTab('create')}
                       className={`flex items-center space-x-2 ${getThemeClasses.buttonPadding()} ${getThemeClasses.button('primary')}`}
                     >
-                      <UserPlus className="w-4 h-4" />
+                      <UserPlus className="size-4" />
                       <span>Create New User</span>
                     </button>
                   </div>
 
                   {loadingUsers ? (
                     <div className="text-center py-12">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                      <div className="animate-spin rounded-full size-8 border-b-2 border-blue-600 mx-auto"></div>
                       <p className="mt-4 text-gray-600">Loading users...</p>
                     </div>
                   ) : (
@@ -232,7 +232,7 @@ export default function UsersManagementPage() {
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex items-center space-x-3">
                               <div className="p-2 bg-gray-100 rounded-lg">
-                                <User className="w-5 h-5 text-gray-600" />
+                                <User className="size-5 text-gray-600" />
                               </div>
                               <div>
                                 <h3 className="font-semibold text-gray-900">{userItem.name}</h3>
@@ -246,14 +246,14 @@ export default function UsersManagementPage() {
                                 className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                                 title="Edit User"
                               >
-                                <Edit className="w-4 h-4" />
+                                <Edit className="size-4" />
                               </button>
                               <button
                                 onClick={() => handleDeleteUser(userItem)}
                                 className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                 title="Delete User"
                               >
-                                <Trash2 className="w-4 h-4" />
+                                <Trash2 className="size-4" />
                               </button>
                             </div>
                           </div>
@@ -277,14 +277,14 @@ export default function UsersManagementPage() {
 
                   {!loadingUsers && users.length === 0 && (
                     <div className="text-center py-12">
-                      <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                      <Users className="size-12 text-gray-400 mx-auto mb-4" />
                       <h3 className="text-lg font-medium text-gray-900 mb-2">No users found</h3>
                       <p className="text-gray-600 mb-4">Get started by creating your first user</p>
                       <button
                         onClick={() => setActiveTab('create')}
                         className={`${getThemeClasses.buttonPadding()} ${getThemeClasses.button('primary')}`}
                       >
-                        <UserPlus className="w-4 h-4 inline mr-2" />
+                        <UserPlus className="size-4 inline mr-2" />
                         Create User
                       </button>
                     </div>
@@ -336,7 +336,7 @@ export default function UsersManagementPage() {
                   onClick={handleCloseEditModal}
                   className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="size-5" />
                 </button>
               </div>
 
@@ -403,12 +403,12 @@ export default function UsersManagementPage() {
                   >
                     {saving ? (
                       <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <div className="size-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                         <span>Saving...</span>
                       </>
                     ) : (
                       <>
-                        <Save className="w-4 h-4" />
+                        <Save className="size-4" />
                         <span>Update User</span>
                       </>
                     )}

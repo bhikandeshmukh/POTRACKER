@@ -49,13 +49,13 @@ export default function RecentActivity({ userId, limit = 10, showFilters = true 
 
   const getActivityIcon = (type: string) => {
     switch (type) {
-      case 'po_created': return <FileText className="w-4 h-4" />;
-      case 'po_updated': return <FileText className="w-4 h-4" />;
-      case 'po_approved': return <CheckCircle className="w-4 h-4" />;
-      case 'po_rejected': return <XCircle className="w-4 h-4" />;
-      case 'shipment_created': return <Truck className="w-4 h-4" />;
-      case 'comment_added': return <MessageCircle className="w-4 h-4" />;
-      default: return <Package className="w-4 h-4" />;
+      case 'po_created': return <FileText className="size-4" />;
+      case 'po_updated': return <FileText className="size-4" />;
+      case 'po_approved': return <CheckCircle className="size-4" />;
+      case 'po_rejected': return <XCircle className="size-4" />;
+      case 'shipment_created': return <Truck className="size-4" />;
+      case 'comment_added': return <MessageCircle className="size-4" />;
+      default: return <Package className="size-4" />;
     }
   };
 
@@ -88,7 +88,7 @@ export default function RecentActivity({ userId, limit = 10, showFilters = true 
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        <div className="size-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
         <span className="ml-2 text-gray-600">Loading activities...</span>
       </div>
     );
@@ -195,7 +195,7 @@ export default function RecentActivity({ userId, limit = 10, showFilters = true 
 
       {(!activities || activities.length === 0) && !loading && (
         <div className="text-center p-8 text-gray-500">
-          <Clock className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+          <Clock className="size-8 mx-auto mb-2 text-gray-300" />
           <p>No recent activity</p>
         </div>
       )}

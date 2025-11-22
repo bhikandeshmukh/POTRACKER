@@ -143,7 +143,7 @@ export default function NewReturnOrderPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full size-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading...</p>
         </div>
       </div>
@@ -160,7 +160,7 @@ export default function NewReturnOrderPage() {
           {/* Header */}
           <div className="flex items-center space-x-4 mb-6">
             <Link href="/ros" className="text-gray-600 hover:text-gray-900">
-              <ArrowLeft className="w-6 h-6" />
+              <ArrowLeft className="size-6" />
             </Link>
             <div>
               <h1 className={getThemeClasses.pageTitle()}>New Return Order</h1>
@@ -223,7 +223,7 @@ export default function NewReturnOrderPage() {
                     onClick={addLineItem}
                     className="flex items-center space-x-2 px-3 py-1 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                   >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="size-4" />
                     <span>Add Item</span>
                   </button>
                 </div>
@@ -313,7 +313,7 @@ export default function NewReturnOrderPage() {
                               onClick={() => removeLineItem(index)}
                               className="text-red-600 hover:text-red-900"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="size-4" />
                             </button>
                           </td>
                         </tr>

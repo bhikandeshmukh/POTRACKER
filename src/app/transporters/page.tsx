@@ -252,7 +252,7 @@ export default function TransportersPage() {
                   onClick={() => setShowImportExport(true)}
                   className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
                 >
-                  <Download className="w-5 h-5" />
+                  <Download className="size-5" />
                   <span>Import/Export</span>
                 </button>
               )}
@@ -263,7 +263,7 @@ export default function TransportersPage() {
                   onClick={() => setShowForm(!showForm)}
                   className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
                 >
-                  <Plus className="w-5 h-5" />
+                  <Plus className="size-5" />
                   <span>Add Transporter</span>
                 </button>
               )}
@@ -273,7 +273,7 @@ export default function TransportersPage() {
           {/* Search Bar */}
           <div className="mb-6">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 size-5" />
               <input
                 type="text"
                 placeholder="Search transporters by name, contact person, phone, email, or vehicle number..."
@@ -448,7 +448,7 @@ export default function TransportersPage() {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200">
             {filteredTransporters.length === 0 ? (
               <div className="text-center py-12">
-                <Truck className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <Truck className="size-16 text-gray-300 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No Transporters Found</h3>
                 <p className="text-gray-500 mb-4">
                   {searchTerm ? 'No transporters match your search criteria' : 'Add your first transporter to get started'}
@@ -458,7 +458,7 @@ export default function TransportersPage() {
                     onClick={() => setShowForm(true)}
                     className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
                   >
-                    <Plus className="w-5 h-5" />
+                    <Plus className="size-5" />
                     <span>Add Transporter</span>
                   </button>
                 )}
@@ -470,7 +470,7 @@ export default function TransportersPage() {
                     <div className="flex items-start justify-between">
                       <div className="flex items-start space-x-4 flex-1">
                         <div className="p-3 bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-lg">
-                          <Truck className="w-6 h-6" />
+                          <Truck className="size-6" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center space-x-3 mb-2">
@@ -480,25 +480,25 @@ export default function TransportersPage() {
                               className="p-1 text-gray-400 hover:text-gray-600 rounded"
                             >
                               {expandedTransporters.has(transporter.id!) ? (
-                                <ChevronDown className="w-5 h-5" />
+                                <ChevronDown className="size-5" />
                               ) : (
-                                <ChevronRight className="w-5 h-5" />
+                                <ChevronRight className="size-5" />
                               )}
                             </button>
                           </div>
                           
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
                             <div className="flex items-center space-x-2">
-                              <User className="w-4 h-4 text-gray-400" />
+                              <User className="size-4 text-gray-400" />
                               <span>{transporter.contactPerson}</span>
                             </div>
                             <div className="flex items-center space-x-2">
-                              <Phone className="w-4 h-4 text-gray-400" />
+                              <Phone className="size-4 text-gray-400" />
                               <span>{transporter.phone}</span>
                             </div>
                             {transporter.email && (
                               <div className="flex items-center space-x-2">
-                                <Mail className="w-4 h-4 text-gray-400" />
+                                <Mail className="size-4 text-gray-400" />
                                 <span>{transporter.email}</span>
                               </div>
                             )}
@@ -509,7 +509,7 @@ export default function TransportersPage() {
                             <div className="mt-2 flex items-center space-x-4 text-sm text-gray-600">
                               {transporter.vehicleNumber && (
                                 <div className="flex items-center space-x-2">
-                                  <FileText className="w-4 h-4 text-gray-400" />
+                                  <FileText className="size-4 text-gray-400" />
                                   <span>{transporter.vehicleNumber}</span>
                                 </div>
                               )}
@@ -532,7 +532,7 @@ export default function TransportersPage() {
                           {transporter.address && (
                             <div className="mt-2 text-sm text-gray-600">
                               <div className="flex items-start space-x-2">
-                                <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
+                                <MapPin className="size-4 text-gray-400 mt-0.5" />
                                 <span>{transporter.address}</span>
                               </div>
                             </div>
@@ -541,7 +541,7 @@ export default function TransportersPage() {
                           {/* Warehouses Summary */}
                           {transporter.warehouses && transporter.warehouses.length > 0 && (
                             <div className="mt-3 flex items-center space-x-2 text-sm">
-                              <WarehouseIcon className="w-4 h-4 text-blue-500" />
+                              <WarehouseIcon className="size-4 text-blue-500" />
                               <span className="text-blue-600 font-medium">
                                 {transporter.warehouses.length} Warehouse{transporter.warehouses.length > 1 ? 's' : ''}
                               </span>
@@ -558,21 +558,21 @@ export default function TransportersPage() {
                             className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition"
                             title="Add Warehouse"
                           >
-                            <WarehouseIcon className="w-5 h-5" />
+                            <WarehouseIcon className="size-5" />
                           </button>
                           <button
                             onClick={() => handleEdit(transporter)}
                             className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition"
                             title="Edit Transporter"
                           >
-                            <Edit className="w-5 h-5" />
+                            <Edit className="size-5" />
                           </button>
                           <button
                             onClick={() => handleDelete(transporter.id!, transporter.name)}
                             className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition"
                             title="Delete Transporter"
                           >
-                            <Trash2 className="w-5 h-5" />
+                            <Trash2 className="size-5" />
                           </button>
                         </div>
                       )}
@@ -589,7 +589,7 @@ export default function TransportersPage() {
                                 onClick={() => handleAddWarehouse(transporter.id!)}
                                 className="flex items-center space-x-2 px-3 py-1 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
                               >
-                                <Plus className="w-4 h-4" />
+                                <Plus className="size-4" />
                                 <span>Add Warehouse</span>
                               </button>
                             )}
@@ -616,18 +616,18 @@ export default function TransportersPage() {
                                       </div>
                                       <div className="text-sm text-gray-600 space-y-1">
                                         <div className="flex items-start space-x-2">
-                                          <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
+                                          <MapPin className="size-4 text-gray-400 mt-0.5" />
                                           <span>{warehouse.address}</span>
                                         </div>
                                         {warehouse.contactPerson && (
                                           <div className="flex items-center space-x-2">
-                                            <User className="w-4 h-4 text-gray-400" />
+                                            <User className="size-4 text-gray-400" />
                                             <span>{warehouse.contactPerson}</span>
                                           </div>
                                         )}
                                         {warehouse.phone && (
                                           <div className="flex items-center space-x-2">
-                                            <Phone className="w-4 h-4 text-gray-400" />
+                                            <Phone className="size-4 text-gray-400" />
                                             <span>{warehouse.phone}</span>
                                           </div>
                                         )}
@@ -644,7 +644,7 @@ export default function TransportersPage() {
                                         className="p-1 text-red-600 hover:bg-red-100 rounded transition"
                                         title="Delete Warehouse"
                                       >
-                                        <Trash2 className="w-4 h-4" />
+                                        <Trash2 className="size-4" />
                                       </button>
                                     )}
                                   </div>
@@ -653,7 +653,7 @@ export default function TransportersPage() {
                             </div>
                           ) : (
                             <div className="text-center py-8 text-gray-500">
-                              <WarehouseIcon className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+                              <WarehouseIcon className="size-12 text-gray-300 mx-auto mb-2" />
                               <p>No warehouses added yet</p>
                             </div>
                           )}
@@ -679,7 +679,7 @@ export default function TransportersPage() {
                     onClick={() => setShowWarehouseForm(null)}
                     className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
                   >
-                    <X className="w-5 h-5" />
+                    <X className="size-5" />
                   </button>
                 </div>
                 
@@ -779,7 +779,7 @@ export default function TransportersPage() {
                         id="isActive"
                         checked={warehouseFormData.isActive}
                         onChange={(e) => setWarehouseFormData({ ...warehouseFormData, isActive: e.target.checked })}
-                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        className="size-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                       />
                       <label htmlFor="isActive" className="ml-2 text-sm text-gray-700">
                         Active warehouse

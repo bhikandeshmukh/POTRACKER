@@ -152,7 +152,7 @@ export default function GlobalSearch() {
         onClick={() => setIsOpen(true)}
         className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-500 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
       >
-        <Search className="w-4 h-4" />
+        <Search className="size-4" />
         <span>Search...</span>
       </button>
     );
@@ -171,7 +171,7 @@ export default function GlobalSearch() {
         <div className="bg-white rounded-lg shadow-xl border border-gray-200 mx-4">
           {/* Search Input */}
           <div className="flex items-center p-4 border-b border-gray-200">
-            <Search className="w-5 h-5 text-gray-400 mr-3" />
+            <Search className="size-5 text-gray-400 mr-3" />
             <input
               ref={inputRef}
               type="text"
@@ -185,7 +185,7 @@ export default function GlobalSearch() {
               onClick={() => setIsOpen(false)}
               className="ml-3 p-1 hover:bg-gray-100 rounded"
             >
-              <X className="w-4 h-4 text-gray-400" />
+              <X className="size-4 text-gray-400" />
             </button>
           </div>
 
@@ -193,7 +193,7 @@ export default function GlobalSearch() {
           <div className="max-h-80 overflow-y-auto">
             {loading ? (
               <div className="p-4 text-center text-gray-500">
-                <div className="animate-spin w-5 h-5 border-2 border-blue-200 border-t-blue-600 rounded-full mx-auto mb-2"></div>
+                <div className="animate-spin size-5 border-2 border-blue-200 border-t-blue-600 rounded-full mx-auto mb-2"></div>
                 Searching...
               </div>
             ) : results.length > 0 ? (
@@ -206,7 +206,7 @@ export default function GlobalSearch() {
                       onClick={() => handleResultClick(result)}
                       className="w-full flex items-center p-3 hover:bg-gray-50 text-left"
                     >
-                      <Icon className="w-4 h-4 text-gray-400 mr-3 flex-shrink-0" />
+                      <Icon className="size-4 text-gray-400 mr-3 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-900 truncate">
                           {result.title}

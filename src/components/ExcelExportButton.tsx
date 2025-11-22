@@ -147,7 +147,7 @@ export default function ExcelExportButton({
               onClick={() => handleBulkExport(false)}
               className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
             >
-              <FileSpreadsheet className="w-4 h-4 text-green-600" />
+              <FileSpreadsheet className="size-4 text-green-600" />
               <div>
                 <div className="font-medium">Summary Only</div>
                 <div className="text-xs text-gray-500">PO overview without line items</div>
@@ -158,7 +158,7 @@ export default function ExcelExportButton({
               onClick={() => handleBulkExport(true)}
               className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
             >
-              <FileSpreadsheet className="w-4 h-4 text-blue-600" />
+              <FileSpreadsheet className="size-4 text-blue-600" />
               <div>
                 <div className="font-medium">Detailed Report</div>
                 <div className="text-xs text-gray-500">Complete data with all line items</div>

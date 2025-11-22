@@ -226,7 +226,7 @@ export default function UserPermissionsManager() {
   if (loading) {
     return (
       <div className="flex items-center justify-center p-12">
-        <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        <div className="size-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
         <span className="ml-3 text-gray-600">Loading users...</span>
       </div>
     );
@@ -244,7 +244,7 @@ export default function UserPermissionsManager() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 flex items-center space-x-2">
-            <User className="w-7 h-7 text-blue-600" />
+            <User className="size-7 text-blue-600" />
             <span>User Permissions Management</span>
           </h2>
           <p className="text-sm text-gray-600 mt-1">
@@ -258,7 +258,7 @@ export default function UserPermissionsManager() {
               onClick={loadData}
               className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
             >
-              <RotateCcw className="w-4 h-4 inline mr-2" />
+              <RotateCcw className="size-4 inline mr-2" />
               Discard Changes
             </button>
             <button
@@ -268,12 +268,12 @@ export default function UserPermissionsManager() {
             >
               {saving ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <div className="size-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   <span>Saving...</span>
                 </>
               ) : (
                 <>
-                  <Save className="w-4 h-4" />
+                  <Save className="size-4" />
                   <span>Save Changes</span>
                 </>
               )}
@@ -285,7 +285,7 @@ export default function UserPermissionsManager() {
       {/* Warning for non-admins */}
       {userData?.role !== 'Admin' && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start space-x-3">
-          <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+          <AlertCircle className="size-5 text-yellow-600 flex-shrink-0 mt-0.5" />
           <div className="text-sm text-yellow-800">
             <p className="font-medium">View Only Mode</p>
             <p>You can view permissions but only administrators can modify them.</p>
@@ -300,7 +300,7 @@ export default function UserPermissionsManager() {
             <div className="p-4 border-b border-gray-200">
               <h3 className="font-semibold text-gray-900 mb-3">Select User</h3>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 size-4 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search users..."
@@ -323,7 +323,7 @@ export default function UserPermissionsManager() {
                   <div className="flex items-center justify-between mb-1">
                     <span className="font-medium text-gray-900">{u.name}</span>
                     {u.role === 'Admin' && (
-                      <Shield className="w-4 h-4 text-red-600" />
+                      <Shield className="size-4 text-red-600" />
                     )}
                   </div>
                   <p className="text-sm text-gray-600">{u.email}</p>
@@ -340,7 +340,7 @@ export default function UserPermissionsManager() {
         <div className="lg:col-span-2">
           {!selectedUser ? (
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-              <User className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <User className="size-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-600">Select a user to manage their permissions</p>
             </div>
           ) : (
@@ -349,7 +349,7 @@ export default function UserPermissionsManager() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
-                      <User className="w-5 h-5" />
+                      <User className="size-5" />
                       <span>{selectedUserData?.name}</span>
                     </h3>
                     <p className="text-sm text-gray-600 mt-1">
@@ -369,7 +369,7 @@ export default function UserPermissionsManager() {
                       disabled={userData?.role !== 'Admin'}
                       className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <RotateCcw className="w-4 h-4 inline mr-2" />
+                      <RotateCcw className="size-4 inline mr-2" />
                       Reset to Role Permissions
                     </button>
                   )}
@@ -379,7 +379,7 @@ export default function UserPermissionsManager() {
               {selectedUserData?.role === 'Admin' ? (
                 <div className="p-6">
                   <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start space-x-3">
-                    <Shield className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                    <Shield className="size-5 text-red-600 flex-shrink-0 mt-0.5" />
                     <div className="text-sm text-red-800">
                       <p className="font-medium mb-1">Administrator Account</p>
                       <p>Admin users automatically have all {totalPermissions} permissions and cannot be restricted.</p>
@@ -432,15 +432,15 @@ export default function UserPermissionsManager() {
                                   checked={isEnabled}
                                   onChange={() => togglePermission(permission)}
                                   disabled={userData?.role !== 'Admin'}
-                                  className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"
+                                  className="size-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"
                                 />
                                 
                                 <div className="flex-1">
                                   <div className="flex items-center space-x-2">
                                     {isEnabled ? (
-                                      <Unlock className="w-4 h-4 text-blue-600" />
+                                      <Unlock className="size-4 text-blue-600" />
                                     ) : (
-                                      <Lock className="w-4 h-4 text-gray-400" />
+                                      <Lock className="size-4 text-gray-400" />
                                     )}
                                     <span className="font-medium text-gray-900">
                                       {permission}
@@ -452,7 +452,7 @@ export default function UserPermissionsManager() {
                                 </div>
 
                                 {isEnabled && (
-                                  <CheckCircle className="w-5 h-5 text-blue-600" />
+                                  <CheckCircle className="size-5 text-blue-600" />
                                 )}
                               </label>
                             );

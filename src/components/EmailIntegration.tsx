@@ -176,7 +176,7 @@ Best regards,
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <div className="flex items-center space-x-3">
-              <Mail className="w-6 h-6 text-blue-600" />
+              <Mail className="size-6 text-blue-600" />
               <div>
                 <h2 className="text-xl font-semibold text-gray-900">Send Email</h2>
                 <p className="text-sm text-gray-600">PO {po.poNumber} - {po.vendorName}</p>
@@ -188,7 +188,7 @@ Best regards,
                 onClick={() => setPreviewMode(!previewMode)}
                 className="flex items-center space-x-2 px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
               >
-                <Eye className="w-4 h-4" />
+                <Eye className="size-4" />
                 <span>{previewMode ? 'Edit' : 'Preview'}</span>
               </button>
               
@@ -196,7 +196,7 @@ Best regards,
                 onClick={onClose}
                 className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
               >
-                <X className="w-5 h-5" />
+                <X className="size-5" />
               </button>
             </div>
           </div>
@@ -335,7 +335,7 @@ Best regards,
                     {/* Auto-attach PO PDF */}
                     <div className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg">
                       <div className="flex items-center space-x-2">
-                        <Download className="w-4 h-4 text-blue-600" />
+                        <Download className="wsize-4 text-blue-600 />
                         <span className="text-sm text-blue-800">PO_{po.poNumber}.pdf</span>
                         <span className="text-xs text-blue-600">(Auto-generated)</span>
                       </div>
@@ -351,7 +351,7 @@ Best regards,
                     {attachments.map((file, index) => (
                       <div key={index} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg">
                         <div className="flex items-center space-x-2">
-                          <Paperclip className="w-4 h-4 text-gray-600" />
+                          <Paperclip className="wsize-4 text-gray-600 />
                           <span className="text-sm text-gray-800">{file.name}</span>
                           <span className="text-xs text-gray-500">({(file.size / 1024).toFixed(1)} KB)</span>
                         </div>
@@ -359,7 +359,7 @@ Best regards,
                           onClick={() => removeAttachment(index)}
                           className="text-red-600 hover:text-red-800"
                         >
-                          <X className="w-4 h-4" />
+                          <X className="wsize-4 />
                         </button>
                       </div>
                     ))}
@@ -378,7 +378,7 @@ Best regards,
                         htmlFor="attachments"
                         className="flex items-center justify-center space-x-2 p-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 cursor-pointer transition-colors"
                       >
-                        <Paperclip className="w-4 h-4 text-gray-600" />
+                        <Paperclip className="wsize-4 text-gray-600 />
                         <span className="text-sm text-gray-600">Add attachments</span>
                       </label>
                     </div>
@@ -392,11 +392,11 @@ Best regards,
           <div className="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50">
             <div className="flex items-center space-x-4 text-sm text-gray-600">
               <div className="flex items-center space-x-1">
-                <Users className="w-4 h-4" />
+                <Users className="wsize-4 />
                 <span>Recipients: {emailData.to ? 1 : 0}</span>
               </div>
               <div className="flex items-center space-x-1">
-                <Paperclip className="w-4 h-4" />
+                <Paperclip className="wsize-4 />
                 <span>Attachments: {attachments.length + 1}</span>
               </div>
             </div>
@@ -413,7 +413,7 @@ Best regards,
                 disabled={!emailData.to.trim() || sending}
                 className="flex items-center space-x-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Send className="w-4 h-4" />
+                <Send className="wsize-4 />
                 <span>{sending ? 'Sending...' : 'Send Email'}</span>
               </button>
             </div>

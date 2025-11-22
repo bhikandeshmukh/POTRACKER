@@ -137,21 +137,21 @@ export default function MicroservicesDashboard() {
     switch (status) {
       case 'healthy':
       case 'running':
-        return <CheckCircle className="h-5 w-5" />;
+        return <CheckCircle className="size-5" />;
       case 'degraded':
-        return <AlertTriangle className="h-5 w-5" />;
+        return <AlertTriangle className="size-5" />;
       case 'unhealthy':
       case 'error':
-        return <AlertTriangle className="h-5 w-5" />;
+        return <AlertTriangle className="size-5" />;
       default:
-        return <Server className="h-5 w-5" />;
+        return <Server className="size-5" />;
     }
   };
 
   if (loading && !metrics) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full size-8 border-b-2 border-blue-600"></div>
         <span className="ml-2 text-gray-600">Loading microservices dashboard...</span>
       </div>
     );
@@ -172,7 +172,7 @@ export default function MicroservicesDashboard() {
           disabled={loading}
           className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
         >
-          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`size-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
           Refresh
         </button>
       </div>
@@ -212,7 +212,7 @@ export default function MicroservicesDashboard() {
               </p>
             </div>
             <div className="p-3 rounded-full text-blue-600 bg-blue-100">
-              <Server className="h-5 w-5" />
+              <Server className="size-5" />
             </div>
           </div>
         </div>
@@ -230,7 +230,7 @@ export default function MicroservicesDashboard() {
               </p>
             </div>
             <div className="p-3 rounded-full text-purple-600 bg-purple-100">
-              <MessageSquare className="h-5 w-5" />
+              <MessageSquare className="size-5" />
             </div>
           </div>
         </div>
@@ -248,7 +248,7 @@ export default function MicroservicesDashboard() {
               </p>
             </div>
             <div className="p-3 rounded-full text-green-600 bg-green-100">
-              <Database className="h-5 w-5" />
+              <Database className="size-5" />
             </div>
           </div>
         </div>
@@ -344,7 +344,7 @@ export default function MicroservicesDashboard() {
               <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div className="flex items-center">
                   <div className="p-2 rounded-full text-blue-600 bg-blue-100 mr-3">
-                    <Zap className="h-4 w-4" />
+                    <Zap className="size-4" />
                   </div>
                   <div>
                     <p className="font-medium text-gray-900">{event.type}</p>

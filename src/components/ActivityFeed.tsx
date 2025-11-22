@@ -99,23 +99,23 @@ export default function ActivityFeed({
   const getActivityIcon = (type: string) => {
     switch (type) {
       case 'po_created':
-        return <FileText className="w-4 h-4 text-blue-600" />;
+        return <FileText className="size-4 text-blue-600" />;
       case 'po_approved':
-        return <CheckCircle className="w-4 h-4 text-green-600" />;
+        return <CheckCircle className="size-4 text-green-600" />;
       case 'po_rejected':
-        return <XCircle className="w-4 h-4 text-red-600" />;
+        return <XCircle className="size-4 text-red-600" />;
       case 'po_shipped':
-        return <FileText className="w-4 h-4 text-purple-600" />;
+        return <FileText className="size-4 text-purple-600" />;
       case 'po_received':
-        return <CheckCircle className="w-4 h-4 text-green-600" />;
+        return <CheckCircle className="size-4 text-green-600" />;
       case 'vendor_added':
-        return <Building2 className="w-4 h-4 text-orange-600" />;
+        return <Building2 className="size-4 text-orange-600" />;
       case 'comment_added':
-        return <MessageCircle className="w-4 h-4 text-blue-600" />;
+        return <MessageCircle className="size-4 text-blue-600" />;
       case 'user_login':
-        return <User className="w-4 h-4 text-gray-600" />;
+        return <User className="size-4 text-gray-600" />;
       default:
-        return <Activity className="w-4 h-4 text-gray-600" />;
+        return <Activity className="size-4 text-gray-600" />;
     }
   };
 
@@ -161,7 +161,7 @@ export default function ActivityFeed({
       {/* Header */}
       <div className="flex items-center justify-between p-6 border-b border-gray-200">
         <div className="flex items-center space-x-2">
-          <Activity className="w-5 h-5 text-blue-600" />
+          <Activity className="size-5 text-blue-600" />
           <h3 className="text-lg font-semibold text-gray-900">Activity Feed</h3>
           <span className="text-sm text-gray-500">({activities?.length || 0} activities)</span>
         </div>
@@ -198,7 +198,7 @@ export default function ActivityFeed({
       <div className="p-6">
         {loading ? (
           <div className="flex items-center justify-center p-8">
-            <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            <div className="size-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
             <span className="ml-2 text-gray-600">Loading activities...</span>
           </div>
         ) : activities && activities.length > 0 ? (
@@ -231,7 +231,7 @@ export default function ActivityFeed({
                       </div>
                       
                       <div className="flex items-center space-x-2 text-sm text-gray-500">
-                        <Clock className="w-3 h-3" />
+                        <Clock className="size-3" />
                         <span>{formatTimestamp(activity.timestamp)}</span>
                       </div>
                     </div>
@@ -242,9 +242,9 @@ export default function ActivityFeed({
                     
                     {activity.entity && (
                       <div className="flex items-center space-x-2 text-xs text-gray-500 mb-2">
-                        {activity.entity.type === 'po' && <FileText className="w-3 h-3" />}
-                        {activity.entity.type === 'vendor' && <Building2 className="w-3 h-3" />}
-                        {activity.entity.type === 'user' && <User className="w-3 h-3" />}
+                        {activity.entity.type === 'po' && <FileText className="size-3" />}
+                        {activity.entity.type === 'vendor' && <Building2 className="size-3" />}
+                        {activity.entity.type === 'user' && <User className="size-3" />}
                         <span>{activity.entity.name}</span>
                       </div>
                     )}
@@ -272,7 +272,7 @@ export default function ActivityFeed({
           </div>
         ) : (
           <div className="text-center py-8 text-gray-500">
-            <Activity className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+            <Activity className="size-8 mx-auto mb-2 text-gray-300" />
             <p>No activities found</p>
             <p className="text-sm mt-1">Activities will appear here as team members interact with the system</p>
           </div>

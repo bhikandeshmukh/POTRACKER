@@ -522,13 +522,13 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Empty state - will be populated from Firestore */}
               <div className="col-span-3 text-center py-8 text-gray-500">
-                <Calendar className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                <Calendar className="size-12 mx-auto mb-3 text-gray-300" />
                 <p className="mb-2">No upcoming appointments</p>
                 <Link
                   href="/appointments"
                   className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm"
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="size-4" />
                   <span>Schedule Appointment</span>
                 </Link>
               </div>

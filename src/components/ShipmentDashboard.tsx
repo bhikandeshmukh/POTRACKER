@@ -91,7 +91,7 @@ export default function ShipmentDashboard({ className = '' }: ShipmentDashboardP
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
           <div className="flex items-center">
             <div className="p-2 bg-blue-50 rounded-lg">
-              <Package className="w-5 h-5 text-blue-600" />
+              <Package className="size-5 text-blue-600" />
             </div>
             <div className="ml-3">
               <p className="text-sm font-medium text-gray-600">Total</p>
@@ -103,7 +103,7 @@ export default function ShipmentDashboard({ className = '' }: ShipmentDashboardP
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
           <div className="flex items-center">
             <div className="p-2 bg-yellow-50 rounded-lg">
-              <Clock className="w-5 h-5 text-yellow-600" />
+              <Clock className="size-5 text-yellow-600" />
             </div>
             <div className="ml-3">
               <p className="text-sm font-medium text-gray-600">Prepared</p>
@@ -115,7 +115,7 @@ export default function ShipmentDashboard({ className = '' }: ShipmentDashboardP
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
           <div className="flex items-center">
             <div className="p-2 bg-blue-50 rounded-lg">
-              <Truck className="w-5 h-5 text-blue-600" />
+              <Truck className="size-5 text-blue-600" />
             </div>
             <div className="ml-3">
               <p className="text-sm font-medium text-gray-600">Shipped</p>
@@ -127,7 +127,7 @@ export default function ShipmentDashboard({ className = '' }: ShipmentDashboardP
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
           <div className="flex items-center">
             <div className="p-2 bg-purple-50 rounded-lg">
-              <Truck className="w-5 h-5 text-purple-600" />
+              <Truck className="size-5 text-purple-600" />
             </div>
             <div className="ml-3">
               <p className="text-sm font-medium text-gray-600">In Transit</p>
@@ -139,7 +139,7 @@ export default function ShipmentDashboard({ className = '' }: ShipmentDashboardP
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
           <div className="flex items-center">
             <div className="p-2 bg-green-50 rounded-lg">
-              <CheckCircle className="w-5 h-5 text-green-600" />
+              <CheckCircle className="size-5 text-green-600" />
             </div>
             <div className="ml-3">
               <p className="text-sm font-medium text-gray-600">Delivered</p>
@@ -151,7 +151,7 @@ export default function ShipmentDashboard({ className = '' }: ShipmentDashboardP
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
           <div className="flex items-center">
             <div className="p-2 bg-red-50 rounded-lg">
-              <XCircle className="w-5 h-5 text-red-600" />
+              <XCircle className="size-5 text-red-600" />
             </div>
             <div className="ml-3">
               <p className="text-sm font-medium text-gray-600">Cancelled</p>
@@ -195,7 +195,7 @@ export default function ShipmentDashboard({ className = '' }: ShipmentDashboardP
         {/* Overdue Shipments */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center space-x-2 mb-4">
-            <AlertTriangle className="w-5 h-5 text-red-600" />
+            <AlertTriangle className="size-5 text-red-600" />
             <h3 className="text-lg font-semibold text-gray-900">Overdue Shipments</h3>
           </div>
           {overdueShipments.length > 0 ? (
@@ -224,7 +224,7 @@ export default function ShipmentDashboard({ className = '' }: ShipmentDashboardP
             </div>
           ) : (
             <div className="text-center py-8">
-              <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-2" />
+              <CheckCircle className="size-12 text-green-600 mx-auto mb-2" />
               <p className="text-green-600 font-medium">No overdue shipments</p>
               <p className="text-sm text-gray-500">All shipments are on track</p>
             </div>
