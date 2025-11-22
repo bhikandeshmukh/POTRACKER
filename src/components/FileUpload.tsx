@@ -25,6 +25,14 @@ interface FileUploadProps {
   className?: string;
 }
 
+/**
+* Renders a configurable drag-and-drop file uploader with validation, previews, and simulated upload progress.
+* @example
+* FileUpload({ accept: '.png,.jpg', maxSize: 5, onFilesChange: files => console.log(files) })
+* <FileUpload ... />
+* @param {{FileUploadProps}} props - Configuration and callbacks that control accepted types, limits, styling, and change handling.
+* @returns {{JSX.Element}} JSX representing the drop zone, file list, and upload status UI.
+**/
 export default function FileUpload({
   accept = '.pdf,.doc,.docx,.jpg,.jpeg,.png,.xlsx,.csv',
   maxSize = 10, // 10MB
@@ -79,6 +87,14 @@ export default function FileUpload({
     return null;
   }, [accept, maxSize]);
 
+  /**
+  * Starts syncing the specified file and updates its progress until completion, resolving on success or rejecting on failure.
+  * @example
+  * sync('abc123')
+  * Promise<void>
+  * @param {{string}} fileId - ID of the file to synchronize.
+  * @returns {{Promise<void>}} Promise that resolves when sync succeeds or rejects on failure.
+  **/
   const simulateUpload = async (fileId: string): Promise<void> => {
     return new Promise((resolve, reject) => {
       let progress = 0;

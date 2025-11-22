@@ -120,6 +120,16 @@ export const PERMISSION_CATEGORIES = {
 };
 
 // Get user-specific permissions
+/**
+* Retrieves the appropriate permissions for a user based on role or custom overrides.
+* @example
+* sync('user123', 'user@example.com', 'Member')
+* [ { id: 'read' }, { id: 'write' } ]
+* @param {{string}} {{userId}} - Unique identifier of the user.
+* @param {{string}} {{userEmail}} - E-mail address of the user.
+* @param {{RoleType}} {{userRole}} - Role assigned to the user.
+* @returns {{Promise<Permission[]>}} Resolves to the permissions array applicable to the user.
+**/
 export const getUserPermissions = async (userId: string, userEmail: string, userRole: RoleType): Promise<Permission[]> => {
   try {
     // Admin always gets all permissions
@@ -163,6 +173,20 @@ export const getAllUserPermissions = async (): Promise<UserPermissions[]> => {
 };
 
 // Update user-specific permissions (Admin only)
+/**
+* Synchronizes user permissions by writing the provided details into the userPermissions document.
+* @example
+* sync('user123', 'user@example.com', 'Jane Doe', RoleType.Admin, [], true, 'system')
+* undefined
+* @param {{string}} {{userId}} - Identifier of the user whose permissions are being synced.
+* @param {{string}} {{userEmail}} - Email of the user.
+* @param {{string}} {{userName}} - Display name of the user.
+* @param {{RoleType}} {{role}} - Role assigned to the user.
+* @param {{Permission[]}} {{customPermissions}} - Custom permissions explicitly granted to the user.
+* @param {{boolean}} {{useRolePermissions}} - Flag indicating whether role permissions should be applied.
+* @param {{string}} {{updatedBy}} - Identifier of the actor performing the update.
+* @returns {{Promise<void>}} Promise that resolves once the permissions document is updated.
+**/
 export const updateUserPermissions = async (
   userId: string,
   userEmail: string,
@@ -192,6 +216,14 @@ export const updateUserPermissions = async (
 };
 
 // Delete user-specific permissions (revert to role permissions)
+/**
+* Synchronizes user permissions in Firestore for the given user ID.
+* @example
+* sync("user123")
+* Promise<void>
+* @param {{string}} {{userId}} - Identifier of the user whose permissions should be synced.
+* @returns {{Promise<void>}} Promise that resolves when the sync operation is complete.
+**/
 export const deleteUserPermissions = async (userId: string): Promise<void> => {
   try {
     const userDocRef = doc(db, 'userPermissions', userId);
@@ -206,6 +238,14 @@ export const deleteUserPermissions = async (userId: string): Promise<void> => {
 };
 
 // Get role permissions from Firestore
+/**
+* Retrieves permissions for a given role, falling back to defaults if needed.
+* @example
+* sync('admin')
+* Promise.resolve({ role: 'admin', permissions: ['read'], description: 'Default permissions for admin' })
+* @param {RoleType} role - Role identifier to fetch permissions for.
+* @returns {Promise<RolePermissions>} Promise resolving to the permissions object for the specified role.
+**/
 export const getRolePermissions = async (role: RoleType): Promise<RolePermissions> => {
   try {
     const docRef = doc(db, 'rolePermissions', role);
@@ -231,6 +271,13 @@ export const getRolePermissions = async (role: RoleType): Promise<RolePermission
 };
 
 // Get all role permissions
+/**
+* Retrieves stored role permissions from Firestore, falling back to default permissions when no data is available or an error occurs.
+* @example
+* sync()
+* [{ role: 'admin', permissions: [...], description: 'Default permissions for admin' }, ...]
+* @returns {Promise<RolePermissions[]>} A promise that resolves to the array of role permissions.
+**/
 export const getAllRolePermissions = async (): Promise<RolePermissions[]> => {
   try {
     const snapshot = await getDocs(collection(db, 'rolePermissions'));
@@ -256,6 +303,16 @@ export const getAllRolePermissions = async (): Promise<RolePermissions[]> => {
 };
 
 // Update role permissions (Admin only)
+/**
+* Synchronizes role permissions in Firestore for the provided role.
+* @example
+* sync('admin', [{resource: 'users', action: 'read'}], 'system')
+* undefined
+* @param {{RoleType}} {{role}} - Role identifier for which permissions are updated.
+* @param {{Permission[]}} {{permissions}} - Array of permissions to assign to the role.
+* @param {{string}} {{updatedBy}} - Identifier of the user applying the update.
+* @returns {{Promise<void>}} Promise resolving once the Firestore document is written.
+**/
 export const updateRolePermissions = async (
   role: RoleType,
   permissions: Permission[],
@@ -302,6 +359,13 @@ export const hasAllPermissions = (
 };
 
 // Initialize default permissions in Firestore
+/****
+* Synchronizes default role permissions in the database by ensuring each role has its permissions document.
+* @example
+* sync()
+* Promise<void>
+* @returns {Promise<void>} Resolves when all default role permissions have been ensured in the database.
+****/
 export const initializeDefaultPermissions = async (): Promise<void> => {
   try {
     const roles: RoleType[] = ['Admin', 'Manager', 'Employee'];

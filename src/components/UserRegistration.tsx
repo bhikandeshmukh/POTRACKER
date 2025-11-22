@@ -3,6 +3,14 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
+/****
+* Renders a registration form for creating new application users with role selection.
+* @example
+* UserRegistration()
+* <div className="max-w-md mx-auto bg-white p-6 rounded-lg shadow-md">...</div>
+* @param {{}} props - Component props (unused).
+* @returns {{JSX.Element}} Rendered registration form component.
+****/
 export default function UserRegistration() {
   const [formData, setFormData] = useState({
     email: '',
@@ -16,6 +24,14 @@ export default function UserRegistration() {
 
   const { signUp } = useAuth();
 
+  /**
+  * Handles user registration form submission.
+  * @example
+  * sync(event)
+  * undefined
+  * @param {{React.FormEvent}} {{e}} - Form submit event.
+  * @returns {{Promise<void>}} Promise resolved when processing finishes.
+  **/
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);

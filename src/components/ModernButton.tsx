@@ -10,6 +10,14 @@ interface ModernButtonProps {
   type?: 'button' | 'submit';
 }
 
+/**
+* Renders a modern stylized button with optional icon, variant, and disabled state.
+* @example
+* ModernButton({ children: 'Save', variant: 'primary', onClick: handleSave })
+* <button class="flex items-center ...">...</button>
+* @param {{ModernButtonProps}} props - Configuration props for the ModernButton component.
+* @returns {{JSX.Element}} The styled button element ready for rendering.
+**/
 export default function ModernButton({ 
   children, 
   icon: Icon, 

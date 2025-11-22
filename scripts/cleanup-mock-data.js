@@ -22,6 +22,14 @@ const mockDataPatterns = [
   /var\s+mock\w+\s*=/gi
 ];
 
+/****
+* Scans a file for mock data remnants and logs findings or a clean message.
+* @example
+* cleanupMockData('scripts/sample-mock.js')
+* undefined
+* @param {{string}} filePath - Path to the file to examine for mock data patterns.
+* @returns {{void}} Logs the analysis results without returning a value.
+****/
 function cleanupMockData(filePath) {
   try {
     if (!fs.existsSync(filePath)) {
@@ -74,6 +82,14 @@ componentsToCheck.forEach(file => {
 });
 
 // Check all TypeScript/React files in src directory
+/**
+* Recursively traverses the given directory to clean up mock data files.
+* @example
+* checkDirectory('/path/to/project')
+* undefined
+* @param {{string}} {{dir}} - Path to the directory that should be checked.
+* @returns {{void}} Function does not return a value.
+**/
 function checkDirectory(dir) {
   const files = fs.readdirSync(dir);
   

@@ -7,6 +7,14 @@ import { Truck, Package, Clock, CheckCircle, XCircle, AlertTriangle } from 'luci
 import StatusBadge from '@/components/StatusBadge';
 
 // Custom StatusBadge for Shipments
+/****
+* Renders a badge showing the shipment status with a matching color scheme.
+* @example
+* ShipmentStatusBadge({ status: 'Shipped' })
+* <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Shipped</span>
+* @param {{Shipment['status']}} status - Current status of the shipment to display.
+* @returns {{JSX.Element}} Styled badge element representing the shipment status.
+****/
 function ShipmentStatusBadge({ status }: { status: Shipment['status'] }) {
   const getStatusColor = (status: Shipment['status']) => {
     switch (status) {
@@ -30,6 +38,14 @@ interface ShipmentDashboardProps {
   className?: string;
 }
 
+/**
+* Renders the shipment dashboard panel showing statistics, recent, overdue, and all shipments with a loading placeholder.
+* @example
+* ShipmentDashboard({ className: 'max-w-4xl' })
+* <div className="space-y-6 max-w-4xl">...</div>
+* @param {{ShipmentDashboardProps}} {{props}} - Props including optional className to append custom styling to the dashboard container.
+* @returns {{JSX.Element}} Returns the dashboard UI composed of stats cards, shipment lists, and a detailed timeline table.
+**/
 export default function ShipmentDashboard({ className = '' }: ShipmentDashboardProps) {
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [loading, setLoading] = useState(true);

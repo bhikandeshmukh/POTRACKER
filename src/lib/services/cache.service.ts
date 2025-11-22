@@ -32,6 +32,13 @@ export class CacheService {
     }, 60 * 1000);
   }
 
+  /**
+  * Removes expired entries from the cache and logs the cleanup.
+  * @example
+  * this.cleanup()
+  * undefined
+  * @returns {{void}} Undefined.
+  **/
   private cleanup() {
     const now = Date.now();
     const keysToDelete: string[] = [];
@@ -51,6 +58,13 @@ export class CacheService {
     }
   }
 
+  /**/ **
+  * Removes the oldest entry from the cache if one exists.
+  * @example
+  * evictOldest()
+  * undefined
+  * @returns {void} Void return since the method only mutates internal cache state.
+  **/*/
   private evictOldest() {
     if (this.cache.size === 0) return;
 
@@ -71,6 +85,16 @@ export class CacheService {
     }
   }
 
+  /**
+  * Stores a value in the cache under the given key, evicting the oldest entry if needed.
+  * @example
+  * et('session', sessionData, 3600)
+  * undefined
+  * @param {{string}} key - Key under which to store the data in the cache.
+  * @param {{T}} data - Value to cache for the provided key.
+  * @param {{number}} [ttl] - Optional time-to-live for the cached entry in seconds.
+  * @returns {{void}} Returns nothing.
+  **/
   set<T>(key: string, data: T, ttl?: number): void {
     // Check if we need to evict entries
     if (this.cache.size >= this.maxSize) {
@@ -87,6 +111,14 @@ export class CacheService {
     logger.debug(`Cache set: ${key}`);
   }
 
+  /**
+  * Retrieves a cached entry by key while validating its TTL to avoid serving expired data.
+  * @example
+  * et<MyData>('config')
+  * { id: 1, name: 'config' }
+  * @param {{string}} {{key}} - Cache key to retrieve the stored value.
+  * @returns {{T | null}} Cached value for the key or null if missing or expired.
+  **/
   get<T>(key: string): T | null {
     const entry = this.cache.get(key);
     
@@ -106,6 +138,14 @@ export class CacheService {
     return entry.data;
   }
 
+  /**
+  * Checks whether a cache entry for the provided key exists and is not expired.
+  * @example
+  * as("userSession")
+  * true
+  * @param {{string}} {{key}} - Cache key to validate.
+  * @returns {{boolean}} True if the entry exists and is still within its TTL.
+  **/
   has(key: string): boolean {
     const entry = this.cache.get(key);
     
@@ -145,6 +185,13 @@ export class CacheService {
   }
 
   // Get cache statistics
+  /**
+  * Provides statistics about the cache contents.
+  * @example
+  * etStats()
+  * { totalEntries: 10, validEntries: 7, expiredEntries: 3, maxSize: 100, defaultTTL: 60000 }
+  * @returns {{Object}} Summary of cache statistics including total, valid, expired counts, maximum size, and default TTL.
+  **/
   getStats() {
     const now = Date.now();
     let expiredCount = 0;
@@ -168,6 +215,14 @@ export class CacheService {
   }
 
   // Invalidate cache entries by pattern
+  /**
+  * Invalidates cache entries whose keys match the provided regex pattern.
+  * @example
+  * nvalidatePattern('^user:')
+  * 5
+  * @param {{string}} {{pattern}} - Regex pattern to match cache keys for invalidation.
+  * @returns {{number}} Number of cache entries removed.
+  **/
   invalidatePattern(pattern: string): number {
     const regex = new RegExp(pattern);
     const keysToDelete: string[] = [];

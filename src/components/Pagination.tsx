@@ -14,6 +14,14 @@ interface PaginationProps {
   className?: string;
 }
 
+/**
+* Renders pagination controls along with item range information and an optional items-per-page selector for navigating between data pages.
+* @example
+* Pagination({ currentPage: 1, totalPages: 5, totalItems: 50, itemsPerPage: 10, onPageChange: (page) => console.log(page), onItemsPerPageChange: (count) => console.log(count), showItemsPerPage: true, className: 'mt-4' })
+* <div className="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0 mt-4">...</div>
+* @param {{PaginationProps}} {{currentPage, totalPages, totalItems, itemsPerPage, onPageChange, onItemsPerPageChange, showItemsPerPage, className}} - Pagination settings and callbacks for controlling the current page, page size, and styling.
+* @returns {{JSX.Element | null}} Rendered pagination controls or null when only a single page exists.
+**/
 export default function Pagination({
   currentPage,
   totalPages,
@@ -26,6 +34,15 @@ export default function Pagination({
 }: PaginationProps) {
   
   // Calculate visible page numbers
+  /**/ **
+  * Generates a paginated range of page numbers with ellipses when pages are skipped.
+  * @example
+  * getPaginationRange(5, 10)
+  * [1, '...', 3, 4, 5, 6, 7, '...', 10]
+  * @param {{number}} {{currentPage}} - Current active page number.
+  * @param {{number}} {{totalPages}} - Total number of available pages.
+  * @returns {{Array<(number|string)>}} Returns an ordered list of page indicators with ellipses.
+  **/*/
   const getVisiblePages = () => {
     const delta = 2; // Number of pages to show on each side of current page
     const range = [];
@@ -167,6 +184,15 @@ export default function Pagination({
 }
 
 // Hook for pagination logic
+/**
+* Manages pagination state and returns current page metadata and controls.
+* @example
+* usePagination(allProducts, 10)
+* { currentPage: 1, totalPages: 5, itemsPerPage: 10, paginatedItems: [...], totalItems: 50, setCurrentPage: fn, setItemsPerPage: fn }
+* @param {{T[]}} items - List of items to paginate.
+* @param {{number}} initialItemsPerPage - Initial count of items per page.
+* @returns {{object}} Pagination controls and metadata for the current view.
+**/
 export function usePagination<T>(
   items: T[],
   initialItemsPerPage: number = 25

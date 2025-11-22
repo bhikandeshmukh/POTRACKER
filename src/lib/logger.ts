@@ -55,6 +55,16 @@ class Logger {
     }
   }
 
+  /**
+  * Logs an error message with optional error details and additional data while respecting configuration settings.
+  * @example
+  * rror("Failed to save user", new Error("Validation"), { userId: 123 })
+  * undefined
+  * @param {{string}} {{message}} - Error message to be logged.
+  * @param {{any}} {{error}} - Optional error object whose stack trace may be logged.
+  * @param {{any}} {{data}} - Optional additional data to include with the log.
+  * @returns {{void}} No return value.
+  **/
   error(message: string, error?: any, data?: any): void {
     if (this.shouldLog('error')) {
       const errorMessage = this.formatMessage('error', message, { error, ...data });

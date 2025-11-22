@@ -85,6 +85,14 @@ export default function CommentsSystem({ poId, className = '' }: CommentsSystemP
       commentService.likeComment(commentId, user!.uid, isLiking)
   );
 
+  /**
+  * Tries to post a new comment and refresh the comments list when successful
+  * @example
+  * sync()
+  * undefined
+  * @param {{void}} void - No parameters are required for this function.
+  * @returns {{Promise<void>}} Resolves when the comment posting flow and refetch complete.
+  **/
   const handleSubmitComment = async () => {
     if (!newComment.trim() || !user || !userData) return;
 
@@ -100,6 +108,14 @@ export default function CommentsSystem({ poId, className = '' }: CommentsSystemP
     }
   };
 
+  /**
+  * Updates a comment using the current edit content when all required data is present.
+  * @example
+  * sync('comment-123')
+  * Promise resolves to void
+  * @param {{string}} {{commentId}} - Identifier of the comment to update.
+  * @returns {{Promise<void>}} Promise that resolves once the update attempt completes.
+  **/
   const handleEditComment = async (commentId: string) => {
     if (!editContent.trim() || !user || !userData) return;
 
@@ -115,6 +131,14 @@ export default function CommentsSystem({ poId, className = '' }: CommentsSystemP
     }
   };
 
+  /**
+  * Prompts for confirmation and attempts to delete a comment, handling refresh and notifications.
+  * @example
+  * sync("comment123")
+  * undefined
+  * @param {{string}} {{commentId}} - Identifier of the comment to delete.
+  * @returns {{Promise<void>}} Resolves when the deletion attempt has finished.
+  **/
   const handleDeleteComment = async (commentId: string) => {
     if (!confirm('Are you sure you want to delete this comment?') || !user || !userData) return;
 
@@ -128,6 +152,14 @@ export default function CommentsSystem({ poId, className = '' }: CommentsSystemP
     }
   };
 
+  /**
+  * Toggle like status for a comment by its identifier, refetching comments on success or showing an error on failure.
+  * @example
+  * sync('commentId123')
+  * undefined
+  * @param {{string}} {{commentId}} - ID of the comment to sync.
+  * @returns {{Promise<void>}} Void promise once the sync attempt finishes.
+  **/
   const handleLikeComment = async (commentId: string) => {
     if (!user) return;
 
@@ -155,6 +187,14 @@ export default function CommentsSystem({ poId, className = '' }: CommentsSystemP
     return mentions;
   };
 
+  /**
+  * Handles textarea change to update comment text, cursor, and mention UI state.
+  * @example
+  * handleTextareaChange(event)
+  * undefined
+  * @param {{React.ChangeEvent<HTMLTextAreaElement>}} e - Change event from the textarea element.
+  * @returns {{void}} Updates state for the comment input and mention suggestions.
+  **/
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const { value, selectionStart: cursorPos } = e.target;
     
@@ -176,6 +216,14 @@ export default function CommentsSystem({ poId, className = '' }: CommentsSystemP
     }
   };
 
+  /****
+  * Handles keyboard-driven mention navigation and selection within the textarea.
+  * @example
+  * handleMentionNavigation(event)
+  * undefined
+  * @param {{React.KeyboardEvent<HTMLTextAreaElement>}} e - Keyboard event from the textarea to navigate or finish mention selection.
+  * @returns {{void}} No return value.
+  ****/
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (showMentions && filteredUsers.length > 0) {
       if (e.key === 'ArrowDown') {
@@ -198,6 +246,14 @@ export default function CommentsSystem({ poId, className = '' }: CommentsSystemP
     }
   };
 
+  /**
+  * Inserts the selected user mention into the comment text and repositions the cursor.
+  * @example
+  * handleMention('alice')
+  * undefined
+  * @param {{string}} {{userName}} - The username to insert into the mention placeholder.
+  * @returns {{void}} No return value.
+  **/
   const insertMention = (userName: string) => {
     const textBeforeCursor = newComment.substring(0, cursorPosition);
     const textAfterCursor = newComment.substring(cursorPosition);
@@ -229,6 +285,14 @@ export default function CommentsSystem({ poId, className = '' }: CommentsSystemP
     u.id !== user?.uid // Don't show current user
   ).slice(0, 5); // Limit to 5 suggestions
 
+  /**/ **
+  * Converts a Date or Firebase Timestamp into a human-readable relative time string.
+  * @example
+  * formatTimestampAgo(new Date())
+  * "Just now"
+  * @param {{Date | Timestamp}} {{timestamp}} - Date or Firestore Timestamp used to compute how long ago it occurred.
+  * @returns {{string}} Human-readable relative time string such as "5m ago" or full locale date.
+  * /*/
   const formatTimestamp = (timestamp: Date | Timestamp) => {
     const date = timestamp instanceof Date ? timestamp : timestamp.toDate();
     const now = new Date();
@@ -244,6 +308,15 @@ export default function CommentsSystem({ poId, className = '' }: CommentsSystemP
     return date.toLocaleDateString();
   };
 
+  /**
+  * Renders a single comment block with metadata, actions, reply flows, and nested replies for the comments UI.
+  * @example
+  * renderComment(comment, false)
+  * // React element representing the provided comment with actions and replies
+  * @param {{Comment}} {{comment}} - Comment data including user info, content, likes, replies, and timestamps.
+  * @param {{boolean}} {{isReply}} - When true renders the comment as an indented reply thread.
+  * @returns {{JSX.Element}} JSX markup representing the comment card, actions, nested replies, and reply form.
+  **/
   const renderComment = (comment: Comment, isReply = false) => {
     const isOwner = comment.userId === user?.uid;
     const canEdit = isOwner || userData?.role === 'Admin';

@@ -26,6 +26,16 @@ interface VersionHistoryProps {
   onRestore?: (versionId: string) => void;
 }
 
+/****
+* Renders a version history timeline for an entity, showing actions, users, timestamps, and change details, and optionally allows restoring a selected version.
+* @example
+* VersionHistory({ entityId: '123', entityType: 'Document', onRestore: id => console.log(id) })
+* <div className="bg-white rounded-lg shadow-sm border border-gray-200">...</div>
+* @param {{string}} {{entityId}} - Identifier of the entity whose history is shown.
+* @param {{string}} {{entityType}} - Type of the entity for loading the corresponding audit logs.
+* @param {{((versionId: string) => void) | undefined}} {{onRestore}} - Optional callback invoked when a non-create version is restored.
+* @returns {{JSX.Element}} Rendered version history UI.
+****/
 export default function VersionHistory({ entityId, entityType, onRestore }: VersionHistoryProps) {
   const [versions, setVersions] = useState<VersionHistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);

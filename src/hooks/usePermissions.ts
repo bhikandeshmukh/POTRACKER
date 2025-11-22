@@ -8,12 +8,27 @@ import {
   hasAllPermissions as checkAllPermissions
 } from '@/lib/permissions';
 
+/**
+* Manages and exposes permission helpers for the authenticated user.
+* @example
+* usePermissions()
+* { permissions, loading, hasPermission, hasAnyPermission, hasAllPermissions, canView, canCreate, canEdit, canDelete, isAdmin, isManager, isEmployee }
+* @param {void} _ - No parameters.
+* @returns {{permissions: Permission[], loading: boolean, hasPermission: (permission: Permission) => boolean, hasAnyPermission: (requiredPermissions: Permission[]) => boolean, hasAllPermissions: (requiredPermissions: Permission[]) => boolean, canView: (resource: string) => boolean, canCreate: (resource: string) => boolean, canEdit: (resource: string) => boolean, canDelete: (resource: string) => boolean, isAdmin: boolean, isManager: boolean, isEmployee: boolean}} Hook state and helpers for user permissions.
+**/
 export const usePermissions = () => {
   const { user, userData } = useAuth();
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    /**
+    * Synchronizes user permissions and loading state based on current user data.
+    * @example
+    * sync()
+    * undefined
+    * @returns {Promise<void>} Updates permissions and loading indicators for the current user.
+    **/
     const loadPermissions = async () => {
       if (user && userData?.role) {
         try {

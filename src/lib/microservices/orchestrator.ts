@@ -27,6 +27,14 @@ export class MicroserviceOrchestrator {
   }
 
   // Initialize and start all services
+  /**
+  * Starts the microservice orchestrator if not already running.
+  * @example
+  * start()
+  * Promise<void>
+  * @param {{void}} {{}} - No arguments.
+  * @returns {{Promise<void>}} Promise that resolves when the orchestrator has started.
+  **/
   async start(): Promise<void> {
     if (this.isRunning) {
       logger.debug('Orchestrator already running');
@@ -76,6 +84,14 @@ export class MicroserviceOrchestrator {
   }
 
   // Stop all services
+  /****
+  * Stops all services gracefully and publishes orchestrator stopped event.
+  * @example
+  * orchestrator.stop()
+  * undefined
+  * @param {{type}} {{Argument}} - Argument description in one line.
+  * @returns {{Promise<void>}} Stops all services and resolves when complete.
+  ****/
   async stop(): Promise<void> {
     if (!this.isRunning) {
       logger.debug('Orchestrator not running');
@@ -139,6 +155,13 @@ export class MicroserviceOrchestrator {
   }
 
   // Get orchestrator status
+  /**
+  * Returns the current orchestrator status summary.
+  * @example
+  * getStatus()
+  * {isRunning: true, services: [{name: 'auth', status: 'running'}], apiGateway: {enabled: true, stats: {...}}}
+  * @returns {{isRunning: boolean; services: Array<{name: string; status: 'running' | 'stopped' | 'error'; health?: any}>; apiGateway?: {enabled: boolean; stats?: any}}} Current orchestrator status summary.
+  **/
   getStatus(): {
     isRunning: boolean;
     services: Array<{
@@ -171,6 +194,13 @@ export class MicroserviceOrchestrator {
   }
 
   // Health check all services
+  /**
+  * Checks the health of each registered service and reports an aggregated status.
+  * @example
+  * healthCheck()
+  * {overall: 'degraded', services: {serviceA: {status: 'healthy'}, serviceB: {status: 'unhealthy', error: 'timeout'}}, timestamp: new Date()}
+  * @returns {Promise<{overall: 'healthy' | 'degraded' | 'unhealthy'; services: Record<string, any>; timestamp: Date;}>} Summary of the overall and per-service health status.
+  **/
   async healthCheck(): Promise<{
     overall: 'healthy' | 'degraded' | 'unhealthy';
     services: Record<string, any>;
@@ -215,6 +245,30 @@ export class MicroserviceOrchestrator {
   }
 
   // Get orchestrator metrics
+  /**
+  * Collects orchestrator and service metrics including uptime, service counts, healthy services, and stats from the event bus, registry, and optional API gateway.
+  * @example
+  * getMetrics()
+  * {
+  *   orchestrator: { uptime: 1234, servicesCount: 5, healthyServices: 4, isRunning: true },
+  *   services: { auth: { status: 'healthy' }, cache: { status: 'unhealthy' } },
+  *   eventBus: { published: 10, consumed: 10 },
+  *   serviceRegistry: { registered: 5, active: 4 },
+  *   apiGateway: { requests: 42 }
+  * }
+  * @returns {{Promise<{
+  *   orchestrator: {
+  *     uptime: number;
+  *     servicesCount: number;
+  *     healthyServices: number;
+  *     isRunning: boolean;
+  *   };
+  *   services: Record<string, any>;
+  *   eventBus: any;
+  *   serviceRegistry: any;
+  *   apiGateway?: any;
+  * }}} Metrics aggregated from the orchestrator, service registry, event bus, and optional API gateway.
+  **/
   async getMetrics(): Promise<{
     orchestrator: {
       uptime: number;
@@ -251,6 +305,13 @@ export class MicroserviceOrchestrator {
   }
 
   // Private helper methods
+  /**/ **
+  * Initializes and registers configured microservice instances with the event bus and registry.
+  * @example
+  * setupServices()
+  * undefined
+  * @returns {void} Registers configured services and logs the setup summary.
+  **/*/
   private setupServices(): void {
     // Create service instances based on configuration
     if (this.config.services.includes('po-service')) {
@@ -280,6 +341,13 @@ export class MicroserviceOrchestrator {
     }
   }
 
+  /**
+  * Configures API Gateway routes and applies shared middleware.
+  * @example
+  * orchestrator.setupGatewayRoutes()
+  * undefined
+  * @returns {void} Sets up gateway routes and middleware without returning a value.
+  **/
   private setupGatewayRoutes(): void {
     if (!this.apiGateway) return;
 
@@ -301,6 +369,14 @@ export class MicroserviceOrchestrator {
     logger.debug('API Gateway routes configured');
   }
 
+  /**
+   * Determines the startup order of services based on their dependencies in a microservices orchestrator.
+   * @example
+   * getServiceStartOrder()
+   * ['vendor-service', 'po-service']
+   * @param {{}} - No parameters are required for this function.
+   * @returns {{string[]}} Array of service identifiers in the order they should be started.
+   **/
   private getServiceStartOrder(): string[] {
     // Define service dependencies and start order
     // Services with no dependencies start first
@@ -317,6 +393,13 @@ export class MicroserviceOrchestrator {
     return order;
   }
 
+  /**
+  * Starts periodic health checks, logging unhealthy services and publishing status updates.
+  * @example
+  * startHealthChecking()
+  * undefined
+  * @returns {void} Does not return anything.
+  **/
   private startHealthChecking(): void {
     const interval = this.config.healthCheckInterval || 30000; // 30 seconds
     
@@ -358,6 +441,13 @@ export class MicroserviceOrchestrator {
   private startTime = Date.now();
 
   // Graceful shutdown handler
+  /****
+  * Sets up listeners for shutdown signals to stop services gracefully before exiting.
+  * @example
+  * setupGracefulShutdown()
+  * undefined
+  * @returns {void} Initiates graceful shutdown handling for SIGTERM, SIGINT, and SIGUSR2.
+  ****/
   setupGracefulShutdown(): void {
     const shutdown = async (signal: string) => {
       logger.debug(`Received ${signal}, starting graceful shutdown`);
@@ -378,6 +468,14 @@ export class MicroserviceOrchestrator {
 }
 
 // Factory function to create orchestrator with default configuration
+/**
+* Creates or retrieves a MicroserviceOrchestrator instance based on optional configuration overrides.
+* @example
+* createOrchestrator({ autoStart: true })
+* MicroserviceOrchestratorInstance
+* @param {{Partial<OrchestrationConfig>}} config - Optional partial configuration to override defaults.
+* @returns {{MicroserviceOrchestrator}} A configured MicroserviceOrchestrator instance.
+**/
 export function createOrchestrator(config?: Partial<OrchestrationConfig>): MicroserviceOrchestrator {
   const defaultConfig: OrchestrationConfig = {
     services: ['vendor-service', 'po-service'],

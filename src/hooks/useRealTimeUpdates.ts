@@ -9,6 +9,14 @@ interface UseRealTimeUpdatesProps {
   enabled?: boolean;
 }
 
+/**
+* Manages polling-based real-time updates and exposes controls.
+* @example
+* useRealTimeUpdates({ onUpdate: () => console.log('updated') })
+* { isActive: true, lastUpdate: new Date(), toggleRealTime: () => {}, forceUpdate: () => {} }
+* @param {{UseRealTimeUpdatesProps}} {{config}} - Configuration for update callback, polling interval, and enable state.
+* @returns {{isActive: boolean, lastUpdate: Date, toggleRealTime: () => void, forceUpdate: () => void}} Object with current status, timestamp, and control helpers.
+**/
 export function useRealTimeUpdates({ 
   onUpdate, 
   interval = 30000, // 30 seconds default

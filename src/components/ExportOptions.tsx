@@ -11,11 +11,28 @@ interface ExportOptionsProps {
   className?: string;
 }
 
+/**
+* Provides export, print, and share options for PO tracking data within a dropdown.
+* @example
+* ExportOptions({ data, filename: 'export', className: 'my-export' })
+* <JSX.Element />
+* @param {{any[]}} {{data}} - Array of records to export or print.
+* @param {{string}} {{filename}} - Optional base filename used for exported files.
+* @param {{string}} {{className}} - Optional additional class name for the wrapper element.
+* @returns {{JSX.Element}} Returns the export options UI element.
+**/
 export default function ExportOptions({ data, filename = 'export', className = '' }: ExportOptionsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const { showSuccess, showError, showInfo } = useToast();
 
+  /**
+  * Initiates a simulated PDF export flow, showing success or error notifications and updating exporting state.
+  * @example
+  * sync()
+  * Promise<void>
+  * @returns {{Promise<void>}} Resolves when the simulated export process completes and the UI state is reset.
+  **/
   const exportToPDF = async () => {
     setIsExporting(true);
     try {
@@ -36,6 +53,13 @@ export default function ExportOptions({ data, filename = 'export', className = '
     }
   };
 
+  /**
+  * Exports current data as a CSV to simulate Excel export while managing export state flags.
+  * @example
+  * sync()
+  * Promise<void>
+  * @returns {Promise<void>} Resolves once the export attempt finishes and status flags are reset.
+  **/
   const exportToExcel = async () => {
     setIsExporting(true);
     try {
@@ -61,6 +85,14 @@ export default function ExportOptions({ data, filename = 'export', className = '
     setIsOpen(false);
   };
 
+  /**
+  * Shares PO Tracking Report via Web Share API or copies link fallback.
+  * @example
+  * sync()
+  * undefined
+  * @param {{void}} void - No parameters required.
+  * @returns {{Promise<void>}} Resolves after attempting to share or copy the report link.
+  **/
   const shareReport = async () => {
     if (navigator.share) {
       try {
@@ -81,6 +113,14 @@ export default function ExportOptions({ data, filename = 'export', className = '
     setIsOpen(false);
   };
 
+  /**
+  * Converts an array of records into a CSV string with headers derived from the first record.
+  * @example
+  * convertToCSV([{ name: 'Alice', score: 10 }, { name: 'Bob', score: 12 }])
+  * "name,score\nAlice,10\nBob,12"
+  * @param {{any[]}} data - Array of objects to serialize into CSV.
+  * @returns {{string}} CSV representation of the data or an empty string when no data is provided.
+  **/
   const convertToCSV = (data: any[]) => {
     if (!data.length) return '';
     
@@ -100,6 +140,15 @@ export default function ExportOptions({ data, filename = 'export', className = '
     return [csvHeaders, ...csvRows].join('\n');
   };
 
+  /**
+  * Triggers a download of the provided CSV content using the given filename.
+  * @example
+  * exportCsv(csvContent, filename)
+  * undefined
+  * @param {{string}} csvContent - CSV data to be downloaded.
+  * @param {{string}} filename - Name of the file to save the CSV as.
+  * @returns {{void}} Void.
+  **/
   const downloadCSV = (csvContent: string, filename: string) => {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');

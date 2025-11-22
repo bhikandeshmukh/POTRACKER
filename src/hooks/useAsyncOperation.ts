@@ -15,6 +15,14 @@ interface UseAsyncOperationReturn<T> {
   reset: () => void;
 }
 
+/**
+* Provides a hook for executing async operations with loading, error, and data state management
+* @example
+* useAsyncOperation(fetchData)
+* { data: null, loading: false, error: null, execute: [Function], reset: [Function] }
+* @param {{(...args: any[]) => Promise<ApiResponse<T>>}} {asyncFunction} - Async function that returns an ApiResponse containing the data or an error.
+* @returns {{UseAsyncOperationReturn<T>}} Hook return value with state and control functions for the async operation.
+**/
 export function useAsyncOperation<T>(
   asyncFunction: (...args: any[]) => Promise<ApiResponse<T>>
 ): UseAsyncOperationReturn<T> {

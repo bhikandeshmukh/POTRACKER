@@ -9,6 +9,14 @@ interface InteractiveChartsProps {
   onChartClick?: (data: any) => void;
 }
 
+/********************************************************************************
+* Renders interactive purchase order analytics charts with summaries and optional click handling.
+* @example
+* InteractiveCharts({ data: samplePOs, onChartClick: (info) => console.log(info) })
+* JSX.Element - Rendered analytics dashboard
+* @param {{InteractiveChartsProps}} {{props}} - Props containing dataset and optional onChartClick callback.
+* @returns {{JSX.Element}} Rendered analytics dashboard layout.
+********************************************************************************/
 export default function InteractiveCharts({ data, onChartClick }: InteractiveChartsProps) {
   const [activeChart, setActiveChart] = useState<'bar' | 'line' | 'pie'>('bar');
 

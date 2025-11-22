@@ -78,6 +78,14 @@ const presetRanges = [
   }
 ];
 
+/**
+* Renders a date range selector with preset and custom range controls and manages dropdown visibility.
+* @example
+* DateRangePicker({ value, onChange })
+* <div className="relative ...">...</div>
+* @param {{DateRangePickerProps}} {{props}} - Props containing the current range value, change handler, and optional className.
+* @returns {{JSX.Element}} Rendered date range picker component.
+**/
 export default function DateRangePicker({ value, onChange, className = '' }: DateRangePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [customStart, setCustomStart] = useState(format(value.startDate, 'yyyy-MM-dd'));
@@ -101,6 +109,17 @@ export default function DateRangePicker({ value, onChange, className = '' }: Dat
     setIsOpen(false);
   };
 
+  /**
+  * Updates the selected date range when the provided start is on or before the end.
+  * @example
+  * handleDateRangeChange('2025-01-01','2025-01-10',onChangeCallback,setIsOpen)
+  * undefined
+  * @param {{string}} customStart - Start date in a format parseable by the Date constructor.
+  * @param {{string}} customEnd - End date in a format parseable by the Date constructor.
+  * @param {{function}} onChange - Callback invoked with the normalized date range when valid.
+  * @param {{function}} setIsOpen - Function used to close the picker once dates are accepted.
+  * @returns {{void}} Returns nothing.
+  **/
   const handleCustomApply = () => {
     const startDate = new Date(customStart);
     const endDate = new Date(customEnd);

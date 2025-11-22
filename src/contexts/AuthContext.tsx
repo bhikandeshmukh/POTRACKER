@@ -25,6 +25,14 @@ const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
 export const useAuth = () => useContext(AuthContext);
 
+/**
+* Provides authentication context to descendants, managing user state and auth operations.
+* @example
+* AuthProvider({ children: <App /> })
+* <AuthContext.Provider value={{ user, userData, loading, signIn, signUp, signOut }}>
+* @param {{React.ReactNode}} {{children}} - Child elements that consume authentication context.
+* @returns {{JSX.Element}} JSX element wrapping children with the AuthContext provider.
+**/
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [userData, setUserData] = useState<User | null>(null);
@@ -57,6 +65,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return unsubscribe;
   }, []);
 
+  /**
+  * Signs in a user with email and password and logs login activity if available.
+  * @example
+  * sync('user@example.com', 'p@ssw0rd')
+  * undefined
+  * @param {{string}} {{email}} - User email address.
+  * @param {{string}} {{password}} - User password.
+  * @returns {{Promise<void>}} Promise that resolves when sync is complete.
+  **/
   const signIn = async (email: string, password: string) => {
     const { user } = await signInWithEmailAndPassword(auth, email, password);
     
@@ -78,6 +95,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  /**
+  * Creates a new authenticated user and saves their profile to Firestore
+  * @example
+  * sync('user@example.com', 'securePass123', 'John Doe', 'Admin')
+  * undefined
+  * @param {{string}} {{email}} - User email for authentication.
+  * @param {{string}} {{password}} - User password for authentication.
+  * @param {{string}} {{name}} - Full name to store in the user profile.
+  * @param {{'Admin' | 'Manager' | 'Employee'}} {{role}} - Role assigned to the new user.
+  * @returns {{Promise<void>}} Performs the creation of the user and their Firestore document.
+  **/
   const signUp = async (email: string, password: string, name: string, role: 'Admin' | 'Manager' | 'Employee') => {
     try {
       const { user } = await createUserWithEmailAndPassword(auth, email, password);
@@ -93,6 +121,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  /**
+  * Logs the current user’s logout and signs them out of Firebase.
+  * @example
+  * sync()
+  * undefined
+  * @param {{}} {} - No parameters.
+  * @returns {{Promise<void>}} Resolves once the logout and sign-out operations complete.
+  **/
   const signOut = async () => {
     // Log user logout before signing out
     if (user && userData) {

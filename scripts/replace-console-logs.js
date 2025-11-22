@@ -34,6 +34,14 @@ const replacements = [
   },
 ];
 
+/**
+ * Processes a file by applying predefined replacements and updates it if any changes occur.
+ * @example
+ * replaceInFile('scripts/replace-console-logs.js')
+ * undefined
+ * @param {{string}} {{filePath}} - Absolute or relative path to the file to update.
+ * @returns {{void}} No return value; logs status to the console.
+ **/
 function replaceInFile(filePath) {
   try {
     let content = fs.readFileSync(filePath, 'utf8');

@@ -14,6 +14,13 @@ interface SearchResult {
   url: string;
 }
 
+/**
+* Provides a global search modal that queries POs, vendors, and users with keyboard accessibility and result navigation.
+* @example
+* GlobalSearch()
+* <JSX.Element />
+* @returns {JSX.Element} The search trigger button, overlay, and modal UI with results and loading state.
+*/
 export default function GlobalSearch() {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -23,6 +30,14 @@ export default function GlobalSearch() {
   const router = useRouter();
   const { user, userData } = useAuth();
 
+  /**
+  * Performs a global search across POs, vendors, and users and updates the results/loading state.
+  * @example
+  * sync('vendor')
+  * undefined
+  * @param {{string}} searchQuery - Query string used to filter purchase orders, vendors, and users.
+  * @returns {{Promise<void>}} Promise resolving when the search completes and UI states are updated.
+  **/
   const performSearch = async (searchQuery: string) => {
     if (!searchQuery.trim()) {
       setResults([]);

@@ -19,6 +19,14 @@ interface CalendarIntegrationProps {
   onAddReminder?: (event: Omit<CalendarEvent, 'id'>) => void;
 }
 
+/**
+* Renders the delivery calendar UI with event actions, quick actions, and reminder modal.
+* @example
+* CalendarIntegration({ pos: [], onAddReminder: () => {} })
+* <div className="bg-white rounded-lg shadow-sm border border-gray-200">…</div>
+* @param {{CalendarIntegrationProps}} {{CalendarIntegrationProps}} - Calendar integration configuration, including purchase order list and reminder handler.
+* @returns {{JSX.Element}} Rendered calendar integration component.
+**/
 export default function CalendarIntegration({ pos = [], onAddReminder }: CalendarIntegrationProps) {
   const [events, setEvents] = useState<CalendarEvent[]>([
     // TODO: Fetch real events from Firestore based on PO dates
@@ -36,6 +44,14 @@ export default function CalendarIntegration({ pos = [], onAddReminder }: Calenda
     window.open(url, '_blank');
   };
 
+  /**
+  * Generates and triggers download of an .ics file representing the given calendar event.
+  * @example
+  * downloadCalendarEvent({ date: new Date(), title: 'Meeting', description: 'Project sync' })
+  * undefined
+  * @param {{CalendarEvent}} event - Event object containing date, title, and description.
+  * @returns {{void}} void return value.
+  **/
   const exportToICS = (event: CalendarEvent) => {
     const icsContent = `BEGIN:VCALENDAR
 VERSION:2.0
@@ -68,6 +84,14 @@ END:VCALENDAR`;
     }
   };
 
+  /**
+  * Returns a styled status badge based on the provided status identifier.
+  * @example
+  * renderStatusTag('today')
+  * <span className="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">Today</span>
+  * @param {{string}} status - The status identifier to render a corresponding badge for.
+  * @returns {{JSX.Element|null}} The styled badge element for known statuses or null otherwise.
+  **/
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'today':

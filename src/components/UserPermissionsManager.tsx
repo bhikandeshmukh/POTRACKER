@@ -17,6 +17,13 @@ import { getAllUsers } from '@/lib/firestore';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/components/ToastContainer';
 
+/**
+* Renders the user permissions management interface with loading, selection, filtering, and permission updates.
+* @example
+* UserPermissionsManager()
+* <div className="space-y-6">…</div>
+* @returns {{JSX.Element}} Rendered permission management UI.
+**/
 export default function UserPermissionsManager() {
   const { user, userData } = useAuth();
   const { showSuccess, showError } = useToast();
@@ -62,6 +69,11 @@ export default function UserPermissionsManager() {
     return users.find(u => u.id === selectedUser);
   };
 
+  /**
+  * Returns the effective permissions for the currently selected user.
+  * @example
+  * getPermissionsForSelectedUser()
+  * [/* some permissions */
   const getSelectedUserPermissions = (): Permission[] => {
     if (!selectedUser) return [];
     
@@ -89,6 +101,14 @@ export default function UserPermissionsManager() {
     return !userPerms || userPerms.useRolePermissions;
   };
 
+  /**
+  * Toggle a custom permission for the currently selected non-admin user.
+  * @example
+  * toggleSelectedUserPermission('edit_posts')
+  * undefined
+  * @param {{Permission}} {{permission}} - Permission to add or remove for the selected user.
+  * @returns {{void}} No return value.
+  **/
   const togglePermission = (permission: Permission) => {
     if (!selectedUser) return;
     
@@ -115,6 +135,14 @@ export default function UserPermissionsManager() {
     setHasChanges(true);
   };
 
+  /****
+  * Toggles all permissions within the given category for the currently selected non-admin user.
+  * @example
+  * toggleCategoryPermissions('analytics')
+  * undefined
+  * @param {{string}} {{category}} - Category key identifying which permission group to toggle for the selected user.
+  * @returns {{void}} No return value.
+  ****/
   const selectAllInCategory = (category: string) => {
     if (!selectedUser) return;
     
@@ -148,6 +176,13 @@ export default function UserPermissionsManager() {
     setHasChanges(true);
   };
 
+  /**
+  * Resets the selected user's permissions to their role defaults after confirmation.
+  * @example
+  * sync()
+  * undefined
+  * @returns {Promise<void>} Resolves after attempting to reset permissions or handling failure.
+  **/
   const resetToRolePermissions = async () => {
     if (!selectedUser) return;
     
@@ -172,6 +207,14 @@ export default function UserPermissionsManager() {
     }
   };
 
+  /**
+  * Synchronizes selected user permissions by validating admin access and updating records via API.
+  * @example
+  * sync()
+  * undefined
+  * @param {{}} {{}} - No parameters.
+  * @returns {{Promise<void>}} Promise resolving when synchronization completes.
+  **/
   const savePermissions = async () => {
     if (!user || userData?.role !== 'Admin') {
       showError('Access Denied', 'Only admins can update permissions');

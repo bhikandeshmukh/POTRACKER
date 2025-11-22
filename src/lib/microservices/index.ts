@@ -36,6 +36,14 @@ export { POMicroservice } from './services/po-service';
 export { VendorMicroservice } from './services/vendor-service';
 
 // Utility functions
+/****
+* Builds a default microservice configuration with optional overrides
+* @example
+* createMicroserviceConfig({ name: 'auth-service', timeout: 45000 })
+* { name: 'auth-service', version: '1.0.0', timeout: 45000, retryPolicy: {...}, circuitBreaker: {...} }
+* @param {{Partial<import('./types').ServiceConfig>}} {{overrides}} - Optional configuration overrides to merge with defaults.
+* @returns {{import('./types').ServiceConfig}} Default microservice configuration merged with overrides.
+****/
 export function createMicroserviceConfig(overrides: Partial<import('./types').ServiceConfig> = {}): import('./types').ServiceConfig {
   return {
     name: 'default-service',
@@ -65,6 +73,13 @@ export async function checkServiceHealth(serviceName: string): Promise<import('.
   }
 }
 
+/**
+* Gathers the health status of every registered service concurrently.
+* @example
+* checkAllServicesHealth()
+* Promise.resolve({ serviceA: { status: 'healthy', details: null }, serviceB: null })
+* @returns {Promise<Record<string, import('./types').ServiceHealth | null>>} Promise resolving to a map of service names to their health status or null.
+**/
 export async function checkAllServicesHealth(): Promise<Record<string, import('./types').ServiceHealth | null>> {
   const services = await serviceRegistry.listServices();
   const healthChecks: Record<string, import('./types').ServiceHealth | null> = {};
@@ -122,6 +137,13 @@ export const TEST_CONFIG: Partial<OrchestrationConfig> = {
 
 // Migration utilities
 export class MicroserviceMigrationHelper {
+  /**
+  * Migrates orchestrated services from legacy runtime, tracking successes and failures.
+  * @example
+  * MicroserviceManager.migrateFromLegacyServices()
+  * { success: true, migratedServices: ['service-a'], errors: [] }
+  * @returns {{Promise<{success: boolean; migratedServices: string[]; errors: string[];}>}} Promise resolving with migration results.
+  **/
   static async migrateFromLegacyServices(): Promise<{
     success: boolean;
     migratedServices: string[];
@@ -160,6 +182,13 @@ export class MicroserviceMigrationHelper {
     }
   }
 
+  /**
+  * Validates that all supporting services and orchestrator are running before a migration.
+  * @example
+  * validateMigration()
+  * { valid: true, checks: [{ name: 'Orchestrator Status', passed: true, message: 'Orchestrator is running' }, ...] }
+  * @returns {{valid: boolean, checks: Array<{name: string, passed: boolean, message: string}>}} Indicates whether migration prerequisites passed and detailed check results.
+  **/
   static async validateMigration(): Promise<{
     valid: boolean;
     checks: Array<{

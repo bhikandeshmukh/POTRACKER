@@ -12,6 +12,14 @@ export interface ToastProps {
   onClose: (id: string) => void;
 }
 
+/**
+* Renders a dismissible toast notification based on the provided toast properties.
+* @example
+* Toast({ id: '1', type: 'success', title: 'Saved', message: 'Changes saved', duration: 3000, onClose: () => {} })
+* <JSX.Element />
+* @param {{ToastProps}} props - Toast properties containing id, type, title, message, duration, and onClose handler.
+* @returns {{JSX.Element}} The JSX element representing the toast notification.
+**/
 export default function Toast({ id, type, title, message, duration = 5000, onClose }: ToastProps) {
   const [isVisible, setIsVisible] = useState(false);
 

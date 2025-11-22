@@ -24,6 +24,14 @@ interface AdvancedFiltersProps {
   className?: string;
 }
 
+/**
+* Renders an advanced filters dropdown with multi-select controls, active count indicator, and filter chips.
+* @example
+* AdvancedFilters({filters, selectedFilters, onFiltersChange})
+* <AdvancedFilters filters={filters} selectedFilters={selectedFilters} onFiltersChange={onFiltersChange} />
+* @param {{AdvancedFiltersProps}} {{props}} - Props containing filter configuration, current selections, change handler, and optional styling class.
+* @returns {{JSX.Element}} Rendered advanced filters UI including dropdowns, buttons, and active filter tags.
+**/
 export default function AdvancedFilters({ 
   filters, 
   selectedFilters, 
@@ -45,6 +53,15 @@ export default function AdvancedFilters({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  /**
+  * Toggle the selected value for a given filter key and propagate the updated filters.
+  * @example
+  * updateFilters('status', 'active')
+  * undefined
+  * @param {{string}} {{filterKey}} - The filter key to toggle a value for.
+  * @param {{string}} {{value}} - The value to add or remove from the filter selection.
+  * @returns {{void}} Returns undefined after triggering the filter change handler.
+  **/
   const handleFilterToggle = (filterKey: string, value: string) => {
     const currentValues = selectedFilters[filterKey] || [];
     const filterConfig = filters.find(f => f.key === filterKey);

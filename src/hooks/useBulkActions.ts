@@ -12,6 +12,15 @@ export interface BulkAction {
   action: (selectedIds: string[]) => Promise<void>;
 }
 
+/**
+* Creates reusable selection state and helpers for performing bulk actions on a collection of items.
+* @example
+* useBulkActions([{ id: '1' }], [{ id: 'archive', label: 'Archive', action: ids => Promise.resolve() }])
+* { selectedIds: [], selectedCount: 0, isProcessing: false, ... }
+* @param {{T[]}} {{items}} - Array of items that can be selected for bulk operations.
+* @param {{BulkAction[]}} {{actions}} - Available bulk actions that can be executed against the selected items.
+* @returns {{UseBulkActionsResult}} Returns selection state, control handlers, and execution helpers for bulk actions.
+**/
 export function useBulkActions<T extends { id?: string }>(
   items: T[],
   actions: BulkAction[]

@@ -23,6 +23,14 @@ const adminNavigation = [
   { name: 'Audit Logs', href: '/audit-logs', icon: Shield },
 ];
 
+/**
+* Renders the sidebar with navigation links, admin panel shortcuts, and user controls while managing open/close state.
+* @example
+* Sidebar()
+* JSX.Element
+* @param {{void}} {{none}} - No parameters are required for this component.
+* @returns {{JSX.Element}} The sidebar element ready to be rendered within the layout.
+**/
 export default function Sidebar() {
   const pathname = usePathname();
   const { userData, signOut } = useAuth();

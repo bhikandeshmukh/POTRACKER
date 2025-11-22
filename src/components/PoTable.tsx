@@ -15,6 +15,14 @@ interface PoTableProps {
   onRefresh?: () => void;
 }
 
+/**
+* Renders a searchable, filterable list of purchase orders with inline status editing and delete controls.
+* @example
+* PoTable({ pos, onRefresh })
+* <PoTable ... />
+* @param {{PoTableProps}} {{props}} - Props containing the purchase orders array and optional refresh callback.
+* @returns {{JSX.Element}} Rendered purchase order table component.
+**/
 export default function PoTable({ pos, onRefresh }: PoTableProps) {
   const { userData } = useAuth();
   const { showSuccess, showError } = useToast();
@@ -35,6 +43,14 @@ export default function PoTable({ pos, onRefresh }: PoTableProps) {
     setNewStatus(currentStatus);
   };
 
+  /**
+  * Syncs the purchase order status by updating it through the backend service.
+  * @example
+  * sync('PO12345')
+  * undefined
+  * @param {{string}} poId - Identifier of the purchase order to sync.
+  * @returns {{Promise<void>}} Promise resolving once the status update attempt completes.
+  **/
   const handleStatusUpdate = async (poId: string) => {
     if (!userData || !userData.uid || !userData.name || !userData.role) {
       console.error('User data not available');
@@ -65,6 +81,15 @@ export default function PoTable({ pos, onRefresh }: PoTableProps) {
     }
   };
 
+  /**
+  * Deletes a purchase order after confirming with the user and handles any errors that occur.
+  * @example
+  * sync('po123', 'PO-2025-11')
+  * Promise<void>
+  * @param {{string}} {{poId}} - ID of the purchase order to delete.
+  * @param {{string}} {{poNumber}} - Display number used in the confirmation prompt.
+  * @returns {{Promise<void>}} Promise that resolves once the delete attempt completes.
+  **/
   const handleDelete = async (poId: string, poNumber: string) => {
     if (!userData || !userData.uid || !userData.name || !userData.role) {
       console.error('User data not available');
