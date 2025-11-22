@@ -154,11 +154,11 @@ export default function AdvancedFilters({
                             : 'Select options...'
                           }
                         </span>
-                        <Filter className="w-4 h-4 text-gray-400" />
+                        <Filter className="size-4 text-gray-400" />
                       </button>
 
                       {openDropdown === filter.key && (
-                        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded shadow-lg z-10 max-h-48 overflow-y-auto">
+                        <div className="absolute top-full inset-x-0 mt-1 bg-white border border-gray-200 rounded shadow-lg z-10 max-h-48 overflow-y-auto">
                           {filter.options.map((option) => {
                             const isSelected = selectedValues.includes(option.value);
                             
@@ -170,13 +170,13 @@ export default function AdvancedFilters({
                               >
                                 <div className="flex items-center space-x-2">
                                   <div className={`
-                                    w-4 h-4 border rounded flex items-center justify-center
+                                    size-4 border rounded flex items-center justify-center
                                     ${isSelected 
                                       ? 'bg-blue-600 border-blue-600' 
                                       : 'border-gray-300'
                                     }
                                   `}>
-                                    {isSelected && <Check className="w-3 h-3 text-white" />}
+                                    {isSelected && <Check className="size-3 text-white" />}
                                   </div>
                                   <span className="text-gray-700">{option.label}</span>
                                 </div>
@@ -216,7 +216,7 @@ export default function AdvancedFilters({
                             onClick={() => handleFilterToggle(filterKey, value)}
                             className="hover:text-blue-600"
                           >
-                            <X className="w-3 h-3" />
+                            <X className="size-3" />
                           </button>
                         </span>
                       );

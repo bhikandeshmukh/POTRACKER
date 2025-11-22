@@ -72,7 +72,7 @@ export default function Toast({ id, type, title, message, duration = 5000, onClo
       max-w-sm w-full ${config.bgColor} ${config.borderColor} border rounded-lg shadow-lg p-4
     `}>
       <div className="flex items-start">
-        <Icon className={`w-5 h-5 ${config.iconColor} mt-0.5 flex-shrink-0`} />
+        <Icon className={`size-5 ${config.iconColor} mt-0.5 flex-shrink-0`} />
         <div className="ml-3 flex-1">
           <p className={`text-sm font-medium ${config.titleColor}`}>
             {title}
@@ -87,7 +87,7 @@ export default function Toast({ id, type, title, message, duration = 5000, onClo
           onClick={handleClose}
           className="ml-4 flex-shrink-0 text-gray-400 hover:text-gray-600"
         >
-          <X className="w-4 h-4" />
+          <X className="size-4" />
         </button>
       </div>
     </div>

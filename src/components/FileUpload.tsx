@@ -229,7 +229,7 @@ export default function FileUpload({
           }
         `}
       >
-        <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+        <Upload className="size-8 text-gray-400 mx-auto mb-2" />
         <p className="text-sm text-gray-600 mb-1">
           <span className="font-medium text-blue-600">Click to upload</span> or drag and drop
         </p>
@@ -264,10 +264,10 @@ export default function FileUpload({
                   <img 
                     src={file.preview} 
                     alt={file.name}
-                    className="w-10 h-10 object-cover rounded"
+                    className="size-10 object-cover rounded"
                   />
                 ) : (
-                  <Icon className="w-10 h-10 text-gray-400" />
+                  <Icon className="size-10 text-gray-400" />
                 )}
                 
                 <div className="flex-1 min-w-0">
@@ -294,7 +294,7 @@ export default function FileUpload({
                   
                   {file.status === 'error' && (
                     <p className="text-xs text-red-600 mt-1 flex items-center">
-                      <AlertCircle className="w-3 h-3 mr-1" />
+                      <AlertCircle className="size-3 mr-1" />
                       {file.error}
                     </p>
                   )}
@@ -302,14 +302,14 @@ export default function FileUpload({
 
                 <div className="flex items-center space-x-2">
                   {file.status === 'success' && (
-                    <Check className="w-5 h-5 text-green-600" />
+                    <Check className="size-5 text-green-600" />
                   )}
                   
                   <button
                     onClick={() => removeFile(file.id)}
                     className="p-1 text-gray-400 hover:text-red-600 transition-colors"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="size-4" />
                   </button>
                 </div>
               </div>

@@ -88,7 +88,7 @@ END:VCALENDAR`;
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Calendar className="w-5 h-5 text-blue-600" />
+            <Calendar className="size-5 text-blue-600" />
             <h3 className="text-lg font-semibold text-gray-900">Delivery Calendar</h3>
           </div>
           
@@ -96,7 +96,7 @@ END:VCALENDAR`;
             onClick={() => setShowAddModal(true)}
             className="flex items-center space-x-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="size-4" />
             <span>Add Reminder</span>
           </button>
         </div>
@@ -151,7 +151,7 @@ END:VCALENDAR`;
                   
                   <div className="flex items-center space-x-4 text-xs text-gray-500">
                     <div className="flex items-center space-x-1">
-                      <Calendar className="w-3 h-3" />
+                      <Calendar className="size-3" />
                       <span>{format(event.date, 'MMM dd, yyyy')}</span>
                     </div>
                     {event.poNumber && (
@@ -168,20 +168,20 @@ END:VCALENDAR`;
                     className="p-2 text-gray-600 hover:bg-white rounded-lg transition-colors"
                     title="Add to Google Calendar"
                   >
-                    <Calendar className="w-4 h-4" />
+                    <Calendar className="size-4" />
                   </button>
                   <button
                     onClick={() => exportToICS(event)}
                     className="p-2 text-gray-600 hover:bg-white rounded-lg transition-colors"
                     title="Download ICS"
                   >
-                    <Download className="w-4 h-4" />
+                    <Download className="size-4" />
                   </button>
                   <button
                     className="p-2 text-gray-600 hover:bg-white rounded-lg transition-colors"
                     title="Set Email Reminder"
                   >
-                    <Mail className="w-4 h-4" />
+                    <Mail className="size-4" />
                   </button>
                 </div>
               </div>
@@ -190,7 +190,7 @@ END:VCALENDAR`;
 
           {sortedEvents.length === 0 && (
             <div className="text-center p-8 text-gray-500">
-              <Calendar className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+              <Calendar className="size-8 mx-auto mb-2 text-gray-300" />
               <p>No upcoming events</p>
             </div>
           )}
@@ -201,11 +201,11 @@ END:VCALENDAR`;
           <h4 className="font-semibold text-gray-900 mb-3">Quick Actions</h4>
           <div className="grid grid-cols-2 gap-3">
             <button className="flex items-center justify-center space-x-2 px-4 py-3 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors">
-              <Bell className="w-4 h-4" />
+              <Bell className="size-4" />
               <span className="text-sm font-medium">Enable Notifications</span>
             </button>
             <button className="flex items-center justify-center space-x-2 px-4 py-3 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors">
-              <Mail className="w-4 h-4" />
+              <Mail className="size-4" />
               <span className="text-sm font-medium">Email Reminders</span>
             </button>
           </div>
@@ -225,7 +225,7 @@ END:VCALENDAR`;
                   onClick={() => setShowAddModal(false)}
                   className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="size-5" />
                 </button>
               </div>
 

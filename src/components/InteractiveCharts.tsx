@@ -147,8 +147,8 @@ export default function InteractiveCharts({ data, onChartClick }: InteractiveCha
 
       <div className="grid grid-cols-4 gap-4 mt-6 pt-6 border-t border-gray-200">
         <div className="text-center">
-          <div className="flex items-center justify-center w-10 h-10 bg-blue-50 text-blue-600 rounded-lg mx-auto mb-2">
-            <Package className="w-5 h-5" />
+          <div className="flex items-center justify-center size-10 bg-blue-50 text-blue-600 rounded-lg mx-auto mb-2">
+            <Package className="size-5" />
           </div>
           <p className="text-2xl font-bold text-gray-900">
             {data.reduce((sum, po) => sum + po.lineItems.reduce((s: number, item: any) => s + item.quantity, 0), 0).toLocaleString()}
@@ -157,8 +157,8 @@ export default function InteractiveCharts({ data, onChartClick }: InteractiveCha
         </div>
         
         <div className="text-center">
-          <div className="flex items-center justify-center w-10 h-10 bg-green-50 text-green-600 rounded-lg mx-auto mb-2">
-            <TrendingUp className="w-5 h-5" />
+          <div className="flex items-center justify-center size-10 bg-green-50 text-green-600 rounded-lg mx-auto mb-2">
+            <TrendingUp className="size-5" />
           </div>
           <p className="text-2xl font-bold text-gray-900">
             {data.length > 0 ? Math.round(data.reduce((sum, po) => sum + po.lineItems.reduce((s: number, item: any) => s + item.quantity, 0), 0) / data.length) : 0}
@@ -167,16 +167,16 @@ export default function InteractiveCharts({ data, onChartClick }: InteractiveCha
         </div>
         
         <div className="text-center">
-          <div className="flex items-center justify-center w-10 h-10 bg-yellow-50 text-yellow-600 rounded-lg mx-auto mb-2">
-            <DollarSign className="w-5 h-5" />
+          <div className="flex items-center justify-center size-10 bg-yellow-50 text-yellow-600 rounded-lg mx-auto mb-2">
+            <DollarSign className="size-5" />
           </div>
           <p className="text-2xl font-bold text-gray-900">{data.length}</p>
           <p className="text-xs text-gray-600">Total POs</p>
         </div>
         
         <div className="text-center">
-          <div className="flex items-center justify-center w-10 h-10 bg-purple-50 text-purple-600 rounded-lg mx-auto mb-2">
-            <Calendar className="w-5 h-5" />
+          <div className="flex items-center justify-center size-10 bg-purple-50 text-purple-600 rounded-lg mx-auto mb-2">
+            <Calendar className="size-5" />
           </div>
           <p className="text-2xl font-bold text-gray-900">{chartData.length}</p>
           <p className="text-xs text-gray-600">Active Months</p>

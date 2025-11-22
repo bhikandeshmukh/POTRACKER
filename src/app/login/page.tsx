@@ -76,7 +76,7 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition disabled:bg-gray-400"
           >
-            <LogIn className="w-5 h-5" />
+            <LogIn className="size-5" />
             <span>{loading ? 'Signing in...' : 'Sign In'}</span>
           </button>
         </form>

@@ -89,15 +89,15 @@ export default function ComparisonView({ data, period = 'month' }: ComparisonVie
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-4">
           <div className={`p-3 rounded-lg ${colorClasses}`}>
-            <Icon className="w-6 h-6" />
+            <Icon className="size-6" />
           </div>
           
           <div className={`flex items-center space-x-1 text-sm font-medium ${
             isPositive ? 'text-green-600' : isNegative ? 'text-red-600' : 'text-gray-600'
           }`}>
-            {isPositive && <TrendingUp className="w-4 h-4" />}
-            {isNegative && <TrendingDown className="w-4 h-4" />}
-            {isNeutral && <Minus className="w-4 h-4" />}
+            {isPositive && <TrendingUp className="size-4" />}
+            {isNegative && <TrendingDown className="size-4" />}
+            {isNeutral && <Minus className="size-4" />}
             <span>{Math.abs(change.percentage).toFixed(1)}%</span>
           </div>
         </div>

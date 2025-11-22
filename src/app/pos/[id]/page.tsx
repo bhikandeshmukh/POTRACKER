@@ -174,7 +174,7 @@ export default function PoDetailPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full size-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading...</p>
         </div>
       </div>
@@ -394,7 +394,7 @@ export default function PoDetailPage() {
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                 >
-                  {showAllRows ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                  {showAllRows ? <EyeOff className="size-3" /> : <Eye className="size-3" />}
                   <span>{showAllRows ? 'Show Pages' : 'Show All'}</span>
                 </button>
 
@@ -435,7 +435,7 @@ export default function PoDetailPage() {
                             type="checkbox"
                             checked={!hiddenColumns.has(column.key)}
                             onChange={() => toggleColumn(column.key)}
-                            className="w-3 h-3"
+                            className="size-3"
                           />
                           <span className="truncate">{column.label}</span>
                         </label>
@@ -449,7 +449,7 @@ export default function PoDetailPage() {
                   onClick={resetTableSettings}
                   className="flex items-center space-x-1 px-3 py-1 bg-gray-100 text-gray-600 rounded text-sm hover:bg-gray-200"
                 >
-                  <RotateCcw className="w-3 h-3" />
+                  <RotateCcw className="size-3" />
                   <span>Reset</span>
                 </button>
               </div>
@@ -494,7 +494,7 @@ export default function PoDetailPage() {
                 {/* Header Row */}
                 <thead>
                   <tr className="bg-blue-50 border-b-2 border-blue-200">
-                    <th className="w-12 px-3 py-3 text-xs font-medium text-gray-500 bg-gray-100 border-r border-gray-300 text-center">
+                    <th className="w-12 p-3 text-xs font-medium text-gray-500 bg-gray-100 border-r border-gray-300 text-center">
                       #
                     </th>
                     {columns.map((column) => (
@@ -512,7 +512,7 @@ export default function PoDetailPage() {
                             
                             {/* Resize handle */}
                             <div
-                              className={`absolute right-0 top-0 bottom-0 w-2 cursor-col-resize transition-colors ${
+                              className={`absolute right-0 inset-y-0 w-2 cursor-col-resize transition-colors ${
                                 resizing?.column === column.key 
                                   ? 'bg-blue-500' 
                                   : 'hover:bg-blue-300 bg-transparent'

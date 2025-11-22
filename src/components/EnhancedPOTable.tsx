@@ -93,7 +93,7 @@ export default function EnhancedPOTable({ pos, onRefresh }: EnhancedPOTableProps
   if (pos.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-        <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+        <Package className="size-12 text-gray-400 mx-auto mb-4" />
         <p className="text-gray-600">No purchase orders found</p>
       </div>
     );
@@ -120,7 +120,7 @@ export default function EnhancedPOTable({ pos, onRefresh }: EnhancedPOTableProps
                     onClick={(e) => toggleExpanded(po.id!, e)}
                     className="mt-1 p-1.5 hover:bg-gray-100 rounded transition-colors"
                   >
-                    <BarChart3 className={`w-4 h-4 text-gray-500 transition-transform ${
+                    <BarChart3 className={`size-4 text-gray-500 transition-transform ${
                       isExpanded ? 'rotate-90' : ''
                     }`} />
                   </button>
@@ -182,7 +182,7 @@ export default function EnhancedPOTable({ pos, onRefresh }: EnhancedPOTableProps
                         disabled={processingPO === po.id}
                         className="flex items-center space-x-1 px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition disabled:opacity-50"
                       >
-                        <Check className="w-3 h-3" />
+                        <Check className="size-3" />
                         <span>Approve</span>
                       </button>
                       <button
@@ -190,7 +190,7 @@ export default function EnhancedPOTable({ pos, onRefresh }: EnhancedPOTableProps
                         disabled={processingPO === po.id}
                         className="flex items-center space-x-1 px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition disabled:opacity-50"
                       >
-                        <X className="w-3 h-3" />
+                        <X className="size-3" />
                         <span>Reject</span>
                       </button>
                     </>
@@ -202,7 +202,7 @@ export default function EnhancedPOTable({ pos, onRefresh }: EnhancedPOTableProps
                     }}
                     className="flex items-center space-x-1 px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition"
                   >
-                    <Eye className="w-3 h-3" />
+                    <Eye className="size-3" />
                     <span>View</span>
                   </button>
                 </div>
@@ -224,7 +224,7 @@ export default function EnhancedPOTable({ pos, onRefresh }: EnhancedPOTableProps
                             {item.size && <span>Size: {item.size}</span>}
                             {item.barcode && (
                               <span className="flex items-center space-x-1">
-                                <QrCode className="w-3 h-3" />
+                                <QrCode className="size-3" />
                                 <span>{item.barcode}</span>
                               </span>
                             )}

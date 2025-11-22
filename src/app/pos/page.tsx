@@ -110,7 +110,7 @@ export default function PosPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full size-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading...</p>
         </div>
       </div>
@@ -142,7 +142,7 @@ export default function PosPage() {
                 className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
                 title="Refresh data"
               >
-                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`size-4 ${isRefreshing ? 'animate-spin' : ''}`} />
               </button>
 
               {/* Search Input */}
@@ -262,7 +262,7 @@ export default function PosPage() {
           {/* Empty State */}
           {filteredPOs.length === 0 && pos.length > 0 ? (
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-              <Filter className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <Filter className="size-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No matching orders</h3>
               <p className="text-gray-600 mb-4">Try adjusting your filters</p>
               <button
