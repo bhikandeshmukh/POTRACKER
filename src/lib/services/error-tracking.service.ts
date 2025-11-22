@@ -45,9 +45,8 @@ export class ErrorTrackingService {
 
   // Generate error fingerprint for deduplication
   private generateFingerprint(error: Error, context: ErrorContext): string {
+    const { operation, service } = context;
     const message = error.message || 'Unknown error';
-    const operation = context.operation;
-    const service = context.service;
     
     // Create a hash-like fingerprint
     return `${service}:${operation}:${message}`.replace(/[^a-zA-Z0-9:]/g, '');

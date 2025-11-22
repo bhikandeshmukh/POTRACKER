@@ -58,8 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
+    const { user } = await signInWithEmailAndPassword(auth, email, password);
     
     // Log user login immediately after successful sign in
     if (user && user.email) {
@@ -81,8 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = async (email: string, password: string, name: string, role: 'Admin' | 'Manager' | 'Employee') => {
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+      const { user } = await createUserWithEmailAndPassword(auth, email, password);
       
       // Create user document in Firestore
       await createUser(user.uid, {

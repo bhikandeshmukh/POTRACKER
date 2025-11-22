@@ -156,8 +156,7 @@ export default function CommentsSystem({ poId, className = '' }: CommentsSystemP
   };
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const value = e.target.value;
-    const cursorPos = e.target.selectionStart;
+    const { value, selectionStart: cursorPos } = e.target;
     
     setNewComment(value);
     setCursorPosition(cursorPos);
