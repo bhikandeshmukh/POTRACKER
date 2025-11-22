@@ -45,7 +45,7 @@ export default function ExcelExportButton({
       });
     } catch (error) {
       console.error('Export failed:', error);
-      alert('Export failed. Please try again.');
+      ;
     } finally {
       setIsExporting(false);
     }
@@ -70,7 +70,7 @@ export default function ExcelExportButton({
       }
     } catch (error) {
       console.error('Export failed:', error);
-      alert('Export failed. Please try again.');
+      ;
     } finally {
       setIsExporting(false);
       setShowDropdown(false);

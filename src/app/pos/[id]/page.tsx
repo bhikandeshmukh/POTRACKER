@@ -164,7 +164,7 @@ export default function PoDetailPage() {
       // Audit logging is now handled automatically by the service
     } catch (error) {
       console.error('Error updating status:', error);
-      alert('Failed to update status');
+      ;
     } finally {
       setUpdating(false);
     }

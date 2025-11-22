@@ -99,13 +99,13 @@ export default function NewReturnOrderPage() {
     e.preventDefault();
     
     if (!selectedPO) {
-      alert('Please select a PO');
+      ;
       return;
     }
 
     const itemsToReturn = lineItems.filter(item => item.returnQty > 0);
     if (itemsToReturn.length === 0) {
-      alert('Please add at least one item to return');
+      ;
       return;
     }
 
@@ -127,11 +127,11 @@ export default function NewReturnOrderPage() {
         notes
       });
 
-      alert('Return Order created successfully!');
+      ;
       router.push('/ros');
     } catch (error) {
       console.error('Error creating return order:', error);
-      alert('Failed to create return order');
+      ;
     } finally {
       setSubmitting(false);
     }
