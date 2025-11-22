@@ -67,12 +67,12 @@ export default function Toast({ id, type, title, message, duration = 5000, onClo
 
   return (
     <div className={`
-      transform transition-all duration-300 ease-in-out
+      transition-all duration-300 ease-in-out
       ${isVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}
       max-w-sm w-full ${config.bgColor} ${config.borderColor} border rounded-lg shadow-lg p-4
     `}>
       <div className="flex items-start">
-        <Icon className={`size-5 ${config.iconColor} mt-0.5 flex-shrink-0`} />
+        <Icon className={`size-5 ${config.iconColor} mt-0.5 shrink-0`} />
         <div className="ml-3 flex-1">
           <p className={`text-sm font-medium ${config.titleColor}`}>
             {title}
@@ -85,7 +85,7 @@ export default function Toast({ id, type, title, message, duration = 5000, onClo
         </div>
         <button
           onClick={handleClose}
-          className="ml-4 flex-shrink-0 text-gray-400 hover:text-gray-600"
+          className="ml-4 shrink-0 text-gray-400 hover:text-gray-600"
         >
           <X className="size-4" />
         </button>

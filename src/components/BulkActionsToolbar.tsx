@@ -43,9 +43,9 @@ export default function BulkActionsToolbar({
 
   return (
     <div className={`
-      fixed bottom-4 left-1/2 transform -translate-x-1/2 z-40
-      bg-white border border-gray-200 rounded-lg shadow-lg p-4
-      transition-all duration-300 ease-in-out
+      fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-white
+      border border-gray-200 rounded-lg shadow-lg p-4 transition-all
+      duration-300 ease-in-out
       ${className}
     `}>
       <div className="flex items-center space-x-4">

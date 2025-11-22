@@ -207,7 +207,7 @@ export default function PosPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
               {/* Total Ordered Qty */}
               <div className={`${getThemeClasses.card()} ${getThemeClasses.cardPadding()} flex items-center gap-3 hover:shadow-md transition-shadow duration-200`}>
-                <div className="p-2 sm:p-2.5 rounded-full bg-blue-50 text-blue-600 flex-shrink-0">
+                <div className="p-2 sm:p-2.5 rounded-full bg-blue-50 text-blue-600 shrink-0">
                   <Package className={getThemeClasses.icon('medium')} />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -220,7 +220,7 @@ export default function PosPage() {
 
               {/* Sent Qty */}
               <div className={`${getThemeClasses.card()} ${getThemeClasses.cardPadding()} flex items-center gap-3 hover:shadow-md transition-shadow duration-200`}>
-                <div className="p-2 sm:p-2.5 rounded-full bg-green-50 text-green-600 flex-shrink-0">
+                <div className="p-2 sm:p-2.5 rounded-full bg-green-50 text-green-600 shrink-0">
                   <Truck className={getThemeClasses.icon('medium')} />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -233,7 +233,7 @@ export default function PosPage() {
 
               {/* Received Qty */}
               <div className={`${getThemeClasses.card()} ${getThemeClasses.cardPadding()} flex items-center gap-3 hover:shadow-md transition-shadow duration-200`}>
-                <div className="p-2 sm:p-2.5 rounded-full bg-blue-50 text-blue-600 flex-shrink-0">
+                <div className="p-2 sm:p-2.5 rounded-full bg-blue-50 text-blue-600 shrink-0">
                   <CheckCircle className={getThemeClasses.icon('medium')} />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -246,7 +246,7 @@ export default function PosPage() {
 
               {/* Pending Qty */}
               <div className={`${getThemeClasses.card()} ${getThemeClasses.cardPadding()} flex items-center gap-3 hover:shadow-md transition-shadow duration-200`}>
-                <div className="p-2 sm:p-2.5 rounded-full bg-orange-50 text-orange-600 flex-shrink-0">
+                <div className="p-2 sm:p-2.5 rounded-full bg-orange-50 text-orange-600 shrink-0">
                   <Clock className={getThemeClasses.icon('medium')} />
                 </div>
                 <div className="min-w-0 flex-1">

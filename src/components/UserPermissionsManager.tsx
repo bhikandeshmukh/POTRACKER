@@ -285,7 +285,7 @@ export default function UserPermissionsManager() {
       {/* Warning for non-admins */}
       {userData?.role !== 'Admin' && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start space-x-3">
-          <AlertCircle className="size-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+          <AlertCircle className="size-5 text-yellow-600 shrink-0 mt-0.5" />
           <div className="text-sm text-yellow-800">
             <p className="font-medium">View Only Mode</p>
             <p>You can view permissions but only administrators can modify them.</p>
@@ -300,7 +300,7 @@ export default function UserPermissionsManager() {
             <div className="p-4 border-b border-gray-200">
               <h3 className="font-semibold text-gray-900 mb-3">Select User</h3>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 size-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search users..."
@@ -379,7 +379,7 @@ export default function UserPermissionsManager() {
               {selectedUserData?.role === 'Admin' ? (
                 <div className="p-6">
                   <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start space-x-3">
-                    <Shield className="size-5 text-red-600 flex-shrink-0 mt-0.5" />
+                    <Shield className="size-5 text-red-600 shrink-0 mt-0.5" />
                     <div className="text-sm text-red-800">
                       <p className="font-medium mb-1">Administrator Account</p>
                       <p>Admin users automatically have all {totalPermissions} permissions and cannot be restricted.</p>

@@ -98,7 +98,7 @@ export default function PoTable({ pos, onRefresh }: PoTableProps) {
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center justify-between gap-4">
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 size-5 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-gray-400" />
             <input
               type="text"
               placeholder="Search by PO number or vendor..."

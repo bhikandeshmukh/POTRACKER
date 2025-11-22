@@ -86,7 +86,7 @@ export default function Sidebar() {
         id="sidebar"
         className={`
           fixed top-0 left-0 z-40 w-64 bg-white shadow-lg border-r border-gray-200 h-screen pt-4 flex flex-col
-          transform transition-transform duration-300 ease-in-out
+          transition-transform duration-300 ease-in-out
           ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         `}
       >
@@ -141,7 +141,7 @@ export default function Sidebar() {
         </nav>
 
         {/* User Info Section at Bottom */}
-        <div className="border-t border-gray-200 p-4 flex-shrink-0">
+        <div className="border-t border-gray-200 p-4 shrink-0">
           <div className="flex items-center space-x-3 mb-3">
             <div className="p-1.5 bg-gray-100 rounded-lg">
               <User className={`${getThemeClasses.icon('small')} text-gray-600`} />

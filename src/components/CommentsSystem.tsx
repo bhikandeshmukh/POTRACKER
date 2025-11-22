@@ -253,7 +253,7 @@ export default function CommentsSystem({ poId, className = '' }: CommentsSystemP
       <div key={comment.id} className={`${isReply ? 'ml-12 mt-3' : 'mb-6'}`}>
         <div className="flex space-x-3">
           {/* Avatar */}
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             <div className="size-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
               <User className="size-4 text-white" />
             </div>

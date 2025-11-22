@@ -212,7 +212,7 @@ export default function ActivityFeed({
                 
                 <div className="flex items-start space-x-4">
                   {/* Icon */}
-                  <div className={`flex-shrink-0 p-2 rounded-full border ${getActivityColor(activity.type)}`}>
+                  <div className={`shrink-0 p-2 rounded-full border ${getActivityColor(activity.type)}`}>
                     {getActivityIcon(activity.type)}
                   </div>
                   

@@ -188,7 +188,7 @@ export default function TeamNotifications({ className = '' }: TeamNotificationsP
                       onClick={() => handleNotificationClick(notification)}
                     >
                       <div className="flex items-start space-x-3">
-                        <div className="flex-shrink-0 mt-1">
+                        <div className="shrink-0 mt-1">
                           {getNotificationIcon(notification.type)}
                         </div>
                         
@@ -232,7 +232,7 @@ export default function TeamNotifications({ className = '' }: TeamNotificationsP
                           )}
                         </div>
                         
-                        <div className="flex-shrink-0">
+                        <div className="shrink-0">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();

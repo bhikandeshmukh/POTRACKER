@@ -520,7 +520,7 @@ export default function PoDetailPage() {
                               onMouseDown={(e) => handleMouseDown(e, column.key)}
                               title="Drag to resize column"
                             >
-                              <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-1 h-4 bg-gray-400 rounded-full opacity-0 hover:opacity-100 transition-opacity" />
+                              <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-4 bg-gray-400 rounded-full opacity-0 hover:opacity-100 transition-opacity" />
                             </div>
                           </div>
                         </th>

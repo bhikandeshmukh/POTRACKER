@@ -273,7 +273,7 @@ export default function TransportersPage() {
           {/* Search Bar */}
           <div className="mb-6">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 size-5" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 size-5" />
               <input
                 type="text"
                 placeholder="Search transporters by name, contact person, phone, email, or vehicle number..."

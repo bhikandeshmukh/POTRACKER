@@ -174,7 +174,7 @@ export default function ExportOptions({ data, filename = 'export', className = '
                     disabled={isExporting}
                     className="w-full flex items-start space-x-3 p-3 text-left hover:bg-gray-50 rounded transition-colors disabled:opacity-50"
                   >
-                    <Icon className="size-4 text-gray-500 mt-0.5 flex-shrink-0" />
+                    <Icon className="size-4 text-gray-500 mt-0.5 shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900">
                         {option.label}
