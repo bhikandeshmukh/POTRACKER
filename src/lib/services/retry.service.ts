@@ -175,11 +175,7 @@ export class RetryService {
     }
 
     // HTTP 5xx errors
-    if (error.status >= 500 && error.status < 600) {
-      return true;
-    }
-
-    return false;
+    return !!(error.status >= 500 && error.status < 600);
   }
 
   // Calculate delay with exponential backoff and jitter
