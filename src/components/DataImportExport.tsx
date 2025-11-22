@@ -335,7 +335,7 @@ export default function DataImportExport({ type, isOpen, onClose, onImportComple
             };
 
             await addVendor(vendorData, user.uid, user.email || undefined);
-            result.success++;
+            result.success += 1;
           } catch (error: any) {
             result.errors.push({
               row: rowNumber,
@@ -512,7 +512,7 @@ export default function DataImportExport({ type, isOpen, onClose, onImportComple
             total: lineTotal
           });
           
-          result.success++;
+          result.success += 1;
         }
       }
 
@@ -650,7 +650,7 @@ export default function DataImportExport({ type, isOpen, onClose, onImportComple
               });
             }
             
-            result.success++;
+            result.success += 1;
           } catch (error: any) {
             console.error('🔴 Shipment creation error for', shipmentKey, ':', error);
             result.errors.push({
