@@ -230,7 +230,7 @@ export class ErrorTrackingService {
     
     // Remove oldest 10%
     const toRemove = Math.floor(this.maxErrors * 0.1);
-    for (let i = 0; i < toRemove; i++) {
+    for (let i = 0; i < toRemove; i+=1) {
       this.errors.delete(sortedErrors[i].id);
     }
 

@@ -83,7 +83,7 @@ class CircuitBreaker {
   **/
   private onSuccess(): void {
     if (this.state === CircuitState.HALF_OPEN) {
-      this.successCount++;
+      undefined+=1;
       if (this.successCount >= 3) { // Require 3 successes to close
         this.state = CircuitState.CLOSED;
         this.failures = 0;
@@ -103,7 +103,7 @@ class CircuitBreaker {
   * @returns {{void}} No return value; updates internal state only.
   **/
   private onFailure(): void {
-    this.failures++;
+    undefined+=1;
     this.lastFailureTime = Date.now();
 
     if (this.state === CircuitState.HALF_OPEN) {
@@ -240,7 +240,7 @@ export class RetryService {
     let attempt = 0;
 
     while (attempt < mergedOptions.maxAttempts) {
-      attempt++;
+      attempt+=1;
 
       try {
         // Execute with circuit breaker
@@ -413,9 +413,9 @@ export class RetryService {
 
     for (const stats of Object.values(circuitBreakers)) {
       if (stats.state === CircuitState.OPEN) {
-        openCircuitBreakers++;
+        openCircuitBreakers+=1;
       } else if (stats.state === CircuitState.HALF_OPEN) {
-        halfOpenCircuitBreakers++;
+        halfOpenCircuitBreakers+=1;
       }
     }
 
