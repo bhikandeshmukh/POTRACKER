@@ -33,7 +33,7 @@ export default function PoDetailPage() {
       const result = await poService.findById(params.id as string);
       return result.success ? result.data : null;
     },
-    enabled: !!params.id,
+    enabled: Boolean(params.id),
     staleTime: 2 * 60 * 1000, // 2 minutes for detail page
   });
 

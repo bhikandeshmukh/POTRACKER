@@ -43,7 +43,7 @@ export default function PosPage() {
   } = useQuery({
     queryKey: ['pos', user?.uid, userData?.role],
     queryFn: () => getPOs(user?.uid, userData?.role, 100),
-    enabled: !!user && !!userData,
+    enabled: Boolean(user) && Boolean(userData),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 

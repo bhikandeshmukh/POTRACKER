@@ -64,7 +64,7 @@ export default function Dashboard() {
   const { data: pos = [], isLoading: loadingPOs, refetch: refetchPOs } = useQuery({
     queryKey: ['pos', user?.uid, userData?.role],
     queryFn: () => getPOs(user?.uid, userData?.role, 50),
-    enabled: !!user && !!userData,
+    enabled: Boolean(user) && Boolean(userData),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
@@ -72,7 +72,7 @@ export default function Dashboard() {
   const { data: shipments = [], isLoading: loadingShipments } = useQuery({
     queryKey: ['shipments'],
     queryFn: () => getShipments().catch(() => []),
-    enabled: !!user && !!userData,
+    enabled: Boolean(user) && Boolean(userData),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
